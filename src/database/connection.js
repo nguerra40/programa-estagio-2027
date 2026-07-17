@@ -1,73 +1,57 @@
 /**
- * Conexão com banco de dados.
- * Se DB_HOST estiver configurado, usa PostgreSQL.
- * Caso contrário, usa SQLite local (para dev e deploys sem banco externo).
+ * Banco de dados simples baseado em arquivo JSON.
+ * Zero dependências nativas — funciona em qualquer container.
  */
+const fs = require('fs');
+const path = require('path');
 
-let db;
+const DATA_DIR = path.join(__dirname, '..', '..', 'data');
+const DB_FILE = path.join(DATA_DIR, 'solicitacoes.json');
 
-if (process.env.DB_HOST && process.env.DB_HOST !== 'localhost_desativado') {
-  // PostgreSQL
-  const { Pool } = require('pg');
-  const pool = new Pool({
-    host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT || '5432'),
-    database: process.env.DB_NAME || 'programa_estagio',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || '',
-    max: 10,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000
-  });
-
-  pool.on('connect', () => console.log('[DB] Conectado ao PostgreSQL.'));
-  pool.on('error', (err) => console.error('[DB] Erro no pool:', err.message));
-
-  db = {
-    type: 'postgres',
-    query: (text, params) => pool.query(text, params),
-    end: () => pool.end()
-  };
-} else {
-  // SQLite (arquivo local — funciona sem infra externa)
-  const Database = require('better-sqlite3');
-  const path = require('path');
-  const dbPath = path.join(__dirname, '..', '..', 'data', 'estagio.db');
-
-  // Cria pasta data se não existir
-  const fs = require('fs');
-  const dataDir = path.join(__dirname, '..', '..', 'data');
-  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-
-  const sqlite = new Database(dbPath);
-  sqlite.pragma('journal_mode = WAL');
-
-  console.log('[DB] Usando SQLite local:', dbPath);
-
-  // Adapter para manter a mesma interface que pg
-  db = {
-    type: 'sqlite',
-    query: (text, params) => {
-      // Converte $1, $2... para ? (SQLite usa ?)
-      const sqliteText = text.replace(/\$(\d+)/g, '?');
-      
-      if (sqliteText.trim().toUpperCase().startsWith('SELECT') || 
-          sqliteText.trim().toUpperCase().startsWith('WITH')) {
-        const rows = sqlite.prepare(sqliteText).all(...(params || []));
-        return Promise.resolve({ rows });
-      } else if (sqliteText.toUpperCase().includes('RETURNING')) {
-        const cleanSql = sqliteText.replace(/RETURNING \*/i, '');
-        const info = sqlite.prepare(cleanSql).run(...(params || []));
-        // Busca o registro inserido
-        const row = sqlite.prepare('SELECT * FROM solicitacoes WHERE id = ?').get(info.lastInsertRowid);
-        return Promise.resolve({ rows: [row] });
-      } else {
-        sqlite.prepare(sqliteText).run(...(params || []));
-        return Promise.resolve({ rows: [] });
-      }
-    },
-    end: () => sqlite.close()
-  };
+// Cria pasta de dados se não existir
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-module.exports = db;
+// Cria arquivo se não existir
+if (!fs.existsSync(DB_FILE)) {
+  fs.writeFileSync(DB_FILE, JSON.stringify([], null, 2));
+}
+
+function readAll() {
+  try {
+    const raw = fs.readFileSync(DB_FILE, 'utf-8');
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+function writeAll(data) {
+  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+}
+
+function insert(record) {
+  const data = readAll();
+  const newRecord = {
+    id: Date.now(),
+    ...record,
+    created_at: new Date().toISOString()
+  };
+  data.push(newRecord);
+  writeAll(data);
+  return newRecord;
+}
+
+function findAll() {
+  return readAll().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+}
+
+function stats() {
+  const data = readAll();
+  const totalVagas = data.reduce((sum, item) => sum + parseInt(item.vagas), 0);
+  const totalAreas = new Set(data.map(d => d.area)).size;
+  return { totalVagas, totalAreas };
+}
+
+module.exports = { insert, findAll, stats };

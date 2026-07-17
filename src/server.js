@@ -63,11 +63,4 @@ app.get('*', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[Programa de Estágio 2027] Servidor rodando em 0.0.0.0:${PORT}`);
   console.log(`[Ambiente] ${process.env.NODE_ENV || 'development'}`);
-  
-  // Auto-migração: cria tabelas se não existirem
-  try {
-    require('./database/auto-migrate');
-  } catch (e) {
-    console.warn('[Migrate] Aviso:', e.message);
-  }
 });
