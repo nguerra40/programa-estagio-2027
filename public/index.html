@@ -799,14 +799,51 @@
       <!-- Stats -->
       <div class="stats-bar">
         <div class="stat-item">
-          <span class="stat-item__label">Total de Vagas Solicitadas</span>
+          <span class="stat-item__label">Total de Vagas Solicitadas (2027)</span>
           <span class="stat-item__value" id="stat-vagas">0</span>
         </div>
         <div class="stat-item">
-          <span class="stat-item__label">Total de Áreas com Solicitações</span>
+          <span class="stat-item__label">Total de Áreas com Solicitações (2027)</span>
           <span class="stat-item__value" id="stat-areas">0</span>
         </div>
+        <div class="stat-item">
+          <span class="stat-item__label">Vagas Orçadas 2026</span>
+          <span class="stat-item__value">32</span>
+        </div>
       </div>
+
+      <!-- Comparativo por área -->
+      <details style="margin-bottom:32px; background:#FFFFFF; border:1.5px solid #E0E0E0; border-radius:8px; padding:16px 24px;">
+        <summary style="cursor:pointer; font-family:var(--font-primary); font-weight:600; font-size:15px; color:var(--color-deep-blue);">Comparativo de Vagas por Área (2026 vs 2027)</summary>
+        <div style="margin-top:16px; display:flex; gap:32px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:280px;">
+            <h4 style="font-size:13px; color:var(--color-light-grey); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px;">2026 — 32 vagas orçadas</h4>
+            <table style="width:100%; font-size:13px; border-collapse:collapse;">
+              <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0; font-weight:500;">IB (M&A + DCM)</td><td style="text-align:right;">8</td></tr>
+              <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0; font-weight:500;">Tecnologia</td><td style="text-align:right;">4</td></tr>
+              <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0; font-weight:500;">Wealth Management</td><td style="text-align:right;">5</td></tr>
+              <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0; font-weight:500;">Illiquid Assets</td><td style="text-align:right;">2</td></tr>
+              <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0; font-weight:500;">Operations</td><td style="text-align:right;">2</td></tr>
+              <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0; font-weight:500;">People</td><td style="text-align:right;">2</td></tr>
+              <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0; font-weight:500;">Asset Líquidos</td><td style="text-align:right;">1</td></tr>
+              <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0; font-weight:500;">Compliance</td><td style="text-align:right;">1</td></tr>
+              <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0; font-weight:500;">Finance</td><td style="text-align:right;">1</td></tr>
+              <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0; font-weight:500;">Home Equity</td><td style="text-align:right;">1</td></tr>
+              <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0; font-weight:500;">Operações DTVM</td><td style="text-align:right;">1</td></tr>
+              <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0; font-weight:500;">RI & BM</td><td style="text-align:right;">1</td></tr>
+              <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0; font-weight:500;">Riscos</td><td style="text-align:right;">1</td></tr>
+              <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0; font-weight:500;">Seguradora</td><td style="text-align:right;">1</td></tr>
+              <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0; font-weight:500;">i9 Advisory</td><td style="text-align:right;">1</td></tr>
+              <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0; font-weight:500;">Global Strategy</td><td style="text-align:right;">1</td></tr>
+              <tr><td style="padding:6px 0; font-weight:500;">PE</td><td style="text-align:right;">1</td></tr>
+            </table>
+          </div>
+          <div style="flex:1; min-width:280px;">
+            <h4 style="font-size:13px; color:var(--color-light-grey); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px;">2027 — <span id="stat-vagas-2027">0</span> vagas orçadas</h4>
+            <div id="areas-2027-lista"><p style="font-size:13px; color:#999;">Nenhuma solicitação ainda.</p></div>
+          </div>
+        </div>
+      </details>
 
       <!-- Filters -->
       <div class="admin-toolbar">
@@ -1139,9 +1176,29 @@
 
     function updateStats(data) {
       const d = data || window._solicitacoes || [];
-      document.getElementById('stat-vagas').textContent = d.reduce((sum, item) => sum + item.vagas, 0);
+      const totalVagas = d.reduce((sum, item) => sum + item.vagas, 0);
+      document.getElementById('stat-vagas').textContent = totalVagas;
+      document.getElementById('stat-vagas-2027').textContent = totalVagas;
+
       const areasComSolicitacoes = new Set(d.map(x => x.area));
       document.getElementById('stat-areas').textContent = areasComSolicitacoes.size;
+
+      // Vagas por área 2027
+      const vagasPorArea = {};
+      d.forEach(item => {
+        vagasPorArea[item.area] = (vagasPorArea[item.area] || 0) + item.vagas;
+      });
+
+      const areas2027 = document.getElementById('areas-2027-lista');
+      const entries = Object.entries(vagasPorArea).sort((a, b) => b[1] - a[1]);
+      if (entries.length === 0) {
+        areas2027.innerHTML = '<p style="font-size:13px; color:#999;">Nenhuma solicitação ainda.</p>';
+      } else {
+        areas2027.innerHTML = '<table style="width:100%; font-size:13px; border-collapse:collapse;">' +
+          entries.map(([area, qtd], i) =>
+            `<tr style="${i < entries.length-1 ? 'border-bottom:1px solid #eee;' : ''}"><td style="padding:6px 0; font-weight:500;">${area}</td><td style="text-align:right;">${qtd}</td></tr>`
+          ).join('') + '</table>';
+      }
     }
 
     function updateFilterOptions(data) {
