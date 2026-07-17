@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Programa de Estágio — Galapagos Capital</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Hind:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+  <style>
+    :root {
+      --color-deep-blue: #183C80;
+      --color-bright-blue: #0071BB;
+      --color-spacial-grey: #231F20;
+      --color-light-grey: #525254;
+      --color-snow-white: #F7F7F8;
+      --font-primary: 'Gadugi', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-secondary: 'Hind', sans-serif;
+      --grid-base: 8px;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --transition: 150ms ease-in-out;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-body);
+      font-size: 16px;
+      color: var(--color-spacial-grey);
+      background-color: var(--color-snow-white);
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      background-color: var(--color-deep-blue);
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header__logo {
+      height: 56px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    /* Form banner */
+    .form-banner {
+      margin-bottom: 32px;
+      text-align: center;
+    }
+
+    .form-banner__img {
+      max-width: 100%;
+      height: auto;
+      max-height: 120px;
+      object-fit: contain;
+      border-radius: var(--radius-md);
+      mix-blend-mode: lighten;
+    }
+
+    .header__nav {
+      display: flex;
+      gap: 16px;
+    }
+
+    .header__btn {
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 8px 24px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid #FFFFFF;
+      background: transparent;
+      color: #FFFFFF;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .header__btn:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .header__btn--active {
+      background: #FFFFFF;
+      color: var(--color-deep-blue);
+    }
+
+    .header__btn--active:hover {
+      background: #FFFFFF;
+    }
+
+    /* Main container */
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 32px;
+    }
+
+    .container--wide {
+      max-width: 1080px;
+    }
+
+    /* Section title */
+    .section-title {
+      font-family: var(--font-primary);
+      font-weight: bold;
+      font-size: 20px;
+      color: var(--color-deep-blue);
+      margin-bottom: 32px;
+    }
+
+    /* Form styles */
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-group label {
+      display: block;
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-light-grey);
+      margin-bottom: 8px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      font-family: var(--font-body);
+      font-size: 16px;
+      color: var(--color-spacial-grey);
+      background: #FFFFFF;
+      border: 1.5px solid #D0D0D0;
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      transition: var(--transition);
+      outline: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+
+    .form-group input::placeholder,
+    .form-group textarea::placeholder {
+      color: #A0A0A0;
+    }
+
+    .form-group select.placeholder {
+      color: #A0A0A0;
+    }
+
+    .form-group select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23525254' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      padding-right: 40px;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--color-bright-blue);
+      box-shadow: 0 0 0 3px rgba(0,113,187,0.1);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .btn-primary {
+      font-family: var(--font-body);
+      font-size: 16px;
+      font-weight: 600;
+      padding: 12px 32px;
+      background-color: #FFFFFF;
+      color: var(--color-deep-blue);
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-primary:hover {
+      background-color: rgba(255,255,255,0.9);
+    }
+
+    .btn-secondary {
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 8px 24px;
+      background-color: transparent;
+      color: var(--color-bright-blue);
+      border: 1.5px solid var(--color-bright-blue);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-secondary:hover {
+      background-color: rgba(0,113,187,0.05);
+    }
+
+    /* Success message */
+    .success-msg {
+      display: none;
+      background: #E8F5E9;
+      border: 1.5px solid #4CAF50;
+      border-radius: var(--radius-md);
+      padding: 16px 24px;
+      margin-top: 24px;
+      font-size: 14px;
+      color: #2E7D32;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .success-msg.visible {
+      display: flex;
+    }
+
+    /* Admin view */
+    .admin-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 32px;
+      align-items: flex-end;
+    }
+
+    .admin-toolbar .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .admin-toolbar .filter-group label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-light-grey);
+    }
+
+    .admin-toolbar .filter-group select,
+    .admin-toolbar .filter-group input {
+      font-family: var(--font-body);
+      font-size: 14px;
+      padding: 8px 12px;
+      border: 1.5px solid #D0D0D0;
+      border-radius: var(--radius-sm);
+      outline: none;
+      color: var(--color-spacial-grey);
+      background: #FFFFFF;
+      min-width: 160px;
+    }
+
+    .admin-toolbar .filter-group select:focus,
+    .admin-toolbar .filter-group input:focus {
+      border-color: var(--color-bright-blue);
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 32px;
+      margin-bottom: 32px;
+      padding: 16px 24px;
+      background: #FFFFFF;
+      border-radius: var(--radius-md);
+      border: 1.5px solid #E0E0E0;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stat-item__label {
+      font-size: 12px;
+      color: var(--color-light-grey);
+      font-weight: 500;
+    }
+
+    .stat-item__value {
+      font-family: var(--font-primary);
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--color-deep-blue);
+    }
+
+    /* Table */
+    .table-wrapper {
+      overflow-x: auto;
+      background: #FFFFFF;
+      border-radius: var(--radius-md);
+      border: 1.5px solid #E0E0E0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    thead {
+      background: var(--color-deep-blue);
+    }
+
+    thead th {
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #FFFFFF;
+      text-align: left;
+      padding: 16px;
+      white-space: nowrap;
+    }
+
+    thead th.sortable {
+      cursor: pointer;
+      user-select: none;
+      transition: var(--transition);
+    }
+
+    thead th.sortable:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .sort-icon {
+      font-size: 12px;
+      opacity: 0.6;
+      margin-left: 4px;
+    }
+
+    thead th.sortable.active .sort-icon {
+      opacity: 1;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #EFEFEF;
+      transition: var(--transition);
+    }
+
+    tbody tr:hover {
+      background: rgba(0,113,187,0.03);
+    }
+
+    tbody td {
+      padding: 14px 16px;
+      color: var(--color-spacial-grey);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 64px 32px;
+      color: var(--color-light-grey);
+      font-size: 16px;
+    }
+
+    .empty-state .material-icons-outlined {
+      font-size: 48px;
+      color: #D0D0D0;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    /* Views toggle */
+    .view-gestor,
+    .view-admin {
+      display: none;
+    }
+
+    .view-gestor.active,
+    .view-admin.active {
+      display: block;
+    }
+
+    .view-gestor.active {
+      background: linear-gradient(180deg, #1a5da6 0%, #0d4a8a 100%);
+      min-height: calc(100vh - 82px);
+    }
+
+    .view-gestor .section-title {
+      color: #FFFFFF;
+    }
+
+    .view-gestor .form-group label {
+      color: rgba(255,255,255,0.85);
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .container {
+        padding: 0 16px;
+        margin: 32px auto;
+      }
+
+      .admin-toolbar {
+        flex-direction: column;
+      }
+
+      .stats-bar {
+        flex-direction: column;
+        gap: 16px;
+      }
+    }
+
+    /* Multi-select */
+    .multi-select {
+      position: relative;
+      min-width: 160px;
+    }
+
+    .multi-select__trigger {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border: 1.5px solid #D0D0D0;
+      border-radius: var(--radius-sm);
+      background: #FFFFFF;
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-size: 14px;
+      color: var(--color-spacial-grey);
+      transition: var(--transition);
+    }
+
+    .multi-select__trigger:hover {
+      border-color: var(--color-bright-blue);
+    }
+
+    .multi-select__dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #FFFFFF;
+      border: 1.5px solid #D0D0D0;
+      border-radius: var(--radius-sm);
+      margin-top: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .multi-select.open .multi-select__dropdown {
+      display: block;
+    }
+
+    .multi-select__option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: var(--transition);
+      color: var(--color-spacial-grey);
+    }
+
+    .multi-select__option:hover {
+      background: rgba(0,113,187,0.05);
+    }
+
+    .multi-select__option input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--color-bright-blue);
+    }
+
+    /* Login */
+    .login-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--color-snow-white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .login-box {
+      background: #FFFFFF;
+      border: 1.5px solid #E0E0E0;
+      border-radius: var(--radius-md);
+      padding: 48px 40px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .login-error {
+      display: none;
+      color: #D32F2F;
+      font-size: 13px;
+      margin-top: 16px;
+    }
+
+    .login-error.visible {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Login Modal -->
+  <div class="login-overlay" id="login-overlay">
+    <div class="login-box">
+      <img src="logo_galapagos.png" alt="Galapagos Capital" style="height:40px; margin-bottom:24px;">
+      <h2 style="font-family:var(--font-primary); font-size:20px; color:var(--color-deep-blue); margin-bottom:8px;">Acesse o formulário</h2>
+      <p style="font-size:14px; color:var(--color-light-grey); margin-bottom:24px;">Informe seu e-mail corporativo para continuar.</p>
+      <div class="form-group">
+        <input type="email" id="login-email" placeholder="seu.email@galapagoscapital.com" onkeydown="if(event.key==='Enter') doLogin()">
+      </div>
+      <button class="btn-primary" style="width:100%; background-color:var(--color-bright-blue); color:#FFFFFF;" onclick="doLogin()">Entrar</button>
+      <p class="login-error" id="login-error">E-mail não reconhecido. Use seu e-mail @galapagoscapital.com</p>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="header" id="main-header" style="display:none;">
+    <img src="logo_galapagos.png" alt="Galapagos Capital" class="header__logo">
+    <nav class="header__nav" id="header-nav" style="display:none;">
+      <button class="header__btn header__btn--active" id="btn-gestor" onclick="switchView('gestor')">
+        <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">edit_note</span>
+        Gestor
+      </button>
+      <button class="header__btn" id="btn-admin" onclick="switchView('admin')">
+        <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">admin_panel_settings</span>
+        Admin
+      </button>
+    </nav>
+  </header>
+
+  <!-- Gestor View -->
+  <section class="view-gestor active" id="view-gestor">
+    <div class="container">
+      <div class="form-banner">
+        <img src="logo_programadeestagio.png" alt="Programa de Estágio 2027" class="form-banner__img">
+      </div>
+      <h2 class="section-title">Solicitação de Vagas de Estágio</h2>
+      <form id="form-estagio" onsubmit="submitForm(event)">
+        <div class="form-group">
+          <label for="gestor-nome">Nome do Gestor <span style="color:#FF6B6B;">*</span></label>
+          <input type="text" id="gestor-nome" placeholder="Digite seu nome completo" required>
+        </div>
+        <div class="form-group">
+          <label for="gestor-email">E-mail <span style="color:#FF6B6B;">*</span></label>
+          <input type="email" id="gestor-email" placeholder="seu.email@galapagoscapital.com" required>
+        </div>
+        <div class="form-group">
+          <label for="gestor-vagas">Quantidade de Vagas <span style="color:#FF6B6B;">*</span></label>
+          <select id="gestor-vagas" required class="placeholder" onchange="this.classList.remove('placeholder')">
+            <option value="" disabled selected>Selecione a quantidade</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="gestor-area">Área <span style="color:#FF6B6B;">*</span></label>
+          <select id="gestor-area" required class="placeholder" onchange="this.classList.remove('placeholder')">
+            <option value="" disabled selected>Selecione a área</option>
+            <option value="Business Management">Business Management</option>
+            <option value="Commercial Business">Commercial Business</option>
+            <option value="Compliance">Compliance</option>
+            <option value="Finance & Adm">Finance & Adm</option>
+            <option value="Galaticos Capital">Galaticos Capital</option>
+            <option value="Global Strategy">Global Strategy</option>
+            <option value="Governance">Governance</option>
+            <option value="I9 Advisory">I9 Advisory</option>
+            <option value="Illiquid Assets">Illiquid Assets</option>
+            <option value="Insurance">Insurance</option>
+            <option value="Insurance Broker">Insurance Broker</option>
+            <option value="International Advisory">International Advisory</option>
+            <option value="International Liquid Assets">International Liquid Assets</option>
+            <option value="Investment Banking">Investment Banking</option>
+            <option value="Investment Solutions">Investment Solutions</option>
+            <option value="Legal">Legal</option>
+            <option value="Liquid Assets Brazil">Liquid Assets Brazil</option>
+            <option value="Log">Log</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Operations">Operations</option>
+            <option value="People & ESG">People & ESG</option>
+            <option value="PX Ativos Judiciais">PX Ativos Judiciais</option>
+            <option value="Real Estate US">Real Estate US</option>
+            <option value="Risk Management">Risk Management</option>
+            <option value="Technology">Technology</option>
+            <option value="Voltera">Voltera</option>
+            <option value="Wealth Management">Wealth Management</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="gestor-subarea">Subárea <span style="color:#FF6B6B;">*</span></label>
+          <span style="font-size:14px; font-style:italic; color:rgba(255,255,255,0.7); margin-bottom:8px; display:block;">(Ex: Novos Negócios, Governança e etc)</span>
+          <input type="text" id="gestor-subarea" placeholder="Descreva a subárea de atuação do estagiário" required>
+        </div>
+        <div class="form-group">
+          <label for="gestor-comentario">Comentário</label>
+          <textarea id="gestor-comentario" placeholder="Escreva aqui observações ou comentários adicionais"></textarea>
+        </div>
+        <button type="submit" class="btn-primary">Enviar Solicitação</button>
+      </form>
+      <div class="success-msg" id="success-msg">
+        <span class="material-icons-outlined">check_circle</span>
+        Solicitação enviada com sucesso!
+      </div>
+    </div>
+  </section>
+
+  <!-- Admin View -->
+  <section class="view-admin" id="view-admin">
+    <div class="container container--wide">
+      <h2 class="section-title">Painel Administrativo</h2>
+
+      <!-- Stats -->
+      <div class="stats-bar">
+        <div class="stat-item">
+          <span class="stat-item__label">Total de Vagas Solicitadas</span>
+          <span class="stat-item__value" id="stat-vagas">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-item__label">Total de Áreas com Solicitações</span>
+          <span class="stat-item__value" id="stat-areas">0</span>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="admin-toolbar">
+        <div class="filter-group">
+          <label>Filtrar por Gestor</label>
+          <div class="multi-select" id="ms-gestor">
+            <div class="multi-select__trigger" onclick="toggleMultiSelect('ms-gestor')">
+              <span class="multi-select__text">Todos</span>
+              <span class="material-icons-outlined" style="font-size:16px;">expand_more</span>
+            </div>
+            <div class="multi-select__dropdown" id="ms-gestor-dropdown"></div>
+          </div>
+        </div>
+        <div class="filter-group">
+          <label>Filtrar por Área</label>
+          <div class="multi-select" id="ms-area">
+            <div class="multi-select__trigger" onclick="toggleMultiSelect('ms-area')">
+              <span class="multi-select__text">Todas</span>
+              <span class="material-icons-outlined" style="font-size:16px;">expand_more</span>
+            </div>
+            <div class="multi-select__dropdown" id="ms-area-dropdown"></div>
+          </div>
+        </div>
+        <div class="filter-group">
+          <label>Filtrar por Vagas</label>
+          <div class="multi-select" id="ms-vagas">
+            <div class="multi-select__trigger" onclick="toggleMultiSelect('ms-vagas')">
+              <span class="multi-select__text">Todas</span>
+              <span class="material-icons-outlined" style="font-size:16px;">expand_more</span>
+            </div>
+            <div class="multi-select__dropdown">
+              <label class="multi-select__option"><input type="checkbox" value="1" onchange="applyFilters()"> 1</label>
+              <label class="multi-select__option"><input type="checkbox" value="2" onchange="applyFilters()"> 2</label>
+              <label class="multi-select__option"><input type="checkbox" value="3" onchange="applyFilters()"> 3</label>
+              <label class="multi-select__option"><input type="checkbox" value="4" onchange="applyFilters()"> 4</label>
+              <label class="multi-select__option"><input type="checkbox" value="5" onchange="applyFilters()"> 5</label>
+            </div>
+          </div>
+        </div>
+        <button class="btn-secondary" onclick="exportToExcel()">
+          <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">download</span>
+          Exportar Excel
+        </button>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th class="sortable" onclick="sortTable('data')">Data <span class="sort-icon" id="sort-icon-data">↕</span></th>
+              <th class="sortable" onclick="sortTable('gestor')">Gestor <span class="sort-icon" id="sort-icon-gestor">↕</span></th>
+              <th class="sortable" onclick="sortTable('email')">E-mail <span class="sort-icon" id="sort-icon-email">↕</span></th>
+              <th class="sortable" onclick="sortTable('vagas')">Vagas <span class="sort-icon" id="sort-icon-vagas">↕</span></th>
+              <th class="sortable" onclick="sortTable('area')">Área <span class="sort-icon" id="sort-icon-area">↕</span></th>
+              <th class="sortable" onclick="sortTable('subarea')">Subárea <span class="sort-icon" id="sort-icon-subarea">↕</span></th>
+              <th class="sortable" onclick="sortTable('comentario')">Comentário <span class="sort-icon" id="sort-icon-comentario">↕</span></th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+          </tbody>
+        </table>
+        <div class="empty-state" id="empty-state">
+          <span class="material-icons-outlined">inbox</span>
+          <p>Nenhuma solicitação encontrada.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Admin emails (fallback — verificação real é no servidor)
+    const ADMIN_EMAILS = [
+      'eduarda.dreux@galapagoscapital.com',
+      'felipe.regis@galapagoscapital.com',
+      'natasha.guerra@galapagoscapital.com'
+    ];
+
+    let currentUser = null;
+    let currentSortField = null;
+    let currentSortOrder = 'asc';
+    let solicitacoesData = [];
+
+    // Sort table by column
+    function sortTable(field) {
+      if (currentSortField === field) {
+        currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSortField = field;
+        currentSortOrder = 'asc';
+      }
+
+      document.querySelectorAll('.sort-icon').forEach(icon => { icon.textContent = '↕'; });
+      document.querySelectorAll('thead th.sortable').forEach(th => th.classList.remove('active'));
+
+      const activeIcon = document.getElementById('sort-icon-' + field);
+      if (activeIcon) {
+        activeIcon.textContent = currentSortOrder === 'asc' ? '↑' : '↓';
+        activeIcon.closest('th').classList.add('active');
+      }
+
+      applyFilters();
+    }
+
+    // Verificar autenticação via SSO
+    async function checkAuth() {
+      try {
+        const response = await fetch('/auth/me');
+        const data = await response.json();
+
+        if (data.authenticated) {
+          currentUser = data.user;
+          document.getElementById('login-overlay').style.display = 'none';
+          document.getElementById('main-header').style.display = 'flex';
+          document.getElementById('view-gestor').classList.add('active');
+
+          if (data.user.isAdmin) {
+            document.getElementById('header-nav').style.display = 'flex';
+          }
+        }
+      } catch (error) {
+        console.log('[Auth] Servidor não disponível, usando modo offline.');
+        // Fallback para login local (modo desenvolvimento)
+      }
+    }
+
+    // Login — redireciona para Microsoft Entra ID
+    function doLogin() {
+      const email = document.getElementById('login-email').value.trim().toLowerCase();
+      const error = document.getElementById('login-error');
+
+      if (!email || !email.endsWith('@galapagoscapital.com')) {
+        error.classList.add('visible');
+        return;
+      }
+
+      // Se SSO está disponível, redireciona
+      window.location.href = '/auth/login';
+    }
+
+    // Switch views
+    function switchView(view) {
+      document.getElementById('view-gestor').classList.toggle('active', view === 'gestor');
+      document.getElementById('view-admin').classList.toggle('active', view === 'admin');
+      document.getElementById('btn-gestor').classList.toggle('header__btn--active', view === 'gestor');
+      document.getElementById('btn-admin').classList.toggle('header__btn--active', view === 'admin');
+
+      if (view === 'admin') {
+        renderAdmin();
+      }
+    }
+
+    // Submit form — envia para a API
+    async function submitForm(e) {
+      e.preventDefault();
+
+      const nome = document.getElementById('gestor-nome').value.trim();
+      const email = document.getElementById('gestor-email').value.trim();
+      const vagas = document.getElementById('gestor-vagas').value;
+      const area = document.getElementById('gestor-area').value;
+      const subarea = document.getElementById('gestor-subarea').value.trim();
+      const comentario = document.getElementById('gestor-comentario').value.trim();
+
+      if (!nome || !email || !vagas || !area || !subarea) return;
+
+      try {
+        const response = await fetch('/api/solicitacoes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ gestor: nome, email, vagas: parseInt(vagas), area, subarea, comentario })
+        });
+
+        if (response.ok) {
+          document.getElementById('form-estagio').reset();
+          const msg = document.getElementById('success-msg');
+          msg.classList.add('visible');
+          setTimeout(() => msg.classList.remove('visible'), 4000);
+        } else {
+          const err = await response.json();
+          alert(err.error || 'Erro ao enviar solicitação.');
+        }
+      } catch (error) {
+        alert('Erro de conexão. Tente novamente.');
+      }
+    }
+
+    // Admin rendering
+    async function renderAdmin() {
+      await loadSolicitacoes();
+      updateStats();
+      updateFilterOptions();
+      applyFilters();
+    }
+
+    async function loadSolicitacoes() {
+      try {
+        const response = await fetch('/api/solicitacoes');
+        if (response.ok) {
+          const result = await response.json();
+          solicitacoesData = result.data.map(item => ({
+            ...item,
+            data: new Date(item.created_at).toLocaleDateString('pt-BR'),
+            vagas: parseInt(item.vagas)
+          }));
+        }
+      } catch (error) {
+        console.error('[Admin] Erro ao carregar solicitações:', error);
+      }
+    }
+
+    function updateStats() {
+      const totalVagas = solicitacoesData.reduce((sum, item) => sum + item.vagas, 0);
+      const areasComSolicitacoes = new Set(solicitacoesData.map(d => d.area));
+      document.getElementById('stat-vagas').textContent = totalVagas;
+      document.getElementById('stat-areas').textContent = areasComSolicitacoes.size;
+    }
+
+    function updateFilterOptions() {
+      const gestores = [...new Set(solicitacoesData.map(d => d.gestor))].sort();
+      const areas = [...new Set(solicitacoesData.map(d => d.area))].sort();
+
+      const gestorDropdown = document.getElementById('ms-gestor-dropdown');
+      gestorDropdown.innerHTML = gestores.map(g =>
+        `<label class="multi-select__option"><input type="checkbox" value="${g}" onchange="applyFilters()"> ${g}</label>`
+      ).join('');
+
+      const areaDropdown = document.getElementById('ms-area-dropdown');
+      areaDropdown.innerHTML = areas.map(a =>
+        `<label class="multi-select__option"><input type="checkbox" value="${a}" onchange="applyFilters()"> ${a}</label>`
+      ).join('');
+    }
+
+    function toggleMultiSelect(id) {
+      const el = document.getElementById(id);
+      const isOpen = el.classList.contains('open');
+      document.querySelectorAll('.multi-select').forEach(ms => ms.classList.remove('open'));
+      if (!isOpen) el.classList.add('open');
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.multi-select')) {
+        document.querySelectorAll('.multi-select').forEach(ms => ms.classList.remove('open'));
+      }
+    });
+
+    function getCheckedValues(containerId) {
+      const container = document.getElementById(containerId);
+      const checked = container.querySelectorAll('input[type="checkbox"]:checked');
+      return Array.from(checked).map(cb => cb.value);
+    }
+
+    function applyFilters() {
+      const selectedGestores = getCheckedValues('ms-gestor');
+      const selectedAreas = getCheckedValues('ms-area');
+      const selectedVagas = Array.from(document.querySelectorAll('#ms-vagas input[type="checkbox"]:checked')).map(cb => parseInt(cb.value));
+
+      const gestorText = document.querySelector('#ms-gestor .multi-select__text');
+      gestorText.textContent = selectedGestores.length === 0 ? 'Todos' : `${selectedGestores.length} selecionado(s)`;
+
+      const areaText = document.querySelector('#ms-area .multi-select__text');
+      areaText.textContent = selectedAreas.length === 0 ? 'Todas' : `${selectedAreas.length} selecionada(s)`;
+
+      const vagasText = document.querySelector('#ms-vagas .multi-select__text');
+      vagasText.textContent = selectedVagas.length === 0 ? 'Todas' : `${selectedVagas.length} selecionada(s)`;
+
+      let filtered = solicitacoesData.filter(item => {
+        if (selectedGestores.length > 0 && !selectedGestores.includes(item.gestor)) return false;
+        if (selectedAreas.length > 0 && !selectedAreas.includes(item.area)) return false;
+        if (selectedVagas.length > 0 && !selectedVagas.includes(item.vagas)) return false;
+        return true;
+      });
+
+      // Sort
+      if (currentSortField) {
+        filtered.sort((a, b) => {
+          let valA = a[currentSortField] || '';
+          let valB = b[currentSortField] || '';
+          if (typeof valA === 'string') valA = valA.toLowerCase();
+          if (typeof valB === 'string') valB = valB.toLowerCase();
+          if (valA < valB) return currentSortOrder === 'asc' ? -1 : 1;
+          if (valA > valB) return currentSortOrder === 'asc' ? 1 : -1;
+          return 0;
+        });
+      }
+
+      renderTable(filtered);
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById('table-body');
+      const emptyState = document.getElementById('empty-state');
+
+      if (data.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      tbody.innerHTML = data.map(item => `
+        <tr>
+          <td>${item.data}</td>
+          <td>${item.gestor}</td>
+          <td>${item.email || ''}</td>
+          <td>${item.vagas}</td>
+          <td>${item.area}</td>
+          <td>${item.subarea}</td>
+          <td>${item.comentario || ''}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Export — usa endpoint do servidor
+    function exportToExcel() {
+      window.location.href = '/api/export';
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAuth();
+    });
+  </script>
+</body>
+</html>
