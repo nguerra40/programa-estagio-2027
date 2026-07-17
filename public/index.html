@@ -495,7 +495,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: var(--color-snow-white);
+      background: var(--color-deep-blue);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -504,11 +504,11 @@
 
     .login-box {
       background: #FFFFFF;
-      border: 1.5px solid #E0E0E0;
-      border-radius: var(--radius-md);
-      padding: 48px 40px;
-      max-width: 400px;
-      width: 100%;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 16px;
+      padding: 56px 48px 40px;
+      max-width: 440px;
+      width: 90%;
       text-align: center;
     }
 
@@ -522,6 +522,19 @@
     .login-error.visible {
       display: block;
     }
+
+    .login-footer {
+      font-size: 13px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 24px;
+      text-align: center;
+    }
+
+    .login-help {
+      font-size: 13px;
+      color: var(--color-light-grey);
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
@@ -529,15 +542,17 @@
   <!-- Login Modal -->
   <div class="login-overlay" id="login-overlay">
     <div class="login-box">
-      <img src="logo_galapagos.png" alt="Galapagos Capital" style="height:40px; margin-bottom:24px;">
-      <h2 style="font-family:var(--font-primary); font-size:20px; color:var(--color-deep-blue); margin-bottom:8px;">Acesse o formulário</h2>
-      <p style="font-size:14px; color:var(--color-light-grey); margin-bottom:24px;">Informe seu e-mail corporativo para continuar.</p>
-      <div class="form-group">
-        <input type="email" id="login-email" placeholder="seu.email@galapagoscapital.com" onkeydown="if(event.key==='Enter') doLogin()">
+      <img src="logo_galapagos.png" alt="Galapagos Capital" style="height:48px; margin-bottom:32px;">
+      <h2 style="font-family:var(--font-primary); font-size:22px; font-weight:bold; color:var(--color-deep-blue); margin-bottom:4px;">Programa de Estágio 2027</h2>
+      <p style="font-size:14px; color:var(--color-light-grey); margin-bottom:32px;">Solicitação de Vagas</p>
+      <div class="form-group" style="margin-bottom:16px;">
+        <input type="email" id="login-email" placeholder="seu.email@galapagoscapital.com" onkeydown="if(event.key==='Enter') doLogin()" style="text-align:center;">
       </div>
-      <button class="btn-primary" style="width:100%; background-color:var(--color-bright-blue); color:#FFFFFF;" onclick="doLogin()">Entrar</button>
+      <button class="btn-primary" style="width:100%; background-color:var(--color-deep-blue); color:#FFFFFF; border:2px solid var(--color-deep-blue); padding:14px 32px; border-radius:8px; font-size:15px;" onclick="doLogin()">Entrar com a conta Galapagos</button>
       <p class="login-error" id="login-error">E-mail não reconhecido. Use seu e-mail @galapagoscapital.com</p>
+      <p class="login-help">Problemas para acessar? Fale com o time de People.</p>
     </div>
+    <p class="login-footer">Galapagos Capital &copy; 2027</p>
   </div>
 
   <!-- Header -->
