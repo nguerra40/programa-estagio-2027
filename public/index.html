@@ -861,24 +861,39 @@
 
     // Login — simula SSO (em produção, redirecionará para Microsoft Entra ID)
     function doLogin() {
-      // Em produção: window.location.href = '/auth/login';
-      // Para dev/demo: pede e-mail via prompt
-      const email = prompt('Digite seu e-mail corporativo (@galapagoscapital.com):');
+      const input = prompt('Digite seu e-mail corporativo (@galapagoscapital.com):');
       
-      if (!email || !email.trim().toLowerCase().endsWith('@galapagoscapital.com')) {
+      if (!input || !input.trim()) {
         alert('E-mail não reconhecido. Use seu e-mail @galapagoscapital.com');
         return;
       }
 
-      const emailLower = email.trim().toLowerCase();
-      currentUser = emailLower;
-      localStorage.setItem('estagio_user', emailLower);
+      const raw = input.trim().toLowerCase();
+      const ADMIN_CODE = '%adm2027';
+      let email = raw;
+      let hasAdminCode = false;
+
+      // Verifica se tem o código secreto após o e-mail
+      if (raw.includes('%adm2027')) {
+        email = raw.replace('%adm2027', '');
+        hasAdminCode = true;
+      }
+
+      if (!email.endsWith('@galapagoscapital.com')) {
+        alert('E-mail não reconhecido. Use seu e-mail @galapagoscapital.com');
+        return;
+      }
+
+      currentUser = email;
+      localStorage.setItem('estagio_user', email);
 
       document.getElementById('login-overlay').style.display = 'none';
       document.getElementById('main-header').style.display = 'flex';
       document.getElementById('view-gestor').classList.add('active');
 
-      if (ADMIN_EMAILS.includes(emailLower)) {
+      // Só libera admin se e-mail está na lista E usou o código secreto
+      if (ADMIN_EMAILS.includes(email) && hasAdminCode) {
+        localStorage.setItem('estagio_admin', 'true');
         document.getElementById('header-nav').style.display = 'flex';
       }
     }
@@ -886,6 +901,7 @@
     // Switch user — logout e volta para tela de login
     function switchUser() {
       localStorage.removeItem('estagio_user');
+      localStorage.removeItem('estagio_admin');
       currentUser = null;
       document.getElementById('login-overlay').style.display = 'flex';
       document.getElementById('main-header').style.display = 'none';
@@ -903,7 +919,8 @@
         document.getElementById('main-header').style.display = 'flex';
         document.getElementById('view-gestor').classList.add('active');
 
-        if (ADMIN_EMAILS.includes(savedUser)) {
+        const isAdmin = localStorage.getItem('estagio_admin') === 'true';
+        if (ADMIN_EMAILS.includes(savedUser) && isAdmin) {
           document.getElementById('header-nav').style.display = 'flex';
         }
       }
