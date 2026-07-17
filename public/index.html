@@ -497,86 +497,127 @@
       bottom: 0;
       background: var(--color-deep-blue);
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       z-index: 1000;
+      padding: 24px;
+      overflow: hidden;
     }
 
-    .login-box {
+    .bg-icon {
+      position: absolute;
+      top: 50%;
+      left: -140px;
+      transform: translateY(-50%);
+      width: 720px;
+      max-width: 82vw;
+      height: auto;
+      opacity: 0.14;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .login-card {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 460px;
       background: #FFFFFF;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-radius: 16px;
-      padding: 56px 48px 40px;
-      max-width: 440px;
-      width: 90%;
+      border-radius: 12px;
+      padding: 48px 44px;
       text-align: center;
+      box-shadow: 0 24px 60px rgba(9,21,50,0.35);
     }
 
-    .login-box__logo {
-      height: 56px;
-      margin-bottom: 32px;
+    .login-card__logo {
+      height: 52px;
+      width: auto;
+      max-width: 100%;
+      margin-bottom: 28px;
     }
 
-    .login-box__title {
+    .login-card__title {
       font-family: var(--font-primary);
-      font-size: 22px;
-      font-weight: bold;
+      font-weight: 700;
+      font-size: 30px;
+      line-height: 1.15;
       color: var(--color-deep-blue);
-      margin-bottom: 4px;
     }
 
-    .login-box__subtitle {
-      font-size: 14px;
+    .login-card__subtitle {
+      font-size: 16px;
       color: var(--color-light-grey);
-      margin-bottom: 32px;
+      margin-top: 6px;
     }
 
-    .login-box__btn {
+    .login-card__btn {
+      width: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      width: 100%;
-      background-color: var(--color-deep-blue);
+      gap: 12px;
+      padding: 16px 24px;
+      margin-top: 28px;
+      background: var(--color-deep-blue);
       color: #FFFFFF;
       border: 2px solid var(--color-deep-blue);
-      padding: 14px 32px;
-      border-radius: 8px;
+      border-radius: var(--radius-md);
       font-family: var(--font-body);
-      font-size: 15px;
-      font-weight: 500;
+      font-size: 16px;
+      font-weight: 600;
       cursor: pointer;
-      transition: var(--transition);
+      text-decoration: none;
+      transition: background 200ms ease-in-out, border-color 200ms ease-in-out;
     }
 
-    .login-box__btn:hover {
-      background-color: #142f66;
-      border-color: #142f66;
+    .login-card__btn:hover {
+      background: var(--color-bright-blue);
+      border-color: var(--color-bright-blue);
     }
 
-    .login-help {
+    .login-card__help {
+      margin-top: 24px;
+      font-size: 14px;
+      color: var(--color-light-grey);
+      line-height: 1.6;
+    }
+
+    .login-card__footer {
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid #eef1f5;
       font-size: 13px;
       color: var(--color-light-grey);
-      margin-top: 24px;
-    }
-
-    .login-footer {
-      font-size: 13px;
-      color: rgba(255,255,255,0.5);
-      margin-top: 32px;
-      text-align: center;
+      letter-spacing: 0.02em;
     }
 
     .login-error {
       display: none;
-      color: #D32F2F;
-      font-size: 13px;
-      margin-top: 16px;
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      line-height: 1.5;
+      text-align: left;
+      background: #fde8e8;
+      color: #8a1c1c;
+      border: 1px solid #f6c5c5;
     }
 
     .login-error.visible {
       display: block;
+    }
+
+    @media (max-width: 520px) {
+      .login-card {
+        padding: 36px 24px;
+      }
+      .login-card__title {
+        font-size: 26px;
+      }
+      .bg-icon {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -584,18 +625,22 @@
 
   <!-- Login Modal -->
   <div class="login-overlay" id="login-overlay">
-    <div class="login-box">
-      <img src="logo_galapagos.png" alt="Galapagos Capital" class="login-box__logo">
-      <h2 class="login-box__title">Programa de Estágio 2027</h2>
-      <p class="login-box__subtitle">Solicitação de Vagas</p>
-      <button class="login-box__btn" onclick="doLogin()">
-        <span class="material-icons-outlined" style="font-size:18px;">lock</span>
+    <img class="bg-icon" src="logo_galapagos.png" alt="" aria-hidden="true" />
+    <main class="login-card">
+      <img class="login-card__logo" src="logo_galapagos.png" alt="Galapagos Capital" />
+      <h1 class="login-card__title">Programa de Estágio 2027</h1>
+      <div class="login-card__subtitle">Solicitação de Vagas</div>
+      <button class="login-card__btn" onclick="doLogin()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0">
+          <rect x="4" y="11" width="16" height="9" rx="2"/>
+          <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+        </svg>
         Entrar com a conta Galapagos
       </button>
-      <p class="login-error" id="login-error">E-mail não reconhecido. Use seu e-mail @galapagoscapital.com</p>
-      <p class="login-help">Problemas para acessar? Fale com o time de People.</p>
-    </div>
-    <p class="login-footer">Galapagos Capital &copy; 2027</p>
+      <div class="login-error" id="login-error">Sua conta não pertence a um domínio autorizado. Entre em contato com o time de People.</div>
+      <div class="login-card__help">Problemas para acessar? Fale com o time de People.</div>
+      <div class="login-card__footer">Galapagos Capital &copy; 2027</div>
+    </main>
   </div>
 
   <!-- Header -->
