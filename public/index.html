@@ -610,6 +610,10 @@
         <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">admin_panel_settings</span>
         Admin
       </button>
+      <button class="header__btn" onclick="switchUser()">
+        <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">swap_horiz</span>
+        Trocar Usuário
+      </button>
     </nav>
   </header>
 
@@ -832,6 +836,17 @@
       if (ADMIN_EMAILS.includes(emailLower)) {
         document.getElementById('header-nav').style.display = 'flex';
       }
+    }
+
+    // Switch user — logout e volta para tela de login
+    function switchUser() {
+      localStorage.removeItem('estagio_user');
+      currentUser = null;
+      document.getElementById('login-overlay').style.display = 'flex';
+      document.getElementById('main-header').style.display = 'none';
+      document.getElementById('header-nav').style.display = 'none';
+      document.getElementById('view-gestor').classList.remove('active');
+      document.getElementById('view-admin').classList.remove('active');
     }
 
     // Check session
