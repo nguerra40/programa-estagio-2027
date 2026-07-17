@@ -88,6 +88,21 @@ router.patch('/solicitacoes/:id', async (req, res) => {
 });
 
 /**
+ * DELETE /api/solicitacoes/:id
+ */
+router.delete('/solicitacoes/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const removed = await db.remove(id);
+    if (!removed) return res.status(404).json({ error: 'Solicitação não encontrada.' });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[API] Erro ao excluir:', error.message);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
+/**
  * GET /api/stats
  */
 router.get('/stats', async (req, res) => {

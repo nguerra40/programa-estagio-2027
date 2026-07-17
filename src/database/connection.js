@@ -85,4 +85,9 @@ async function stats() {
   };
 }
 
-module.exports = { insert, findAll, findByEmail, update, updateField, stats };
+async function remove(id) {
+  const result = await pool.query('DELETE FROM solicitacoes WHERE id=$1 RETURNING *', [id]);
+  return result.rows[0];
+}
+
+module.exports = { insert, findAll, findByEmail, update, updateField, stats, remove };

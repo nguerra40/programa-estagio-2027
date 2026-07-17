@@ -883,6 +883,7 @@
               <th class="sortable" onclick="sortTable('subarea')">Subárea <span class="sort-icon" id="sort-icon-subarea">↕</span></th>
               <th class="sortable" onclick="sortTable('comentario')">Comentário <span class="sort-icon" id="sort-icon-comentario">↕</span></th>
               <th>Status</th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="table-body">
@@ -1315,6 +1316,11 @@
               <option value="reprovado" ${item.status==='reprovado'?'selected':''} style="color:#C62828;">Reprovado</option>
             </select>
           </td>
+          <td>
+            <button onclick="excluirSolicitacao(${item.id})" style="background:none;border:none;cursor:pointer;color:#C62828;font-size:18px;" title="Excluir">
+              <span class="material-icons-outlined" style="font-size:18px;">delete</span>
+            </button>
+          </td>
         </tr>`;
       }).join('');
     }
@@ -1329,6 +1335,17 @@
         if (!res.ok) alert('Erro ao atualizar.');
         else renderAdmin();
       }).catch(() => alert('Erro de conexão.'));
+    }
+
+    // Excluir solicitação
+    function excluirSolicitacao(id) {
+      if (!confirm('Tem certeza que deseja excluir esta solicitação?')) return;
+      fetch(`/api/solicitacoes/${id}`, { method: 'DELETE' })
+        .then(res => {
+          if (res.ok) renderAdmin();
+          else alert('Erro ao excluir.');
+        })
+        .catch(() => alert('Erro de conexão.'));
     }
 
     // Adicionar vaga manual
