@@ -49,6 +49,22 @@ router.get('/solicitacoes', (req, res) => {
 });
 
 /**
+ * GET /api/minhas-solicitacoes?email=xxx
+ * Lista solicitações de um gestor específico.
+ */
+router.get('/minhas-solicitacoes', (req, res) => {
+  try {
+    const email = req.query.email;
+    if (!email) return res.status(400).json({ error: 'Email obrigatório.' });
+    const data = db.findByEmail(email);
+    res.json({ data });
+  } catch (error) {
+    console.error('[API] Erro:', error.message);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
+/**
  * GET /api/stats
  * Retorna estatísticas.
  */
@@ -88,6 +104,31 @@ router.get('/export', (req, res) => {
   } catch (error) {
     console.error('[API] Erro ao exportar:', error.message);
     res.status(500).json({ error: 'Erro interno ao exportar.' });
+  }
+});
+
+/**
+ * PUT /api/solicitacoes/:id
+ * Edita uma solicitação existente.
+ */
+router.put('/solicitacoes/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { gestor, email, vagas, area, subarea, comentario } = req.body;
+
+    const data = db.findAll();
+    const index = data.findIndex(item => item.id === id);
+
+    if (index === -1) {
+      return res.status(404).json({ error: 'Solicitação não encontrada.' });
+    }
+
+    // Atualiza
+    const updated = db.update(id, { gestor, email, vagas: parseInt(vagas), area, subarea, comentario: comentario || '' });
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error('[API] Erro ao editar:', error.message);
+    res.status(500).json({ error: 'Erro interno.' });
   }
 });
 

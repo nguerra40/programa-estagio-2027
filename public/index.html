@@ -399,6 +399,50 @@
       color: rgba(255,255,255,0.85);
     }
 
+    /* Minhas solicitações cards */
+    .minha-card {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      color: #FFFFFF;
+      font-size: 14px;
+    }
+    .minha-card__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .minha-card__area {
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .minha-card__date {
+      font-size: 12px;
+      opacity: 0.7;
+    }
+    .minha-card__details {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+      opacity: 0.85;
+    }
+    .minha-card__btn {
+      font-size: 13px;
+      padding: 6px 16px;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: var(--radius-sm);
+      color: #FFFFFF;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .minha-card__btn:hover {
+      background: rgba(255,255,255,0.25);
+    }
+
     /* Responsive */
     @media (max-width: 640px) {
       .header {
@@ -663,7 +707,7 @@
   </header>
 
   <!-- Gestor View -->
-  <section class="view-gestor active" id="view-gestor">
+  <section class="view-gestor" id="view-gestor">
     <div class="container">
       <div class="form-banner">
         <img src="logo_programadeestagio.png" alt="Programa de Estágio 2027" class="form-banner__img">
@@ -736,6 +780,13 @@
       <div class="success-msg" id="success-msg">
         <span class="material-icons-outlined">check_circle</span>
         Solicitação enviada com sucesso!
+      </div>
+
+      <!-- Minhas Solicitações -->
+      <div id="minhas-solicitacoes" style="margin-top:40px;">
+        <h3 style="font-family:var(--font-primary); font-size:18px; color:#FFFFFF; margin-bottom:16px;">Minhas Solicitações</h3>
+        <div id="minhas-lista" style="display:flex; flex-direction:column; gap:12px;"></div>
+        <p id="minhas-vazio" style="font-size:14px; color:rgba(255,255,255,0.6); display:none;">Você ainda não enviou nenhuma solicitação.</p>
       </div>
     </div>
   </section>
@@ -896,6 +947,8 @@
         localStorage.setItem('estagio_admin', 'true');
         document.getElementById('header-nav').style.display = 'flex';
       }
+
+      loadMinhasSolicitacoes();
     }
 
     // Switch user — logout e volta para tela de login
@@ -923,6 +976,8 @@
         if (ADMIN_EMAILS.includes(savedUser) && isAdmin) {
           document.getElementById('header-nav').style.display = 'flex';
         }
+
+        loadMinhasSolicitacoes();
       }
     }
 
@@ -953,22 +1008,88 @@
 
       if (!nome || !email || !vagas || !area || !subarea) return;
 
-      fetch('/api/solicitacoes', {
-        method: 'POST',
+      const editId = document.getElementById('form-estagio').dataset.editId;
+      const method = editId ? 'PUT' : 'POST';
+      const url = editId ? `/api/solicitacoes/${editId}` : '/api/solicitacoes';
+
+      fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ gestor: nome, email, vagas: parseInt(vagas), area, subarea, comentario })
       })
       .then(res => {
         if (res.ok) {
           document.getElementById('form-estagio').reset();
+          document.getElementById('form-estagio').dataset.editId = '';
           const msg = document.getElementById('success-msg');
+          msg.querySelector('span').nextSibling && (msg.lastChild.textContent = editId ? ' Solicitação atualizada!' : ' Solicitação enviada com sucesso!');
           msg.classList.add('visible');
           setTimeout(() => msg.classList.remove('visible'), 4000);
+          loadMinhasSolicitacoes();
         } else {
           res.json().then(err => alert(err.error || 'Erro ao enviar.'));
         }
       })
       .catch(() => alert('Erro de conexão. Tente novamente.'));
+    }
+
+    // Carrega solicitações do gestor logado
+    function loadMinhasSolicitacoes() {
+      if (!currentUser) return;
+      fetch(`/api/minhas-solicitacoes?email=${encodeURIComponent(currentUser)}`)
+        .then(res => res.json())
+        .then(result => {
+          const lista = document.getElementById('minhas-lista');
+          const vazio = document.getElementById('minhas-vazio');
+          
+          if (!result.data || result.data.length === 0) {
+            lista.innerHTML = '';
+            vazio.style.display = 'block';
+            return;
+          }
+
+          vazio.style.display = 'none';
+          lista.innerHTML = result.data.map(item => `
+            <div class="minha-card">
+              <div class="minha-card__header">
+                <span class="minha-card__area">${item.area} — ${item.subarea}</span>
+                <span class="minha-card__date">${new Date(item.created_at).toLocaleDateString('pt-BR')}</span>
+              </div>
+              <div class="minha-card__details">
+                <span>Vagas: ${item.vagas}</span>
+                <span>${item.comentario ? 'Comentário: ' + item.comentario : ''}</span>
+              </div>
+              <button class="minha-card__btn" onclick="editarSolicitacao(${item.id})">
+                <span class="material-icons-outlined" style="font-size:14px;vertical-align:middle;margin-right:4px;">edit</span>
+                Editar
+              </button>
+            </div>
+          `).join('');
+        })
+        .catch(() => {});
+    }
+
+    // Preenche formulário para edição
+    function editarSolicitacao(id) {
+      fetch(`/api/minhas-solicitacoes?email=${encodeURIComponent(currentUser)}`)
+        .then(res => res.json())
+        .then(result => {
+          const item = result.data.find(d => d.id === id);
+          if (!item) return;
+
+          document.getElementById('gestor-nome').value = item.gestor;
+          document.getElementById('gestor-email').value = item.email;
+          document.getElementById('gestor-vagas').value = item.vagas;
+          document.getElementById('gestor-vagas').classList.remove('placeholder');
+          document.getElementById('gestor-area').value = item.area;
+          document.getElementById('gestor-area').classList.remove('placeholder');
+          document.getElementById('gestor-subarea').value = item.subarea;
+          document.getElementById('gestor-comentario').value = item.comentario || '';
+          document.getElementById('form-estagio').dataset.editId = id;
+
+          // Scroll pro topo do formulário
+          document.getElementById('form-estagio').scrollIntoView({ behavior: 'smooth' });
+        });
     }
 
     // Admin rendering

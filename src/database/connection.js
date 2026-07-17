@@ -47,6 +47,20 @@ function findAll() {
   return readAll().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 }
 
+function findByEmail(email) {
+  return readAll().filter(item => item.email.toLowerCase() === email.toLowerCase())
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+}
+
+function update(id, updates) {
+  const data = readAll();
+  const index = data.findIndex(item => item.id === id);
+  if (index === -1) return null;
+  data[index] = { ...data[index], ...updates, updated_at: new Date().toISOString() };
+  writeAll(data);
+  return data[index];
+}
+
 function stats() {
   const data = readAll();
   const totalVagas = data.reduce((sum, item) => sum + parseInt(item.vagas), 0);
@@ -54,4 +68,4 @@ function stats() {
   return { totalVagas, totalAreas };
 }
 
-module.exports = { insert, findAll, stats };
+module.exports = { insert, findAll, findByEmail, update, stats };
