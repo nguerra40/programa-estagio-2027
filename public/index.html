@@ -720,7 +720,7 @@
   </section>
 
   <script>
-    // Admin emails (fallback — verificação real é no servidor)
+    // Admin emails
     const ADMIN_EMAILS = [
       'eduarda.dreux@galapagoscapital.com',
       'felipe.regis@galapagoscapital.com',
@@ -730,7 +730,6 @@
     let currentUser = null;
     let currentSortField = null;
     let currentSortOrder = 'asc';
-    let solicitacoesData = [];
 
     // Sort table by column
     function sortTable(field) {
@@ -753,29 +752,7 @@
       applyFilters();
     }
 
-    // Verificar autenticação via SSO
-    async function checkAuth() {
-      try {
-        const response = await fetch('/auth/me');
-        const data = await response.json();
-
-        if (data.authenticated) {
-          currentUser = data.user;
-          document.getElementById('login-overlay').style.display = 'none';
-          document.getElementById('main-header').style.display = 'flex';
-          document.getElementById('view-gestor').classList.add('active');
-
-          if (data.user.isAdmin) {
-            document.getElementById('header-nav').style.display = 'flex';
-          }
-        }
-      } catch (error) {
-        console.log('[Auth] Servidor não disponível, usando modo offline.');
-        // Fallback para login local (modo desenvolvimento)
-      }
-    }
-
-    // Login — redireciona para Microsoft Entra ID
+    // Login
     function doLogin() {
       const email = document.getElementById('login-email').value.trim().toLowerCase();
       const error = document.getElementById('login-error');
@@ -785,8 +762,41 @@
         return;
       }
 
-      // Se SSO está disponível, redireciona
-      window.location.href = '/auth/login';
+      error.classList.remove('visible');
+      currentUser = email;
+      localStorage.setItem('estagio_user', email);
+
+      document.getElementById('login-overlay').style.display = 'none';
+      document.getElementById('main-header').style.display = 'flex';
+      document.getElementById('view-gestor').classList.add('active');
+
+      if (ADMIN_EMAILS.includes(email)) {
+        document.getElementById('header-nav').style.display = 'flex';
+      }
+    }
+
+    // Check session
+    function checkSession() {
+      const savedUser = localStorage.getItem('estagio_user');
+      if (savedUser) {
+        currentUser = savedUser;
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('main-header').style.display = 'flex';
+        document.getElementById('view-gestor').classList.add('active');
+
+        if (ADMIN_EMAILS.includes(savedUser)) {
+          document.getElementById('header-nav').style.display = 'flex';
+        }
+      }
+    }
+
+    // Data store using localStorage
+    function getData() {
+      return JSON.parse(localStorage.getItem('estagio_solicitacoes') || '[]');
+    }
+
+    function saveData(data) {
+      localStorage.setItem('estagio_solicitacoes', JSON.stringify(data));
     }
 
     // Switch views
@@ -801,8 +811,8 @@
       }
     }
 
-    // Submit form — envia para a API
-    async function submitForm(e) {
+    // Submit form
+    function submitForm(e) {
       e.preventDefault();
 
       const nome = document.getElementById('gestor-nome').value.trim();
@@ -814,61 +824,43 @@
 
       if (!nome || !email || !vagas || !area || !subarea) return;
 
-      try {
-        const response = await fetch('/api/solicitacoes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ gestor: nome, email, vagas: parseInt(vagas), area, subarea, comentario })
-        });
+      const data = getData();
+      data.push({
+        id: Date.now(),
+        data: new Date().toLocaleDateString('pt-BR'),
+        gestor: nome,
+        email: email,
+        vagas: parseInt(vagas),
+        area: area,
+        subarea: subarea,
+        comentario: comentario
+      });
+      saveData(data);
 
-        if (response.ok) {
-          document.getElementById('form-estagio').reset();
-          const msg = document.getElementById('success-msg');
-          msg.classList.add('visible');
-          setTimeout(() => msg.classList.remove('visible'), 4000);
-        } else {
-          const err = await response.json();
-          alert(err.error || 'Erro ao enviar solicitação.');
-        }
-      } catch (error) {
-        alert('Erro de conexão. Tente novamente.');
-      }
+      document.getElementById('form-estagio').reset();
+      const msg = document.getElementById('success-msg');
+      msg.classList.add('visible');
+      setTimeout(() => msg.classList.remove('visible'), 4000);
     }
 
     // Admin rendering
-    async function renderAdmin() {
-      await loadSolicitacoes();
+    function renderAdmin() {
       updateStats();
       updateFilterOptions();
       applyFilters();
     }
 
-    async function loadSolicitacoes() {
-      try {
-        const response = await fetch('/api/solicitacoes');
-        if (response.ok) {
-          const result = await response.json();
-          solicitacoesData = result.data.map(item => ({
-            ...item,
-            data: new Date(item.created_at).toLocaleDateString('pt-BR'),
-            vagas: parseInt(item.vagas)
-          }));
-        }
-      } catch (error) {
-        console.error('[Admin] Erro ao carregar solicitações:', error);
-      }
-    }
-
     function updateStats() {
-      const totalVagas = solicitacoesData.reduce((sum, item) => sum + item.vagas, 0);
-      const areasComSolicitacoes = new Set(solicitacoesData.map(d => d.area));
-      document.getElementById('stat-vagas').textContent = totalVagas;
+      const data = getData();
+      document.getElementById('stat-vagas').textContent = data.reduce((sum, item) => sum + item.vagas, 0);
+      const areasComSolicitacoes = new Set(data.map(d => d.area));
       document.getElementById('stat-areas').textContent = areasComSolicitacoes.size;
     }
 
     function updateFilterOptions() {
-      const gestores = [...new Set(solicitacoesData.map(d => d.gestor))].sort();
-      const areas = [...new Set(solicitacoesData.map(d => d.area))].sort();
+      const data = getData();
+      const gestores = [...new Set(data.map(d => d.gestor))].sort();
+      const areas = [...new Set(data.map(d => d.area))].sort();
 
       const gestorDropdown = document.getElementById('ms-gestor-dropdown');
       gestorDropdown.innerHTML = gestores.map(g =>
@@ -901,6 +893,7 @@
     }
 
     function applyFilters() {
+      const data = getData();
       const selectedGestores = getCheckedValues('ms-gestor');
       const selectedAreas = getCheckedValues('ms-area');
       const selectedVagas = Array.from(document.querySelectorAll('#ms-vagas input[type="checkbox"]:checked')).map(cb => parseInt(cb.value));
@@ -914,7 +907,7 @@
       const vagasText = document.querySelector('#ms-vagas .multi-select__text');
       vagasText.textContent = selectedVagas.length === 0 ? 'Todas' : `${selectedVagas.length} selecionada(s)`;
 
-      let filtered = solicitacoesData.filter(item => {
+      const filtered = data.filter(item => {
         if (selectedGestores.length > 0 && !selectedGestores.includes(item.gestor)) return false;
         if (selectedAreas.length > 0 && !selectedAreas.includes(item.area)) return false;
         if (selectedVagas.length > 0 && !selectedVagas.includes(item.vagas)) return false;
@@ -961,14 +954,51 @@
       `).join('');
     }
 
-    // Export — usa endpoint do servidor
+    // Export to Excel (CSV)
     function exportToExcel() {
-      window.location.href = '/api/export';
+      const data = getData();
+      const selectedGestores = getCheckedValues('ms-gestor');
+      const selectedAreas = getCheckedValues('ms-area');
+      const selectedVagas = Array.from(document.querySelectorAll('#ms-vagas input[type="checkbox"]:checked')).map(cb => parseInt(cb.value));
+
+      const filtered = data.filter(item => {
+        if (selectedGestores.length > 0 && !selectedGestores.includes(item.gestor)) return false;
+        if (selectedAreas.length > 0 && !selectedAreas.includes(item.area)) return false;
+        if (selectedVagas.length > 0 && !selectedVagas.includes(item.vagas)) return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        alert('Nenhum dado para exportar.');
+        return;
+      }
+
+      const BOM = '\uFEFF';
+      const separator = ';';
+      const headers = ['Data', 'Gestor', 'E-mail', 'Vagas', 'Área', 'Subárea', 'Comentário'];
+      const rows = filtered.map(item =>
+        [item.data, item.gestor, item.email || '', item.vagas, item.area, item.subarea, item.comentario || '']
+          .map(val => `"${String(val).replace(/"/g, '""')}"`)
+          .join(separator)
+      );
+
+      const csv = BOM + headers.join(separator) + '\n' + rows.join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `solicitacoes_estagio_${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     }
 
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
-      checkAuth();
+      checkSession();
+      renderAdmin();
     });
   </script>
 </body>
