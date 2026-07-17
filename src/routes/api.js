@@ -4,9 +4,8 @@ const db = require('../database/connection');
 
 /**
  * POST /api/solicitacoes
- * Cria uma nova solicitação de vaga de estágio.
  */
-router.post('/solicitacoes', (req, res) => {
+router.post('/solicitacoes', async (req, res) => {
   try {
     const { gestor, email, vagas, area, subarea, comentario } = req.body;
 
@@ -18,29 +17,20 @@ router.post('/solicitacoes', (req, res) => {
       return res.status(400).json({ error: 'Quantidade de vagas deve ser entre 1 e 5.' });
     }
 
-    const record = db.insert({
-      gestor,
-      email,
-      vagas: parseInt(vagas),
-      area,
-      subarea,
-      comentario: comentario || ''
-    });
-
+    const record = await db.insert({ gestor, email, vagas: parseInt(vagas), area, subarea, comentario });
     res.status(201).json({ success: true, data: record });
   } catch (error) {
-    console.error('[API] Erro ao criar solicitação:', error.message);
+    console.error('[API] Erro ao criar:', error.message);
     res.status(500).json({ error: 'Erro interno ao salvar solicitação.' });
   }
 });
 
 /**
  * GET /api/solicitacoes
- * Lista todas as solicitações.
  */
-router.get('/solicitacoes', (req, res) => {
+router.get('/solicitacoes', async (req, res) => {
   try {
-    const data = db.findAll();
+    const data = await db.findAll();
     res.json({ data });
   } catch (error) {
     console.error('[API] Erro ao listar:', error.message);
@@ -50,13 +40,12 @@ router.get('/solicitacoes', (req, res) => {
 
 /**
  * GET /api/minhas-solicitacoes?email=xxx
- * Lista solicitações de um gestor específico.
  */
-router.get('/minhas-solicitacoes', (req, res) => {
+router.get('/minhas-solicitacoes', async (req, res) => {
   try {
     const email = req.query.email;
     if (!email) return res.status(400).json({ error: 'Email obrigatório.' });
-    const data = db.findByEmail(email);
+    const data = await db.findByEmail(email);
     res.json({ data });
   } catch (error) {
     console.error('[API] Erro:', error.message);
@@ -65,12 +54,28 @@ router.get('/minhas-solicitacoes', (req, res) => {
 });
 
 /**
- * GET /api/stats
- * Retorna estatísticas.
+ * PUT /api/solicitacoes/:id
  */
-router.get('/stats', (req, res) => {
+router.put('/solicitacoes/:id', async (req, res) => {
   try {
-    res.json(db.stats());
+    const id = parseInt(req.params.id);
+    const { gestor, email, vagas, area, subarea, comentario } = req.body;
+    const updated = await db.update(id, { gestor, email, vagas: parseInt(vagas), area, subarea, comentario });
+    if (!updated) return res.status(404).json({ error: 'Solicitação não encontrada.' });
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error('[API] Erro ao editar:', error.message);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
+/**
+ * GET /api/stats
+ */
+router.get('/stats', async (req, res) => {
+  try {
+    const s = await db.stats();
+    res.json(s);
   } catch (error) {
     console.error('[API] Erro stats:', error.message);
     res.status(500).json({ error: 'Erro interno.' });
@@ -79,11 +84,10 @@ router.get('/stats', (req, res) => {
 
 /**
  * GET /api/export
- * Exporta solicitações em formato CSV.
  */
-router.get('/export', (req, res) => {
+router.get('/export', async (req, res) => {
   try {
-    const data = db.findAll();
+    const data = await db.findAll();
 
     const BOM = '\uFEFF';
     const separator = ';';
@@ -104,31 +108,6 @@ router.get('/export', (req, res) => {
   } catch (error) {
     console.error('[API] Erro ao exportar:', error.message);
     res.status(500).json({ error: 'Erro interno ao exportar.' });
-  }
-});
-
-/**
- * PUT /api/solicitacoes/:id
- * Edita uma solicitação existente.
- */
-router.put('/solicitacoes/:id', (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    const { gestor, email, vagas, area, subarea, comentario } = req.body;
-
-    const data = db.findAll();
-    const index = data.findIndex(item => item.id === id);
-
-    if (index === -1) {
-      return res.status(404).json({ error: 'Solicitação não encontrada.' });
-    }
-
-    // Atualiza
-    const updated = db.update(id, { gestor, email, vagas: parseInt(vagas), area, subarea, comentario: comentario || '' });
-    res.json({ success: true, data: updated });
-  } catch (error) {
-    console.error('[API] Erro ao editar:', error.message);
-    res.status(500).json({ error: 'Erro interno.' });
   }
 });
 
