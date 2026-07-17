@@ -1022,9 +1022,11 @@
           document.getElementById('form-estagio').reset();
           document.getElementById('form-estagio').dataset.editId = '';
           const msg = document.getElementById('success-msg');
-          msg.querySelector('span').nextSibling && (msg.lastChild.textContent = editId ? ' Solicitação atualizada!' : ' Solicitação enviada com sucesso!');
           msg.classList.add('visible');
           setTimeout(() => msg.classList.remove('visible'), 4000);
+          // Atualiza currentUser com o email do formulario para buscar solicitacoes
+          currentUser = email;
+          localStorage.setItem('estagio_user', email);
           loadMinhasSolicitacoes();
         } else {
           res.json().then(err => alert(err.error || 'Erro ao enviar.'));
@@ -1037,7 +1039,10 @@
     function loadMinhasSolicitacoes() {
       if (!currentUser) return;
       fetch(`/api/minhas-solicitacoes?email=${encodeURIComponent(currentUser)}`)
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) throw new Error('Erro ' + res.status);
+          return res.json();
+        })
         .then(result => {
           const lista = document.getElementById('minhas-lista');
           const vazio = document.getElementById('minhas-vazio');
@@ -1066,7 +1071,11 @@
             </div>
           `).join('');
         })
-        .catch(() => {});
+        .catch(err => {
+          console.error('[Minhas] Erro:', err);
+          document.getElementById('minhas-vazio').style.display = 'block';
+          document.getElementById('minhas-vazio').textContent = 'Erro ao carregar solicitações. Tente novamente.';
+        });
     }
 
     // Preenche formulário para edição
