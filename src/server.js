@@ -12,7 +12,7 @@ const apiRoutes = require('./routes/api');
 const { configurePassport } = require('./auth/passport-config');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8000;
 
 // Segurança
 app.use(helmet({
@@ -60,7 +60,14 @@ app.get('*', (req, res) => {
 });
 
 // Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`[Programa de Estágio 2027] Servidor rodando na porta ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[Programa de Estágio 2027] Servidor rodando em 0.0.0.0:${PORT}`);
   console.log(`[Ambiente] ${process.env.NODE_ENV || 'development'}`);
+  
+  // Auto-migração: cria tabelas se não existirem
+  try {
+    require('./database/auto-migrate');
+  } catch (e) {
+    console.warn('[Migrate] Aviso:', e.message);
+  }
 });

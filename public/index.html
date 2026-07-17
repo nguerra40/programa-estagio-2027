@@ -926,14 +926,7 @@
       }
     }
 
-    // Data store using localStorage
-    function getData() {
-      return JSON.parse(localStorage.getItem('estagio_solicitacoes') || '[]');
-    }
-
-    function saveData(data) {
-      localStorage.setItem('estagio_solicitacoes', JSON.stringify(data));
-    }
+    // Data store — centralizado no servidor
 
     // Switch views
     function switchView(view) {
@@ -947,7 +940,7 @@
       }
     }
 
-    // Submit form
+    // Submit form — envia para a API
     function submitForm(e) {
       e.preventDefault();
 
@@ -960,43 +953,58 @@
 
       if (!nome || !email || !vagas || !area || !subarea) return;
 
-      const data = getData();
-      data.push({
-        id: Date.now(),
-        data: new Date().toLocaleDateString('pt-BR'),
-        gestor: nome,
-        email: email,
-        vagas: parseInt(vagas),
-        area: area,
-        subarea: subarea,
-        comentario: comentario
-      });
-      saveData(data);
-
-      document.getElementById('form-estagio').reset();
-      const msg = document.getElementById('success-msg');
-      msg.classList.add('visible');
-      setTimeout(() => msg.classList.remove('visible'), 4000);
+      fetch('/api/solicitacoes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gestor: nome, email, vagas: parseInt(vagas), area, subarea, comentario })
+      })
+      .then(res => {
+        if (res.ok) {
+          document.getElementById('form-estagio').reset();
+          const msg = document.getElementById('success-msg');
+          msg.classList.add('visible');
+          setTimeout(() => msg.classList.remove('visible'), 4000);
+        } else {
+          res.json().then(err => alert(err.error || 'Erro ao enviar.'));
+        }
+      })
+      .catch(() => alert('Erro de conexão. Tente novamente.'));
     }
 
     // Admin rendering
     function renderAdmin() {
-      updateStats();
-      updateFilterOptions();
-      applyFilters();
+      fetch('/api/solicitacoes')
+        .then(res => res.json())
+        .then(result => {
+          const dados = result.data.map(item => ({
+            ...item,
+            data: new Date(item.created_at).toLocaleDateString('pt-BR'),
+            vagas: parseInt(item.vagas)
+          }));
+          window._solicitacoes = dados;
+          updateStats(dados);
+          updateFilterOptions(dados);
+          applyFilters();
+        })
+        .catch(() => {
+          window._solicitacoes = [];
+          updateStats([]);
+          updateFilterOptions([]);
+          applyFilters();
+        });
     }
 
-    function updateStats() {
-      const data = getData();
-      document.getElementById('stat-vagas').textContent = data.reduce((sum, item) => sum + item.vagas, 0);
-      const areasComSolicitacoes = new Set(data.map(d => d.area));
+    function updateStats(data) {
+      const d = data || window._solicitacoes || [];
+      document.getElementById('stat-vagas').textContent = d.reduce((sum, item) => sum + item.vagas, 0);
+      const areasComSolicitacoes = new Set(d.map(x => x.area));
       document.getElementById('stat-areas').textContent = areasComSolicitacoes.size;
     }
 
-    function updateFilterOptions() {
-      const data = getData();
-      const gestores = [...new Set(data.map(d => d.gestor))].sort();
-      const areas = [...new Set(data.map(d => d.area))].sort();
+    function updateFilterOptions(data) {
+      const d = data || window._solicitacoes || [];
+      const gestores = [...new Set(d.map(x => x.gestor))].sort();
+      const areas = [...new Set(d.map(x => x.area))].sort();
 
       const gestorDropdown = document.getElementById('ms-gestor-dropdown');
       gestorDropdown.innerHTML = gestores.map(g =>
@@ -1029,7 +1037,7 @@
     }
 
     function applyFilters() {
-      const data = getData();
+      const data = window._solicitacoes || [];
       const selectedGestores = getCheckedValues('ms-gestor');
       const selectedAreas = getCheckedValues('ms-area');
       const selectedVagas = Array.from(document.querySelectorAll('#ms-vagas input[type="checkbox"]:checked')).map(cb => parseInt(cb.value));
@@ -1090,45 +1098,9 @@
       `).join('');
     }
 
-    // Export to Excel (CSV)
+    // Export — via servidor
     function exportToExcel() {
-      const data = getData();
-      const selectedGestores = getCheckedValues('ms-gestor');
-      const selectedAreas = getCheckedValues('ms-area');
-      const selectedVagas = Array.from(document.querySelectorAll('#ms-vagas input[type="checkbox"]:checked')).map(cb => parseInt(cb.value));
-
-      const filtered = data.filter(item => {
-        if (selectedGestores.length > 0 && !selectedGestores.includes(item.gestor)) return false;
-        if (selectedAreas.length > 0 && !selectedAreas.includes(item.area)) return false;
-        if (selectedVagas.length > 0 && !selectedVagas.includes(item.vagas)) return false;
-        return true;
-      });
-
-      if (filtered.length === 0) {
-        alert('Nenhum dado para exportar.');
-        return;
-      }
-
-      const BOM = '\uFEFF';
-      const separator = ';';
-      const headers = ['Data', 'Gestor', 'E-mail', 'Vagas', 'Área', 'Subárea', 'Comentário'];
-      const rows = filtered.map(item =>
-        [item.data, item.gestor, item.email || '', item.vagas, item.area, item.subarea, item.comentario || '']
-          .map(val => `"${String(val).replace(/"/g, '""')}"`)
-          .join(separator)
-      );
-
-      const csv = BOM + headers.join(separator) + '\n' + rows.join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `solicitacoes_estagio_${new Date().toISOString().slice(0,10)}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      window.location.href = '/api/export';
     }
 
     // Initialize
