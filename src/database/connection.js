@@ -22,9 +22,13 @@ pool.query(`
     area VARCHAR(255) NOT NULL,
     subarea VARCHAR(255) NOT NULL,
     comentario TEXT,
+    status VARCHAR(20) DEFAULT 'pendente',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
   );
 `).then(() => {
+  // Adiciona coluna status se não existir (para bancos já criados)
+  return pool.query(`ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'pendente';`);
+}).then(() => {
   console.log('[DB] Conectado ao PostgreSQL. Tabela OK.');
 }).catch(err => {
   console.error('[DB] Erro ao criar tabela:', err.message);
@@ -55,9 +59,19 @@ async function findByEmail(email) {
 
 async function update(id, updates) {
   const result = await pool.query(
-    `UPDATE solicitacoes SET gestor=$1, email=$2, vagas=$3, area=$4, subarea=$5, comentario=$6
-     WHERE id=$7 RETURNING *`,
-    [updates.gestor, updates.email, updates.vagas, updates.area, updates.subarea, updates.comentario || '', id]
+    `UPDATE solicitacoes SET gestor=$1, email=$2, vagas=$3, area=$4, subarea=$5, comentario=$6, status=$7
+     WHERE id=$8 RETURNING *`,
+    [updates.gestor, updates.email, updates.vagas, updates.area, updates.subarea, updates.comentario || '', updates.status || 'pendente', id]
+  );
+  return result.rows[0];
+}
+
+async function updateField(id, field, value) {
+  const allowed = ['vagas', 'area', 'status'];
+  if (!allowed.includes(field)) return null;
+  const result = await pool.query(
+    `UPDATE solicitacoes SET ${field}=$1 WHERE id=$2 RETURNING *`,
+    [value, id]
   );
   return result.rows[0];
 }
@@ -71,4 +85,4 @@ async function stats() {
   };
 }
 
-module.exports = { insert, findAll, findByEmail, update, stats };
+module.exports = { insert, findAll, findByEmail, update, updateField, stats };

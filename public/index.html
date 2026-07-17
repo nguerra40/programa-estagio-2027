@@ -850,6 +850,10 @@
           <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">download</span>
           Exportar Excel
         </button>
+        <button class="btn-secondary" onclick="adicionarVagaManual()" style="border-color:#2E7D32;color:#2E7D32;">
+          <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">add_circle</span>
+          Adicionar Vaga Manual
+        </button>
       </div>
 
       <!-- Table -->
@@ -864,6 +868,7 @@
               <th class="sortable" onclick="sortTable('area')">Área <span class="sort-icon" id="sort-icon-area">↕</span></th>
               <th class="sortable" onclick="sortTable('subarea')">Subárea <span class="sort-icon" id="sort-icon-subarea">↕</span></th>
               <th class="sortable" onclick="sortTable('comentario')">Comentário <span class="sort-icon" id="sort-icon-comentario">↕</span></th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody id="table-body">
@@ -1215,17 +1220,70 @@
       }
 
       emptyState.style.display = 'none';
-      tbody.innerHTML = data.map(item => `
+      tbody.innerHTML = data.map(item => {
+        const statusColor = item.status === 'aprovado' ? '#2E7D32' : item.status === 'reprovado' ? '#C62828' : '#525254';
+        return `
         <tr>
           <td>${item.data}</td>
           <td>${item.gestor}</td>
           <td>${item.email || ''}</td>
-          <td>${item.vagas}</td>
-          <td>${item.area}</td>
+          <td>
+            <select onchange="updateField(${item.id},'vagas',this.value)" style="border:1px solid #ddd;border-radius:4px;padding:4px 8px;font-size:13px;">
+              ${[1,2,3,4,5].map(v => `<option value="${v}" ${item.vagas==v?'selected':''}>${v}</option>`).join('')}
+            </select>
+          </td>
+          <td>
+            <input type="text" value="${item.area}" onblur="updateField(${item.id},'area',this.value)" style="border:1px solid #ddd;border-radius:4px;padding:4px 8px;font-size:13px;width:140px;">
+          </td>
           <td>${item.subarea}</td>
           <td>${item.comentario || ''}</td>
-        </tr>
-      `).join('');
+          <td>
+            <select onchange="updateField(${item.id},'status',this.value)" style="border:1px solid #ddd;border-radius:4px;padding:4px 8px;font-size:13px;font-weight:600;color:${statusColor};">
+              <option value="pendente" ${item.status==='pendente'||!item.status?'selected':''} style="color:#525254;">Pendente</option>
+              <option value="aprovado" ${item.status==='aprovado'?'selected':''} style="color:#2E7D32;">Aprovado</option>
+              <option value="reprovado" ${item.status==='reprovado'?'selected':''} style="color:#C62828;">Reprovado</option>
+            </select>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    // Atualiza campo individual via admin
+    function updateField(id, field, value) {
+      fetch(`/api/solicitacoes/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field, value })
+      }).then(res => {
+        if (!res.ok) alert('Erro ao atualizar.');
+        else renderAdmin();
+      }).catch(() => alert('Erro de conexão.'));
+    }
+
+    // Adicionar vaga manual
+    function adicionarVagaManual() {
+      const gestor = prompt('Nome do Gestor:');
+      if (!gestor) return;
+      const email = prompt('E-mail do Gestor:');
+      if (!email) return;
+      const vagas = prompt('Quantidade de vagas (1-5):');
+      if (!vagas || vagas < 1 || vagas > 5) return;
+      const area = prompt('Área:');
+      if (!area) return;
+      const subarea = prompt('Subárea:');
+      if (!subarea) return;
+      const comentario = prompt('Comentário (opcional):') || '';
+
+      fetch('/api/solicitacoes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gestor, email, vagas: parseInt(vagas), area, subarea, comentario })
+      }).then(res => {
+        if (res.ok) {
+          alert('Vaga adicionada com sucesso!');
+          renderAdmin();
+        } else alert('Erro ao adicionar.');
+      }).catch(() => alert('Erro de conexão.'));
     }
 
     // Export — via servidor

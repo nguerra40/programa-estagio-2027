@@ -59,12 +59,30 @@ router.get('/minhas-solicitacoes', async (req, res) => {
 router.put('/solicitacoes/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { gestor, email, vagas, area, subarea, comentario } = req.body;
-    const updated = await db.update(id, { gestor, email, vagas: parseInt(vagas), area, subarea, comentario });
+    const { gestor, email, vagas, area, subarea, comentario, status } = req.body;
+    const updated = await db.update(id, { gestor, email, vagas: parseInt(vagas), area, subarea, comentario, status });
     if (!updated) return res.status(404).json({ error: 'Solicitação não encontrada.' });
     res.json({ success: true, data: updated });
   } catch (error) {
     console.error('[API] Erro ao editar:', error.message);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
+/**
+ * PATCH /api/solicitacoes/:id
+ * Atualiza um campo específico (status, vagas, area)
+ */
+router.patch('/solicitacoes/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { field, value } = req.body;
+    if (!field || value === undefined) return res.status(400).json({ error: 'field e value obrigatórios.' });
+    const updated = await db.updateField(id, field, value);
+    if (!updated) return res.status(404).json({ error: 'Solicitação não encontrada ou campo não permitido.' });
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error('[API] Erro ao atualizar campo:', error.message);
     res.status(500).json({ error: 'Erro interno.' });
   }
 });
