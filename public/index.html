@@ -497,6 +497,7 @@
       bottom: 0;
       background: var(--color-deep-blue);
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       z-index: 1000;
@@ -512,6 +513,61 @@
       text-align: center;
     }
 
+    .login-box__logo {
+      height: 56px;
+      margin-bottom: 32px;
+    }
+
+    .login-box__title {
+      font-family: var(--font-primary);
+      font-size: 22px;
+      font-weight: bold;
+      color: var(--color-deep-blue);
+      margin-bottom: 4px;
+    }
+
+    .login-box__subtitle {
+      font-size: 14px;
+      color: var(--color-light-grey);
+      margin-bottom: 32px;
+    }
+
+    .login-box__btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      background-color: var(--color-deep-blue);
+      color: #FFFFFF;
+      border: 2px solid var(--color-deep-blue);
+      padding: 14px 32px;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .login-box__btn:hover {
+      background-color: #142f66;
+      border-color: #142f66;
+    }
+
+    .login-help {
+      font-size: 13px;
+      color: var(--color-light-grey);
+      margin-top: 24px;
+    }
+
+    .login-footer {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      margin-top: 32px;
+      text-align: center;
+    }
+
     .login-error {
       display: none;
       color: #D32F2F;
@@ -522,19 +578,6 @@
     .login-error.visible {
       display: block;
     }
-
-    .login-footer {
-      font-size: 13px;
-      color: rgba(255,255,255,0.6);
-      margin-top: 24px;
-      text-align: center;
-    }
-
-    .login-help {
-      font-size: 13px;
-      color: var(--color-light-grey);
-      margin-top: 20px;
-    }
   </style>
 </head>
 <body>
@@ -542,13 +585,13 @@
   <!-- Login Modal -->
   <div class="login-overlay" id="login-overlay">
     <div class="login-box">
-      <img src="logo_galapagos.png" alt="Galapagos Capital" style="height:48px; margin-bottom:32px;">
-      <h2 style="font-family:var(--font-primary); font-size:22px; font-weight:bold; color:var(--color-deep-blue); margin-bottom:4px;">Programa de Estágio 2027</h2>
-      <p style="font-size:14px; color:var(--color-light-grey); margin-bottom:32px;">Solicitação de Vagas</p>
-      <div class="form-group" style="margin-bottom:16px;">
-        <input type="email" id="login-email" placeholder="seu.email@galapagoscapital.com" onkeydown="if(event.key==='Enter') doLogin()" style="text-align:center;">
-      </div>
-      <button class="btn-primary" style="width:100%; background-color:var(--color-deep-blue); color:#FFFFFF; border:2px solid var(--color-deep-blue); padding:14px 32px; border-radius:8px; font-size:15px;" onclick="doLogin()">Entrar com a conta Galapagos</button>
+      <img src="logo_galapagos.png" alt="Galapagos Capital" class="login-box__logo">
+      <h2 class="login-box__title">Programa de Estágio 2027</h2>
+      <p class="login-box__subtitle">Solicitação de Vagas</p>
+      <button class="login-box__btn" onclick="doLogin()">
+        <span class="material-icons-outlined" style="font-size:18px;">lock</span>
+        Entrar com a conta Galapagos
+      </button>
       <p class="login-error" id="login-error">E-mail não reconhecido. Use seu e-mail @galapagoscapital.com</p>
       <p class="login-help">Problemas para acessar? Fale com o time de People.</p>
     </div>
@@ -767,25 +810,26 @@
       applyFilters();
     }
 
-    // Login
+    // Login — simula SSO (em produção, redirecionará para Microsoft Entra ID)
     function doLogin() {
-      const email = document.getElementById('login-email').value.trim().toLowerCase();
-      const error = document.getElementById('login-error');
-
-      if (!email || !email.endsWith('@galapagoscapital.com')) {
-        error.classList.add('visible');
+      // Em produção: window.location.href = '/auth/login';
+      // Para dev/demo: pede e-mail via prompt
+      const email = prompt('Digite seu e-mail corporativo (@galapagoscapital.com):');
+      
+      if (!email || !email.trim().toLowerCase().endsWith('@galapagoscapital.com')) {
+        alert('E-mail não reconhecido. Use seu e-mail @galapagoscapital.com');
         return;
       }
 
-      error.classList.remove('visible');
-      currentUser = email;
-      localStorage.setItem('estagio_user', email);
+      const emailLower = email.trim().toLowerCase();
+      currentUser = emailLower;
+      localStorage.setItem('estagio_user', emailLower);
 
       document.getElementById('login-overlay').style.display = 'none';
       document.getElementById('main-header').style.display = 'flex';
       document.getElementById('view-gestor').classList.add('active');
 
-      if (ADMIN_EMAILS.includes(email)) {
+      if (ADMIN_EMAILS.includes(emailLower)) {
         document.getElementById('header-nav').style.display = 'flex';
       }
     }
