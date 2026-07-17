@@ -1111,17 +1111,25 @@
       fetch('/api/solicitacoes')
         .then(res => res.json())
         .then(result => {
-          const dados = result.data.map(item => ({
-            ...item,
+          const dados = (result.data || []).map(item => ({
+            id: item.id,
             data: new Date(item.created_at).toLocaleDateString('pt-BR'),
-            vagas: parseInt(item.vagas)
+            gestor: item.gestor || '',
+            email: item.email || '',
+            vagas: parseInt(item.vagas) || 1,
+            area: item.area || '',
+            subarea: item.subarea || '',
+            comentario: item.comentario || '',
+            status: item.status || 'pendente',
+            created_at: item.created_at
           }));
           window._solicitacoes = dados;
           updateStats(dados);
           updateFilterOptions(dados);
           applyFilters();
         })
-        .catch(() => {
+        .catch(err => {
+          console.error('[Admin] Erro:', err);
           window._solicitacoes = [];
           updateStats([]);
           updateFilterOptions([]);
@@ -1138,18 +1146,22 @@
 
     function updateFilterOptions(data) {
       const d = data || window._solicitacoes || [];
-      const gestores = [...new Set(d.map(x => x.gestor))].sort();
-      const areas = [...new Set(d.map(x => x.area))].sort();
+      const gestores = [...new Set(d.map(x => x.gestor).filter(Boolean))].sort();
+      const areas = [...new Set(d.map(x => x.area).filter(Boolean))].sort();
 
       const gestorDropdown = document.getElementById('ms-gestor-dropdown');
-      gestorDropdown.innerHTML = gestores.map(g =>
-        `<label class="multi-select__option"><input type="checkbox" value="${g}" onchange="applyFilters()"> ${g}</label>`
-      ).join('');
+      if (gestorDropdown) {
+        gestorDropdown.innerHTML = gestores.map(g =>
+          `<label class="multi-select__option"><input type="checkbox" value="${g}" onchange="applyFilters()"> ${g}</label>`
+        ).join('');
+      }
 
       const areaDropdown = document.getElementById('ms-area-dropdown');
-      areaDropdown.innerHTML = areas.map(a =>
-        `<label class="multi-select__option"><input type="checkbox" value="${a}" onchange="applyFilters()"> ${a}</label>`
-      ).join('');
+      if (areaDropdown) {
+        areaDropdown.innerHTML = areas.map(a =>
+          `<label class="multi-select__option"><input type="checkbox" value="${a}" onchange="applyFilters()"> ${a}</label>`
+        ).join('');
+      }
     }
 
     function toggleMultiSelect(id) {
