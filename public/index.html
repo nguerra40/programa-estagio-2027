@@ -815,9 +815,9 @@
       <!-- Filters -->
       <div class="admin-toolbar">
         <div class="filter-group">
-          <label>Filtrar por Gestor</label>
-          <div class="multi-select" id="ms-gestor">
-            <div class="multi-select__trigger" onclick="toggleMultiSelect('ms-gestor')">
+          <label id="label-gestor">Filtrar por Gestor</label>
+          <div class="multi-select" id="ms-gestor" role="listbox" aria-labelledby="label-gestor">
+            <div class="multi-select__trigger" role="button" tabindex="0" aria-expanded="false" onclick="toggleMultiSelect('ms-gestor')" onkeydown="if(event.key==='Enter')toggleMultiSelect('ms-gestor')">
               <span class="multi-select__text">Todos</span>
               <span class="material-icons-outlined" style="font-size:16px;">expand_more</span>
             </div>
@@ -825,9 +825,9 @@
           </div>
         </div>
         <div class="filter-group">
-          <label>Filtrar por Área</label>
-          <div class="multi-select" id="ms-area">
-            <div class="multi-select__trigger" onclick="toggleMultiSelect('ms-area')">
+          <label id="label-area">Filtrar por Área</label>
+          <div class="multi-select" id="ms-area" role="listbox" aria-labelledby="label-area">
+            <div class="multi-select__trigger" role="button" tabindex="0" aria-expanded="false" onclick="toggleMultiSelect('ms-area')" onkeydown="if(event.key==='Enter')toggleMultiSelect('ms-area')">
               <span class="multi-select__text">Todas</span>
               <span class="material-icons-outlined" style="font-size:16px;">expand_more</span>
             </div>
@@ -835,9 +835,9 @@
           </div>
         </div>
         <div class="filter-group">
-          <label>Filtrar por Vagas</label>
-          <div class="multi-select" id="ms-vagas">
-            <div class="multi-select__trigger" onclick="toggleMultiSelect('ms-vagas')">
+          <label id="label-vagas">Filtrar por Vagas</label>
+          <div class="multi-select" id="ms-vagas" role="listbox" aria-labelledby="label-vagas">
+            <div class="multi-select__trigger" role="button" tabindex="0" aria-expanded="false" onclick="toggleMultiSelect('ms-vagas')" onkeydown="if(event.key==='Enter')toggleMultiSelect('ms-vagas')">
               <span class="multi-select__text">Todas</span>
               <span class="material-icons-outlined" style="font-size:16px;">expand_more</span>
             </div>
@@ -863,6 +863,7 @@
       <!-- Table -->
       <div class="table-wrapper">
         <table>
+          <caption class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">Solicitações de vagas de estágio 2027</caption>
           <thead>
             <tr>
               <th class="sortable" onclick="sortTable('data')">Data <span class="sort-icon" id="sort-icon-data">↕</span></th>
@@ -930,7 +931,6 @@
       }
 
       const raw = input.trim().toLowerCase();
-      const ADMIN_CODE = '%adm2027';
       let email = raw;
       let hasAdminCode = false;
 
@@ -1206,10 +1206,10 @@
       vagasText.textContent = selectedVagas.length === 0 ? 'Todas' : `${selectedVagas.length} selecionada(s)`;
 
       const filtered = data.filter(item => {
-        if (selectedGestores.length > 0 && !selectedGestores.includes(item.gestor)) return false;
-        if (selectedAreas.length > 0 && !selectedAreas.includes(item.area)) return false;
-        if (selectedVagas.length > 0 && !selectedVagas.includes(item.vagas)) return false;
-        return true;
+        const matchGestor = selectedGestores.length === 0 || selectedGestores.includes(item.gestor);
+        const matchArea = selectedAreas.length === 0 || selectedAreas.includes(item.area);
+        const matchVagas = selectedVagas.length === 0 || selectedVagas.includes(item.vagas);
+        return matchGestor && matchArea && matchVagas;
       });
 
       // Sort
@@ -1240,7 +1240,7 @@
 
       emptyState.style.display = 'none';
       tbody.innerHTML = data.map(item => {
-        const statusColor = item.status === 'aprovado' ? '#2E7D32' : item.status === 'reprovado' ? '#C62828' : '#525254';
+        const statusColor = item.status === 'aprovado' ? '#2E7D32' : (item.status === 'reprovado' ? '#C62828' : '#525254');
         return `
         <tr>
           <td>${item.data}</td>
