@@ -807,19 +807,9 @@
           <span class="stat-item__value" id="stat-areas">0</span>
         </div>
         <div class="stat-item">
-          <span class="stat-item__label">Vagas Orçadas 2026</span>
-          <span class="stat-item__value">32</span>
+          <span class="stat-item__label">Total de Vagas Orçadas (2027)</span>
+          <span class="stat-item__value">15</span>
         </div>
-      </div>
-
-      <!-- Comparativo por área -->
-      <div style="margin-bottom:32px; background:#FFFFFF; border:1.5px solid #E0E0E0; border-radius:8px; padding:24px 32px;">
-        <h3 style="font-family:var(--font-primary); font-weight:600; font-size:16px; color:var(--color-deep-blue); margin-bottom:8px;">Vagas por Área — 2026 vs 2027</h3>
-        <div style="display:flex; gap:16px; margin-bottom:20px; font-size:13px;">
-          <span style="display:flex; align-items:center; gap:6px;"><span style="width:12px;height:12px;border-radius:2px;background:#a8c4e0;"></span> 2026</span>
-          <span style="display:flex; align-items:center; gap:6px;"><span style="width:12px;height:12px;border-radius:2px;background:var(--color-bright-blue);"></span> 2027</span>
-        </div>
-        <div id="chart-areas" style="display:flex; flex-direction:column; gap:10px;"></div>
       </div>
 
       <!-- Filters -->
@@ -1159,49 +1149,6 @@
 
       const areasComSolicitacoes = new Set(d.map(x => x.area));
       document.getElementById('stat-areas').textContent = areasComSolicitacoes.size;
-
-      // Dados 2026 (fixo)
-      const dados2026 = {
-        'IB': 8, 'Wealth Management': 5, 'Tecnologia': 4,
-        'Illiquid Assets': 2, 'Operations': 2, 'People': 2,
-        'Asset Líquidos': 1, 'Compliance': 1, 'Finance': 1,
-        'Home Equity': 1, 'Operações DTVM': 1, 'RI & BM': 1,
-        'Riscos': 1, 'Seguradora': 1, 'i9 Advisory': 1,
-        'Global Strategy': 1, 'PE': 1
-      };
-
-      // Dados 2027 (dinâmico)
-      const dados2027 = {};
-      d.forEach(item => {
-        dados2027[item.area] = (dados2027[item.area] || 0) + item.vagas;
-      });
-
-      // Todas as áreas (unificadas)
-      const todasAreas = [...new Set([...Object.keys(dados2026), ...Object.keys(dados2027)])].sort();
-      const maxVal = Math.max(...Object.values(dados2026), ...Object.values(dados2027), 1);
-
-      // Renderiza gráfico
-      const chart = document.getElementById('chart-areas');
-      chart.innerHTML = todasAreas.map(area => {
-        const v2026 = dados2026[area] || 0;
-        const v2027 = dados2027[area] || 0;
-        const w2026 = (v2026 / maxVal) * 100;
-        const w2027 = (v2027 / maxVal) * 100;
-        return `
-          <div style="display:flex; align-items:center; gap:12px;">
-            <span style="width:140px; font-size:12px; font-weight:500; color:var(--color-spacial-grey); text-align:right; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${area}</span>
-            <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
-              <div style="display:flex; align-items:center; gap:6px;">
-                <div style="height:14px; width:${w2026}%; background:#a8c4e0; border-radius:3px; min-width:${v2026 ? '2px' : '0'}; transition:width 300ms ease;"></div>
-                <span style="font-size:11px; color:#666;">${v2026 || ''}</span>
-              </div>
-              <div style="display:flex; align-items:center; gap:6px;">
-                <div style="height:14px; width:${w2027}%; background:var(--color-bright-blue); border-radius:3px; min-width:${v2027 ? '2px' : '0'}; transition:width 300ms ease;"></div>
-                <span style="font-size:11px; color:#666;">${v2027 || ''}</span>
-              </div>
-            </div>
-          </div>`;
-      }).join('');
     }
 
     function updateFilterOptions(data) {
