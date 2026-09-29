@@ -3,12 +3,13 @@
  * do currículo, usando a API da Anthropic (Claude).
  *
  * Requer ANTHROPIC_API_KEY no .env. Sem a chave configurada (ou se qualquer
- * etapa falhar — PDF corrompido, texto vazio, API fora do ar), retorna ''
- * silenciosamente: gerar o resumo é um extra, nunca deve impedir o upload
- * do currículo ou o cadastro do candidato.
+ * etapa falhar — PDF corrompido, texto vazio, API fora do ar, ou até o
+ * próprio require('pdf-parse') falhando no ambiente de produção), retorna
+ * '' silenciosamente: gerar o resumo é um extra, nunca deve impedir o
+ * upload do currículo, o cadastro do candidato, nem o boot do servidor.
+ * O require é feito aqui dentro (lazy) e não no topo do arquivo, exatamente
+ * para que uma falha nele não derrube o app inteiro ao subir.
  */
-const pdfParse = require('pdf-parse');
-
 const MODEL = 'claude-haiku-4-5-20251001';
 const MAX_CHARS_CURRICULO = 12000;
 
@@ -16,6 +17,7 @@ async function resumirCurriculo(dadosBase64) {
   if (!process.env.ANTHROPIC_API_KEY) return '';
 
   try {
+    const pdfParse = require('pdf-parse');
     const buffer = Buffer.from(dadosBase64, 'base64');
     const { text } = await pdfParse(buffer);
     const texto = (text || '').trim().slice(0, MAX_CHARS_CURRICULO);
