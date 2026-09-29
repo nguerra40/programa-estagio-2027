@@ -4,8 +4,11 @@
 
 // Verifica se o usuário está autenticado
 function isAuthenticated(req, res, next) {
-  // Em modo de desenvolvimento (sem Entra ID configurado), permite acesso
-  if (!process.env.AZURE_CLIENT_ID || process.env.AZURE_CLIENT_ID === 'SEU_CLIENT_ID_AQUI') {
+  // Em modo de desenvolvimento (sem Entra ID configurado, ou sem a sessão do
+  // Passport realmente conectada em server.js), permite acesso simulado em
+  // vez de quebrar em req.isAuthenticated() — essa função só existe depois de
+  // passport.session() ser registrado no app.
+  if (!process.env.AZURE_CLIENT_ID || process.env.AZURE_CLIENT_ID === 'SEU_CLIENT_ID_AQUI' || typeof req.isAuthenticated !== 'function') {
     // Modo dev: simula usuário autenticado
     if (!req.user) {
       req.user = {

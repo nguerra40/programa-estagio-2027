@@ -90,4 +90,8 @@ async function remove(id) {
   return result.rows[0];
 }
 
-module.exports = { insert, findAll, findByEmail, update, updateField, stats, remove };
+function query(text, params) {
+  return pool.query(text, params);
+}
+
+module.exports = { insert, findAll, findByEmail, update, updateField, stats, remove, query };

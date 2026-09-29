@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Avaliação de Candidatos — Galapagos Capital</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+<style>
+  :root {
+    --color-deep-blue: #183C80; --color-bright-blue: #0071BB; --blue-dim: #EAF3FB;
+    --color-spacial-grey: #231F20; --color-light-grey: #525254; --text-light: #8A8A90;
+    --color-snow-white: #F7F7F8; --border: #E4E4E8; --green: #1E7A3D;
+    --radius-sm: 4px; --radius-md: 8px; --transition: 150ms ease-in-out;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; color: var(--color-spacial-grey); background: var(--color-snow-white); font-size: 15px; line-height: 1.5; }
+  header { background: var(--color-deep-blue); color: #fff; padding: 18px 20px; position: sticky; top: 0; z-index: 10; }
+  header h1 { font-size: 16px; font-weight: 700; }
+  header p { font-size: 12px; color: rgba(255,255,255,.75); margin-top: 2px; }
+  main { max-width: 720px; margin: 0 auto; padding: 20px 16px 80px; }
+  .search { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 14px; margin-bottom: 16px; font-family: inherit; }
+  .search:focus { outline: none; border-color: var(--color-bright-blue); }
+  .card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 18px; margin-bottom: 14px; }
+  .card.done { border-color: var(--green); }
+  .cand-head { display: flex; align-items: center; gap: 12px; }
+  .cand-photo { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+  .cand-photo--placeholder { display: flex; align-items: center; justify-content: center; background: var(--color-snow-white); color: var(--text-light); border: 1px solid var(--border); }
+  .cand-name { font-size: 16px; font-weight: 700; color: var(--color-deep-blue); }
+  .cand-meta { font-size: 13px; color: var(--color-light-grey); margin-top: 2px; }
+  .cand-hist { font-size: 12.5px; color: var(--color-light-grey); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .cand-hist b { color: var(--color-spacial-grey); }
+  .cand-links { display: flex; gap: 16px; margin-top: 8px; flex-wrap: wrap; }
+  .cand-links a { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--color-bright-blue); text-decoration: none; }
+  .cand-links a .material-icons-outlined { font-size: 16px; }
+  .nota-row { display: flex; gap: 6px; margin: 14px 0 10px; }
+  .nota-btn { flex: 1; padding: 12px 0; border: 1px solid var(--border); border-radius: var(--radius-md); background: #fff; font-size: 15px; font-weight: 700; cursor: pointer; color: var(--color-light-grey); transition: all var(--transition); font-family: inherit; }
+  .nota-btn:hover { border-color: var(--color-bright-blue); }
+  .nota-btn.active { background: var(--color-bright-blue); border-color: var(--color-bright-blue); color: #fff; }
+  .nota-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-light); margin-bottom: 12px; }
+  textarea { width: 100%; font-family: inherit; font-size: 13px; padding: 9px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); min-height: 56px; resize: vertical; }
+  textarea:focus { outline: none; border-color: var(--color-bright-blue); }
+  .save-status { font-size: 12px; margin-top: 8px; height: 16px; }
+  .save-status.ok { color: var(--green); }
+  .save-status.saving { color: var(--text-light); }
+  .save-status.error { color: #C0392B; }
+  .empty, .loading, .error { text-align: center; padding: 60px 20px; color: var(--text-light); font-size: 14px; }
+  .error { color: #C0392B; }
+  .progress { font-size: 12px; color: var(--color-light-grey); margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Avaliação de Candidatos — Programa de Estágio</h1>
+  <p id="headerSub">Carregando...</p>
+</header>
+<main>
+  <div id="content"><div class="loading">Carregando candidatos...</div></div>
+</main>
+
+<script>
+const token = window.location.pathname.split('/').filter(Boolean).pop();
+const API = '/api/dinamica/publico/' + token;
+let candidatos = [];
+
+async function carregar() {
+  try {
+    const res = await fetch(API);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Link inválido.');
+    candidatos = data.candidatos;
+    document.getElementById('headerSub').textContent =
+      (data.gestor.nome ? data.gestor.nome + ' · ' : '') + 'Turno ' + data.gestor.turno;
+    render();
+  } catch (e) {
+    document.getElementById('headerSub').textContent = 'Link inválido';
+    document.getElementById('content').innerHTML = '<div class="error">' + esc(e.message) + '<br><br>Peça um novo link para o time de People &amp; ESG.</div>';
+  }
+}
+
+function render(filtro) {
+  const box = document.getElementById('content');
+  if (!candidatos.length) {
+    box.innerHTML = '<div class="empty">Nenhum candidato cadastrado neste turno ainda.</div>';
+    return;
+  }
+  const termo = (filtro || '').toLowerCase();
+  const lista = termo
+    ? candidatos.filter(c => (c.nome + ' ' + (c.curso || '') + ' ' + (c.faculdade || '')).toLowerCase().includes(termo))
+    : candidatos;
+  const avaliados = candidatos.filter(c => c.minha_nota != null).length;
+
+  box.innerHTML =
+    '<input class="search" id="busca" placeholder="Buscar candidato por nome, curso ou faculdade..." value="' + esc(filtro || '') + '" />' +
+    '<div class="progress" id="progress">' + avaliados + ' de ' + candidatos.length + ' candidatos avaliados</div>' +
+    lista.map(c => cardHtml(c)).join('');
+
+  document.getElementById('busca').addEventListener('input', (e) => render(e.target.value));
+  document.getElementById('busca').focus();
+  if (filtro !== undefined) {
+    const el = document.getElementById('busca');
+    el.selectionStart = el.selectionEnd = el.value.length;
+  }
+}
+
+function cardHtml(c) {
+  const notas = [1, 2, 3, 4, 5];
+  return `
+    <div class="card ${c.minha_nota != null ? 'done' : ''}" id="card-${c.id}">
+      <div class="cand-head">
+        ${c.foto_arquivo_id
+          ? `<img class="cand-photo" src="/api/dinamica/publico/${token}/foto/${c.id}" alt="" />`
+          : `<div class="cand-photo cand-photo--placeholder"><span class="material-icons-outlined">person</span></div>`}
+        <div>
+          <div class="cand-name">${esc(c.nome)}</div>
+          <div class="cand-meta">${esc(c.curso || '')}${c.faculdade ? ' · ' + esc(c.faculdade) : ''}${c.formacao ? ' · Formação: ' + esc(c.formacao) : ''}</div>
+        </div>
+      </div>
+      ${c.historico ? `<div class="cand-hist"><b>Histórico:</b> ${esc(c.historico)}</div>` : ''}
+      <div class="cand-links">
+        ${c.cv_arquivo_id ? `<a href="/api/dinamica/publico/${token}/cv/${c.id}" target="_blank"><span class="material-icons-outlined">description</span> Ver currículo</a>` : ''}
+        ${c.linkedin_url ? `<a href="${esc(c.linkedin_url)}" target="_blank" rel="noopener"><span class="material-icons-outlined">person</span> Ver LinkedIn</a>` : ''}
+      </div>
+      <div class="nota-row">
+        ${notas.map(n => `<button type="button" class="nota-btn ${c.minha_nota === n ? 'active' : ''}" onclick="votar(${c.id},${n})">${n}</button>`).join('')}
+      </div>
+      <div class="nota-labels"><span>1 (Baixo)</span><span>5 (Alto)</span></div>
+      <textarea placeholder="Comentário (opcional)" onchange="comentar(${c.id}, this.value)">${esc(c.meu_comentario || '')}</textarea>
+      <div class="save-status" id="status-${c.id}"></div>
+    </div>`;
+}
+
+async function votar(candId, nota) {
+  const c = candidatos.find(x => String(x.id) === String(candId));
+  c.minha_nota = nota;
+  document.querySelectorAll('#card-' + candId + ' .nota-btn').forEach((b, i) => b.classList.toggle('active', i + 1 === nota));
+  document.getElementById('card-' + candId).classList.add('done');
+  atualizarProgresso();
+  await salvar(candId);
+}
+
+function comentar(candId, texto) {
+  const c = candidatos.find(x => String(x.id) === String(candId));
+  c.meu_comentario = texto;
+  if (c.minha_nota == null) return; // só salva comentário se já tiver nota
+  salvar(candId);
+}
+
+function atualizarProgresso() {
+  const el = document.getElementById('progress');
+  if (!el) return;
+  const avaliados = candidatos.filter(c => c.minha_nota != null).length;
+  el.textContent = avaliados + ' de ' + candidatos.length + ' candidatos avaliados';
+}
+
+async function salvar(candId) {
+  const c = candidatos.find(x => String(x.id) === String(candId));
+  const statusEl = document.getElementById('status-' + candId);
+  statusEl.textContent = 'Salvando...';
+  statusEl.className = 'save-status saving';
+  try {
+    const res = await fetch(API + '/notas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ candidato_id: candId, nota: c.minha_nota, comentario: c.meu_comentario || '' }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Falha ao salvar.');
+    statusEl.textContent = 'Salvo';
+    statusEl.className = 'save-status ok';
+  } catch (e) {
+    statusEl.textContent = 'Erro ao salvar: ' + e.message;
+    statusEl.className = 'save-status error';
+  }
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+}
+
+carregar();
+</script>
+</body>
+</html>

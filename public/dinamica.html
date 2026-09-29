@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dinâmica de Estágio — Galapagos Capital</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Hind:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+<style>
+  :root {
+    --color-deep-blue: #183C80;
+    --color-bright-blue: #0071BB;
+    --color-spacial-grey: #231F20;
+    --color-light-grey: #525254;
+    --color-snow-white: #F7F7F8;
+    --font-primary: 'Gadugi', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --grid-base: 8px;
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --transition: 150ms ease-in-out;
+    --border: #E4E4E8;
+    --green: #1E7A3D;
+    --red: #C0392B;
+    --gold: #9A6A00;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-body); color: var(--color-spacial-grey); background: var(--color-snow-white); font-size: 14px; line-height: 1.5; }
+  .app { display: flex; min-height: 100vh; }
+  .side { width: 240px; background: var(--color-deep-blue); color: #fff; flex-shrink: 0; padding: 24px 16px; }
+  .side h1 { font-family: var(--font-primary); font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .side p { font-size: 12px; color: rgba(255,255,255,.7); margin-bottom: 28px; }
+  .side a.back { color: rgba(255,255,255,.8); font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 24px; }
+  .side a.back:hover { color: #fff; }
+  .side-nav button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: none; border: none; color: rgba(255,255,255,.82); font-family: inherit; font-size: 14px; font-weight: 500; padding: 10px 12px; border-radius: var(--radius-sm); cursor: pointer; transition: background var(--transition); }
+  .side-nav button:hover { background: rgba(255,255,255,.08); }
+  .side-nav button.active { background: rgba(255,255,255,.16); color: #fff; }
+  .main { flex: 1; padding: 32px 40px; max-width: 1200px; }
+  h2 { font-family: var(--font-primary); font-size: 22px; font-weight: 700; color: var(--color-deep-blue); margin-bottom: 4px; }
+  .sub { color: var(--color-light-grey); font-size: 13px; margin-bottom: 24px; }
+  .view { display: none; }
+  .view.active { display: block; }
+  .card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 20px; margin-bottom: 20px; }
+  .card h3 { font-size: 15px; margin-bottom: 16px; }
+  .grid-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+  .grid-form.wide-2 { grid-template-columns: repeat(2, 1fr); }
+  label { display: block; font-size: 12px; color: var(--color-light-grey); margin-bottom: 4px; font-weight: 500; }
+  input, select, textarea { width: 100%; font-family: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--color-spacial-grey); background: #fff; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--color-bright-blue); }
+  textarea { resize: vertical; min-height: 56px; }
+  .field-full { grid-column: 1 / -1; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: #fff; color: var(--color-spacial-grey); font-family: inherit; transition: background var(--transition); }
+  .btn:hover { background: var(--color-snow-white); }
+  .btn.primary { background: var(--color-bright-blue); border-color: var(--color-bright-blue); color: #fff; }
+  .btn.primary:hover { background: var(--color-deep-blue); }
+  .btn.danger { color: var(--red); }
+  .btn.small { padding: 5px 10px; font-size: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; background: var(--color-snow-white); color: var(--color-light-grey); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  a.linkedin-link { color: var(--color-bright-blue); text-decoration: none; font-size: 12px; }
+  a.linkedin-link:hover { text-decoration: underline; }
+  .muted { color: #8A8A90; font-size: 12px; }
+  .toolbar { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; }
+  .toolbar select, .toolbar input { width: auto; }
+  .link-box { display: flex; align-items: center; gap: 8px; }
+  .link-box input { font-family: 'Courier New', monospace; font-size: 11px; background: var(--color-snow-white); }
+  .media-pill { font-family: 'Courier New', monospace; font-weight: 700; }
+  .media-pill.alta { color: var(--green); }
+  .media-pill.media { color: var(--gold); }
+  .media-pill.baixa { color: var(--red); }
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--color-deep-blue); color: #fff; padding: 12px 18px; border-radius: var(--radius-sm); font-size: 13px; opacity: 0; transform: translateY(8px); transition: all var(--transition); pointer-events: none; z-index: 999; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .empty { color: #8A8A90; font-size: 13px; padding: 24px; text-align: center; }
+  .comments-list { margin-top: 4px; }
+  .comments-list div { font-size: 12px; color: var(--color-light-grey); margin-bottom: 2px; }
+  .comments-list b { color: var(--color-spacial-grey); }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <a class="back" href="/">&#8592; Voltar ao painel</a>
+    <h1>Dinâmica de Estágio</h1>
+    <p>Programa de Estágio 2027</p>
+    <nav class="side-nav">
+      <button type="button" class="active" data-view="candidatos" onclick="showView('candidatos', this)">Candidatos</button>
+      <button type="button" data-view="gestores" onclick="showView('gestores', this)">Gestores &amp; links</button>
+      <button type="button" data-view="resultados" onclick="showView('resultados', this)">Resultados</button>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <!-- CANDIDATOS -->
+    <section class="view active" id="view-candidatos">
+      <h2>Candidatos</h2>
+      <p class="sub">Cadastre quem vai participar da dinâmica. Cada candidato entra em um turno e só aparece para os gestores daquele turno.</p>
+
+      <div class="card">
+        <h3 id="candFormTitle">Novo candidato</h3>
+        <form id="candForm" onsubmit="return salvarCandidato(event)">
+          <input type="hidden" id="c_id" />
+          <div class="grid-form">
+            <div class="field-full"><label>Nome</label><input id="c_nome" required /></div>
+          </div>
+          <div class="grid-form">
+            <div><label>Curso</label><input id="c_curso" /></div>
+            <div><label>Faculdade</label><input id="c_faculdade" /></div>
+            <div><label>Previsão de formação</label><input id="c_formacao" placeholder="Ex.: Dez/2027" /></div>
+          </div>
+          <div class="grid-form">
+            <div><label>Telefone</label><input id="c_telefone" /></div>
+            <div><label>E-mail</label><input id="c_email" type="email" /></div>
+            <div><label>LinkedIn</label><input id="c_linkedin" type="url" placeholder="https://linkedin.com/in/..." /></div>
+          </div>
+          <div class="grid-form">
+            <div><label>Turno da dinâmica</label><input id="c_turno" placeholder="Ex.: 09h-11h" value="09h-11h" /></div>
+            <div><label>Data da dinâmica</label><input id="c_data" type="date" /></div>
+          </div>
+          <div class="grid-form wide-2">
+            <div><label>Currículo (PDF)</label><input id="c_cv" type="file" accept="application/pdf" /></div>
+            <div><label>Foto (opcional)</label><input id="c_foto" type="file" accept="image/*" /></div>
+          </div>
+          <div class="grid-form">
+            <div class="field-full"><label>Histórico profissional</label><textarea id="c_historico" placeholder="Estágios anteriores, projetos, monitorias..."></textarea></div>
+          </div>
+          <button class="btn primary" type="submit">Salvar candidato</button>
+          <button class="btn" type="button" onclick="limparFormCandidato()">Cancelar edição</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3>Importar currículos em lote</h3>
+        <p class="muted" style="margin-bottom:12px">Selecione vários PDFs de uma vez — um candidato é criado para cada arquivo, já com o currículo anexado. O nome inicial é tirado do nome do arquivo; ajuste nome/curso/faculdade/LinkedIn depois na lista abaixo.</p>
+        <form id="bulkForm" onsubmit="return importarLote(event)">
+          <div class="grid-form">
+            <div><label>Turno (aplica a todos)</label><input id="b_turno" placeholder="Ex.: 09h-11h" value="09h-11h" /></div>
+            <div><label>Data da dinâmica</label><input id="b_data" type="date" /></div>
+            <div><label>Currículos (PDF, vários)</label><input id="b_files" type="file" accept="application/pdf" multiple required /></div>
+          </div>
+          <button class="btn primary" type="submit">Cadastrar todos</button>
+          <span class="muted" id="bulkStatus" style="margin-left:10px"></span>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="toolbar">
+          <h3 style="margin:0">Lista de candidatos</h3>
+          <span class="muted" id="candCount"></span>
+          <input id="filtroTurno" placeholder="Filtrar por turno..." oninput="renderCandidatos()" style="margin-left:auto;max-width:220px" />
+        </div>
+        <div id="candList"></div>
+      </div>
+    </section>
+
+    <!-- GESTORES -->
+    <section class="view" id="view-gestores">
+      <h2>Gestores &amp; links</h2>
+      <p class="sub">Cadastre os gestores que vão participar da dinâmica de cada turno. O sistema gera um link pessoal, sem senha — envie por e-mail ou WhatsApp para o gestor avaliar direto no celular ou notebook.</p>
+
+      <div class="card">
+        <h3>Novo gestor</h3>
+        <form onsubmit="return salvarGestor(event)">
+          <div class="grid-form">
+            <div><label>Nome</label><input id="g_nome" required /></div>
+            <div><label>E-mail (opcional)</label><input id="g_email" type="email" /></div>
+            <div><label>Turno que ele avalia</label><input id="g_turno" placeholder="Ex.: 09h-11h" value="09h-11h" /></div>
+          </div>
+          <div class="grid-form wide-2">
+            <div><label>Data da dinâmica</label><input id="g_data" type="date" /></div>
+          </div>
+          <button class="btn primary" type="submit">Gerar link</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3>Gestores cadastrados</h3>
+        <div id="gestList"></div>
+      </div>
+    </section>
+
+    <!-- RESULTADOS -->
+    <section class="view" id="view-resultados">
+      <h2>Resultados</h2>
+      <p class="sub">Nota média calculada automaticamente a partir das avaliações de todos os gestores que já votaram em cada candidato.</p>
+      <div class="card">
+        <div class="toolbar">
+          <button class="btn small" onclick="carregarResultados()"><span class="material-icons-outlined" style="font-size:16px">refresh</span> Atualizar</button>
+        </div>
+        <div id="resultList"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/dinamica';
+let candidatos = [];
+let gestores = [];
+
+function showView(name, el) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelectorAll('.side-nav button').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  if (name === 'resultados') carregarResultados();
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+async function api(path, opts) {
+  const res = await fetch(API + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Erro na requisição.');
+  return data;
+}
+
+async function uploadArquivo(body) {
+  const res = await fetch('/api/arquivos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Erro ao enviar arquivo.');
+  return data;
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+}
+
+// ---------- Candidatos ----------
+
+async function carregarCandidatos() {
+  candidatos = await api('/candidatos');
+  renderCandidatos();
+}
+
+function renderCandidatos() {
+  const filtro = (document.getElementById('filtroTurno').value || '').toLowerCase();
+  const lista = filtro ? candidatos.filter(c => (c.turno || '').toLowerCase().includes(filtro)) : candidatos;
+  document.getElementById('candCount').textContent = lista.length + ' candidato(s)';
+
+  const box = document.getElementById('candList');
+  if (!lista.length) {
+    box.innerHTML = '<div class="empty">Nenhum candidato cadastrado ainda.</div>';
+    return;
+  }
+
+  box.innerHTML = '<table><thead><tr>' +
+    '<th>Foto</th><th>Nome</th><th>Curso</th><th>Turno</th><th>Data</th><th>LinkedIn</th><th>CV</th><th></th>' +
+    '</tr></thead><tbody>' +
+    lista.map(c => `
+      <tr>
+        <td>${c.foto_arquivo_id
+          ? `<img src="/api/arquivos/${c.foto_arquivo_id}" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;display:block;">`
+          : `<div style="width:36px;height:36px;border-radius:50%;background:var(--color-snow-white);border:1px solid var(--border);"></div>`}</td>
+        <td>${esc(c.nome)}</td>
+        <td>${esc(c.curso || '')}${c.faculdade ? ' · ' + esc(c.faculdade) : ''}</td>
+        <td>${esc(c.turno)}</td>
+        <td>${c.data_dinamica ? new Date(c.data_dinamica).toLocaleDateString('pt-BR') : ''}</td>
+        <td>${c.linkedin_url ? `<a class="linkedin-link" href="${esc(c.linkedin_url)}" target="_blank" rel="noopener">Ver perfil</a>` : '<span class="muted">—</span>'}</td>
+        <td>${c.cv_arquivo_id ? `<a class="linkedin-link" href="/api/arquivos/${c.cv_arquivo_id}" target="_blank" rel="noopener">Ver CV</a>` : '<span class="muted">—</span>'}</td>
+        <td>
+          <button class="btn small" type="button" onclick="editarCandidato(${c.id})">Editar</button>
+          <button class="btn small danger" type="button" onclick="excluirCandidato(${c.id})">Excluir</button>
+        </td>
+      </tr>`).join('') +
+    '</tbody></table>';
+}
+
+function limparFormCandidato() {
+  document.getElementById('candForm').reset();
+  document.getElementById('c_id').value = '';
+  document.getElementById('c_turno').value = '09h-11h';
+  document.getElementById('candFormTitle').textContent = 'Novo candidato';
+}
+
+function editarCandidato(id) {
+  const c = candidatos.find(x => String(x.id) === String(id));
+  if (!c) return;
+  document.getElementById('c_id').value = c.id;
+  document.getElementById('c_nome').value = c.nome || '';
+  document.getElementById('c_curso').value = c.curso || '';
+  document.getElementById('c_faculdade').value = c.faculdade || '';
+  document.getElementById('c_formacao').value = c.formacao || '';
+  document.getElementById('c_telefone').value = c.telefone || '';
+  document.getElementById('c_email').value = c.email || '';
+  document.getElementById('c_linkedin').value = c.linkedin_url || '';
+  document.getElementById('c_turno').value = c.turno || '09h-11h';
+  document.getElementById('c_data').value = c.data_dinamica ? String(c.data_dinamica).slice(0, 10) : '';
+  document.getElementById('c_historico').value = c.historico || '';
+  document.getElementById('candFormTitle').textContent = 'Editar candidato';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function salvarCandidato(e) {
+  e.preventDefault();
+  const id = document.getElementById('c_id').value;
+  const payload = {
+    nome: document.getElementById('c_nome').value.trim(),
+    curso: document.getElementById('c_curso').value.trim(),
+    faculdade: document.getElementById('c_faculdade').value.trim(),
+    formacao: document.getElementById('c_formacao').value.trim(),
+    telefone: document.getElementById('c_telefone').value.trim(),
+    email: document.getElementById('c_email').value.trim(),
+    linkedin_url: document.getElementById('c_linkedin').value.trim(),
+    turno: document.getElementById('c_turno').value.trim() || '09h-11h',
+    data_dinamica: document.getElementById('c_data').value,
+    historico: document.getElementById('c_historico').value.trim(),
+  };
+
+  try {
+    const cvFile = document.getElementById('c_cv').files[0];
+    if (cvFile) {
+      const dados = await fileToBase64(cvFile);
+      const arquivo = await uploadArquivo({ tipo: 'cv', nome: cvFile.name, mime: cvFile.type, dados });
+      payload.cv_arquivo_id = arquivo.id;
+    }
+
+    const fotoFile = document.getElementById('c_foto').files[0];
+    if (fotoFile) {
+      const dados = await fileToBase64(fotoFile);
+      const arquivo = await uploadArquivo({ tipo: 'foto', nome: fotoFile.name, mime: fotoFile.type, dados });
+      payload.foto_arquivo_id = arquivo.id;
+    }
+
+    if (id) {
+      await api('/candidatos/' + id, { method: 'PUT', body: JSON.stringify(payload) });
+      toast('Candidato atualizado.');
+    } else {
+      await api('/candidatos', { method: 'POST', body: JSON.stringify(payload) });
+      toast('Candidato cadastrado.');
+    }
+    limparFormCandidato();
+    await carregarCandidatos();
+  } catch (e) {
+    toast('Erro: ' + e.message);
+  }
+  return false;
+}
+
+async function excluirCandidato(id) {
+  if (!confirm('Excluir este candidato? As notas dele também serão apagadas.')) return;
+  try {
+    await api('/candidatos/' + id, { method: 'DELETE' });
+    toast('Candidato excluído.');
+    await carregarCandidatos();
+  } catch (e) {
+    toast('Erro: ' + e.message);
+  }
+}
+
+async function importarLote(e) {
+  e.preventDefault();
+  const turno = document.getElementById('b_turno').value.trim() || '09h-11h';
+  const data_dinamica = document.getElementById('b_data').value;
+  const files = Array.from(document.getElementById('b_files').files);
+  const statusEl = document.getElementById('bulkStatus');
+  if (!files.length) return false;
+
+  statusEl.textContent = 'Enviando ' + files.length + ' currículo(s)...';
+  try {
+    const arquivos = await Promise.all(files.map(async f => ({
+      nome: f.name, mime: f.type, dados: await fileToBase64(f),
+    })));
+    const resultado = await api('/candidatos/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ turno, data_dinamica, arquivos }),
+    });
+    statusEl.textContent = resultado.criados + ' candidato(s) cadastrado(s).';
+    document.getElementById('bulkForm').reset();
+    await carregarCandidatos();
+  } catch (e) {
+    statusEl.textContent = 'Erro: ' + e.message;
+  }
+  return false;
+}
+
+// ---------- Gestores ----------
+
+async function carregarGestores() {
+  gestores = await api('/gestores');
+  renderGestores();
+}
+
+function renderGestores() {
+  const box = document.getElementById('gestList');
+  if (!gestores.length) {
+    box.innerHTML = '<div class="empty">Nenhum gestor cadastrado ainda.</div>';
+    return;
+  }
+  box.innerHTML = '<table><thead><tr><th>Nome</th><th>Turno</th><th>Link pessoal</th><th></th></tr></thead><tbody>' +
+    gestores.map(g => {
+      const link = window.location.origin + '/dinamica/' + g.token;
+      return `<tr>
+        <td>${esc(g.nome)}${g.email ? '<br><span class="muted">' + esc(g.email) + '</span>' : ''}</td>
+        <td>${esc(g.turno)}</td>
+        <td class="link-box">
+          <input readonly value="${esc(link)}" onclick="this.select()" />
+          <button class="btn small" type="button" onclick="copiarLink('${link}')">Copiar</button>
+        </td>
+        <td><button class="btn small danger" type="button" onclick="excluirGestor(${g.id})">Excluir</button></td>
+      </tr>`;
+    }).join('') + '</tbody></table>';
+}
+
+async function copiarLink(link) {
+  try {
+    await navigator.clipboard.writeText(link);
+    toast('Link copiado.');
+  } catch (e) {
+    toast('Não foi possível copiar automaticamente — selecione e copie manualmente.');
+  }
+}
+
+async function salvarGestor(e) {
+  e.preventDefault();
+  const payload = {
+    nome: document.getElementById('g_nome').value.trim(),
+    email: document.getElementById('g_email').value.trim(),
+    turno: document.getElementById('g_turno').value.trim() || '09h-11h',
+    data_dinamica: document.getElementById('g_data').value,
+  };
+  try {
+    await api('/gestores', { method: 'POST', body: JSON.stringify(payload) });
+    e.target.reset();
+    document.getElementById('g_turno').value = '09h-11h';
+    toast('Gestor cadastrado — link gerado.');
+    await carregarGestores();
+  } catch (e) {
+    toast('Erro: ' + e.message);
+  }
+  return false;
+}
+
+async function excluirGestor(id) {
+  if (!confirm('Excluir este gestor? O link dele deixará de funcionar.')) return;
+  try {
+    await api('/gestores/' + id, { method: 'DELETE' });
+    toast('Gestor excluído.');
+    await carregarGestores();
+  } catch (e) {
+    toast('Erro: ' + e.message);
+  }
+}
+
+// ---------- Resultados ----------
+
+function faixaMedia(media) {
+  if (media == null) return '';
+  if (media >= 4) return 'alta';
+  if (media >= 2.5) return 'media';
+  return 'baixa';
+}
+
+async function carregarResultados() {
+  const dados = await api('/resultados');
+  const box = document.getElementById('resultList');
+  if (!dados.length) {
+    box.innerHTML = '<div class="empty">Nenhum candidato avaliado ainda.</div>';
+    return;
+  }
+  box.innerHTML = '<table><thead><tr><th>Candidato</th><th>Turno</th><th>Média</th><th>Avaliações</th><th>LinkedIn</th></tr></thead><tbody>' +
+    dados.map(c => `
+      <tr>
+        <td>${esc(c.nome)}</td>
+        <td>${esc(c.turno)}</td>
+        <td><span class="media-pill ${faixaMedia(c.media)}">${c.media != null ? c.media : '—'}</span></td>
+        <td>
+          ${c.qtd_avaliacoes} nota(s)
+          <div class="comments-list">
+            ${(c.avaliacoes || []).map(a => `<div><b>${esc(a.gestor)} (${a.nota}):</b> ${esc(a.comentario || '')}</div>`).join('')}
+          </div>
+        </td>
+        <td>${c.linkedin_url ? `<a class="linkedin-link" href="${esc(c.linkedin_url)}" target="_blank" rel="noopener">Ver perfil</a>` : '<span class="muted">—</span>'}</td>
+      </tr>`).join('') +
+    '</tbody></table>';
+}
+
+document.getElementById('c_turno').value = '09h-11h';
+carregarCandidatos();
+carregarGestores();
+</script>
+</body>
+</html>
