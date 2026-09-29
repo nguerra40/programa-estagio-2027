@@ -377,26 +377,287 @@
 
     /* Views toggle */
     .view-gestor,
-    .view-admin {
+    .view-admin,
+    .view-avaliacao,
+    .view-candidatos-admin {
       display: none;
     }
 
     .view-gestor.active,
-    .view-admin.active {
+    .view-admin.active,
+    .view-avaliacao.active,
+    .view-candidatos-admin.active {
       display: block;
     }
 
-    .view-gestor.active {
+    .view-gestor.active,
+    .view-avaliacao.active {
       background: linear-gradient(180deg, #1a5da6 0%, #0d4a8a 100%);
       min-height: calc(100vh - 82px);
     }
 
-    .view-gestor .section-title {
+    .view-gestor .section-title,
+    .view-avaliacao .section-title {
       color: #FFFFFF;
     }
 
     .view-gestor .form-group label {
       color: rgba(255,255,255,0.85);
+    }
+
+    /* Botão sólido para uso em fundo claro (painéis admin) */
+    .btn-solid {
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px 24px;
+      background-color: var(--color-bright-blue);
+      color: #FFFFFF;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-solid:hover {
+      background-color: var(--color-deep-blue);
+    }
+
+    /* Toggle "Liberado" (lista de candidatos do admin) */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-switch__slider {
+      position: absolute;
+      inset: 0;
+      background: #D0D0D0;
+      border-radius: 22px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .toggle-switch__slider::before {
+      content: "";
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      left: 3px;
+      top: 3px;
+      background: #FFFFFF;
+      border-radius: 50%;
+      transition: var(--transition);
+    }
+
+    .toggle-switch input:checked + .toggle-switch__slider {
+      background: var(--color-bright-blue);
+    }
+
+    .toggle-switch input:checked + .toggle-switch__slider::before {
+      transform: translateX(18px);
+    }
+
+    /* Toast simples de confirmação */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--color-deep-blue);
+      color: #FFFFFF;
+      padding: 12px 20px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: var(--transition);
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Card de candidato (view Avaliação) */
+    .cand-card {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: var(--radius-md);
+      color: #FFFFFF;
+      overflow: hidden;
+    }
+
+    .cand-card__header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: none;
+      border: none;
+      color: #FFFFFF;
+      cursor: pointer;
+      font-family: inherit;
+      text-align: left;
+    }
+
+    .cand-card__foto {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .cand-card__foto--placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.15);
+    }
+
+    .cand-card__nome {
+      font-weight: 600;
+      font-size: 15px;
+      flex: 1;
+    }
+
+    .cand-card__badge {
+      font-size: 12px;
+      background: rgba(255,255,255,0.2);
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    .cand-card__chevron {
+      transition: var(--transition);
+    }
+
+    .cand-card.open .cand-card__chevron {
+      transform: rotate(180deg);
+    }
+
+    .cand-card__body {
+      display: none;
+      padding: 0 16px 16px;
+    }
+
+    .cand-card.open .cand-card__body {
+      display: block;
+    }
+
+    .cand-card__hist {
+      font-size: 13px;
+      opacity: 0.85;
+      margin-bottom: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .cand-card__links {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .cand-card__links a {
+      color: #FFFFFF;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      opacity: 0.9;
+      text-decoration: none;
+    }
+
+    .cand-card__links a:hover {
+      text-decoration: underline;
+    }
+
+    .cand-nota-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .cand-nota-btn {
+      flex: 1;
+      padding: 10px 0;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.08);
+      color: #FFFFFF;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: inherit;
+    }
+
+    .cand-nota-btn.active {
+      background: #FFFFFF;
+      color: var(--color-deep-blue);
+      border-color: #FFFFFF;
+    }
+
+    .cand-nota-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      opacity: 0.6;
+      margin-bottom: 12px;
+    }
+
+    .cand-comentario {
+      width: 100%;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 9px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.08);
+      color: #FFFFFF;
+      min-height: 56px;
+      resize: vertical;
+    }
+
+    .cand-comentario::placeholder {
+      color: rgba(255,255,255,0.5);
+    }
+
+    .cand-save-status {
+      font-size: 12px;
+      margin-top: 6px;
+      height: 16px;
+      opacity: 0.9;
+    }
+
+    /* Lista de candidatos (view Candidatos admin) */
+    .admin-cand-foto {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .admin-cand-foto--placeholder {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--color-snow-white);
+      border: 1px solid #E0E0E0;
     }
 
     /* Minhas solicitações cards */
@@ -691,18 +952,14 @@
   <header class="header" id="main-header" style="display:none;">
     <img src="logo_galapagos.png" alt="Galapagos Capital" class="header__logo">
     <nav class="header__nav" id="header-nav" style="display:none;">
-      <button class="header__btn header__btn--active" id="btn-gestor" onclick="switchView('gestor')">
-        <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">edit_note</span>
-        Gestor
+      <button class="header__btn header__btn--active" id="btn-avaliacao" onclick="switchView('avaliacao')">
+        <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">fact_check</span>
+        Avaliação
       </button>
-      <button class="header__btn" id="btn-admin" onclick="switchView('admin')">
+      <button class="header__btn" id="btn-candidatos-admin" onclick="switchView('candidatos-admin')" style="display:none;">
         <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">admin_panel_settings</span>
-        Admin
+        Candidatos
       </button>
-      <a class="header__btn" href="/dinamica.html" style="text-decoration:none;display:inline-flex;align-items:center;">
-        <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">groups</span>
-        Dinâmica
-      </a>
     </nav>
     <button class="header__btn" onclick="switchUser()" id="btn-logout">
       <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">logout</span>
@@ -892,6 +1149,129 @@
     </div>
   </section>
 
+  <!-- Avaliação View (todo colaborador logado) -->
+  <section class="view-avaliacao" id="view-avaliacao">
+    <div class="container">
+      <div class="form-banner">
+        <img src="logo_programadeestagio.png" alt="Programa de Estágio 2027" class="form-banner__img">
+      </div>
+      <h2 class="section-title" style="margin-bottom:24px;">Avaliação de Candidatos</h2>
+      <div id="avaliacao-lista" style="display:flex; flex-direction:column; gap:12px;"></div>
+      <p id="avaliacao-vazio" style="font-size:14px; color:rgba(255,255,255,0.6); display:none;">Nenhum candidato liberado para avaliação no momento.</p>
+    </div>
+  </section>
+
+  <!-- Candidatos (Admin) View -->
+  <section class="view-candidatos-admin" id="view-candidatos-admin">
+    <div class="container container--wide">
+      <h2 class="section-title">Gerenciar Candidatos</h2>
+
+      <div class="stats-bar">
+        <div class="stat-item">
+          <span class="stat-item__label">Total de Candidatos</span>
+          <span class="stat-item__value" id="cand-stat-total">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-item__label">Liberados para Avaliação</span>
+          <span class="stat-item__value" id="cand-stat-liberados">0</span>
+        </div>
+      </div>
+
+      <div class="table-wrapper" style="padding:24px; margin-bottom:32px;">
+        <h3 id="cand-form-title" style="font-family:var(--font-primary); color:var(--color-deep-blue); font-size:16px; margin-bottom:16px;">Novo candidato</h3>
+        <form id="cand-form" onsubmit="return salvarCandidatoAdmin(event)">
+          <input type="hidden" id="cand-id">
+          <div class="form-group">
+            <label>Nome</label>
+            <input type="text" id="cand-nome" required>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+            <div class="form-group"><label>Curso</label><input type="text" id="cand-curso"></div>
+            <div class="form-group"><label>Faculdade</label><input type="text" id="cand-faculdade"></div>
+            <div class="form-group"><label>Previsão de formação</label><input type="text" id="cand-formacao" placeholder="Ex.: Dez/2027"></div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+            <div class="form-group"><label>Telefone</label><input type="text" id="cand-telefone"></div>
+            <div class="form-group"><label>E-mail</label><input type="email" id="cand-email"></div>
+            <div class="form-group"><label>LinkedIn</label><input type="url" id="cand-linkedin" placeholder="https://linkedin.com/in/..."></div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px;">
+            <div class="form-group"><label>Turno da dinâmica</label><input type="text" id="cand-turno" value="09h-11h"></div>
+            <div class="form-group"><label>Data da dinâmica</label><input type="date" id="cand-data"></div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px;">
+            <div class="form-group"><label>Currículo (PDF)</label><input type="file" id="cand-cv" accept="application/pdf"></div>
+            <div class="form-group"><label>Foto (opcional)</label><input type="file" id="cand-foto" accept="image/*"></div>
+          </div>
+          <div class="form-group">
+            <label>Histórico profissional</label>
+            <textarea id="cand-historico" placeholder="Estágios anteriores, projetos, monitorias..."></textarea>
+          </div>
+          <div class="form-group" style="display:flex; align-items:center; gap:10px;">
+            <label class="toggle-switch">
+              <input type="checkbox" id="cand-liberado">
+              <span class="toggle-switch__slider"></span>
+            </label>
+            <span style="font-size:14px; color:var(--color-spacial-grey);">Liberado para avaliação</span>
+          </div>
+          <button type="submit" class="btn-solid">Salvar candidato</button>
+          <button type="button" class="btn-secondary" onclick="limparFormCandidatoAdmin()">Cancelar edição</button>
+        </form>
+      </div>
+
+      <div class="table-wrapper" style="padding:24px; margin-bottom:32px;">
+        <h3 style="font-family:var(--font-primary); color:var(--color-deep-blue); font-size:16px; margin-bottom:8px;">Importar currículos em lote</h3>
+        <p style="font-size:13px; color:var(--color-light-grey); margin-bottom:16px;">Selecione vários PDFs de uma vez — um candidato é criado para cada arquivo, já com o currículo anexado.</p>
+        <form id="cand-bulk-form" onsubmit="return importarLoteAdmin(event)">
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; align-items:end;">
+            <div class="form-group" style="margin-bottom:0;"><label>Turno (aplica a todos)</label><input type="text" id="bulk-turno" value="09h-11h"></div>
+            <div class="form-group" style="margin-bottom:0;"><label>Data da dinâmica</label><input type="date" id="bulk-data"></div>
+            <div class="form-group" style="margin-bottom:0;"><label>Currículos (PDF, vários)</label><input type="file" id="bulk-files" accept="application/pdf" multiple required></div>
+          </div>
+          <button type="submit" class="btn-solid" style="margin-top:16px;">Cadastrar todos</button>
+          <span id="bulk-status" style="margin-left:12px; font-size:13px; color:var(--color-light-grey);"></span>
+        </form>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Foto</th><th>Nome</th><th>Curso</th><th>Turno</th><th>LinkedIn</th><th>CV</th><th>Liberado</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="cand-table-body"></tbody>
+        </table>
+        <div class="empty-state" id="cand-empty-state" style="display:none;">
+          <span class="material-icons-outlined">inbox</span>
+          <p>Nenhum candidato cadastrado ainda.</p>
+        </div>
+      </div>
+
+      <div class="table-wrapper" style="margin-top:32px; padding:24px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+          <h3 style="font-family:var(--font-primary); color:var(--color-deep-blue); font-size:16px; margin:0;">Resultados</h3>
+          <button class="btn-secondary" onclick="carregarResultadosAdmin()">
+            <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">refresh</span>
+            Atualizar
+          </button>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Candidato</th><th>Turno</th><th>Média</th><th>Avaliações</th></tr>
+          </thead>
+          <tbody id="resultados-table-body"></tbody>
+        </table>
+        <div class="empty-state" id="resultados-empty-state" style="display:none;">
+          <span class="material-icons-outlined">inbox</span>
+          <p>Nenhum candidato avaliado ainda.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="toast" id="toast"></div>
+
   <script>
     // Admin emails
     const ADMIN_EMAILS = [
@@ -901,6 +1281,7 @@
     ];
 
     let currentUser = null;
+    let currentUserNome = null;
     let currentSortField = null;
     let currentSortOrder = 'asc';
 
@@ -950,19 +1331,29 @@
       }
 
       currentUser = email;
+      currentUserNome = nomeFromEmail(email);
       localStorage.setItem('estagio_user', email);
 
       document.getElementById('login-overlay').style.display = 'none';
       document.getElementById('main-header').style.display = 'flex';
-      document.getElementById('view-gestor').classList.add('active');
+      // Qualquer login válido já vê a aba de Avaliação — não é mais exclusiva de admin.
+      document.getElementById('header-nav').style.display = 'flex';
+      switchView('avaliacao');
 
-      // Só libera admin se e-mail está na lista E usou o código secreto
+      // Só libera a aba de gerenciar candidatos se e-mail está na lista E usou o código secreto
       if (ADMIN_EMAILS.includes(email) && hasAdminCode) {
         localStorage.setItem('estagio_admin', 'true');
-        document.getElementById('header-nav').style.display = 'flex';
+        document.getElementById('btn-candidatos-admin').style.display = 'inline-flex';
       }
+    }
 
-      loadMinhasSolicitacoes();
+    // Deriva um nome de exibição a partir do e-mail (não há SSO real ainda,
+    // então não temos o nome completo do colaborador — ver auth/passport-config.js).
+    function nomeFromEmail(email) {
+      return (email.split('@')[0] || email)
+        .split('.')
+        .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+        .join(' ');
     }
 
     // Switch user — logout e volta para tela de login
@@ -970,11 +1361,15 @@
       localStorage.removeItem('estagio_user');
       localStorage.removeItem('estagio_admin');
       currentUser = null;
+      currentUserNome = null;
       document.getElementById('login-overlay').style.display = 'flex';
       document.getElementById('main-header').style.display = 'none';
       document.getElementById('header-nav').style.display = 'none';
+      document.getElementById('btn-candidatos-admin').style.display = 'none';
       document.getElementById('view-gestor').classList.remove('active');
       document.getElementById('view-admin').classList.remove('active');
+      document.getElementById('view-avaliacao').classList.remove('active');
+      document.getElementById('view-candidatos-admin').classList.remove('active');
     }
 
     // Check session
@@ -982,16 +1377,16 @@
       const savedUser = localStorage.getItem('estagio_user');
       if (savedUser) {
         currentUser = savedUser;
+        currentUserNome = nomeFromEmail(savedUser);
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('main-header').style.display = 'flex';
-        document.getElementById('view-gestor').classList.add('active');
+        document.getElementById('header-nav').style.display = 'flex';
+        switchView('avaliacao');
 
         const isAdmin = localStorage.getItem('estagio_admin') === 'true';
         if (ADMIN_EMAILS.includes(savedUser) && isAdmin) {
-          document.getElementById('header-nav').style.display = 'flex';
+          document.getElementById('btn-candidatos-admin').style.display = 'inline-flex';
         }
-
-        loadMinhasSolicitacoes();
       }
     }
 
@@ -1001,11 +1396,16 @@
     function switchView(view) {
       document.getElementById('view-gestor').classList.toggle('active', view === 'gestor');
       document.getElementById('view-admin').classList.toggle('active', view === 'admin');
-      document.getElementById('btn-gestor').classList.toggle('header__btn--active', view === 'gestor');
-      document.getElementById('btn-admin').classList.toggle('header__btn--active', view === 'admin');
+      document.getElementById('view-avaliacao').classList.toggle('active', view === 'avaliacao');
+      document.getElementById('view-candidatos-admin').classList.toggle('active', view === 'candidatos-admin');
+      document.getElementById('btn-avaliacao').classList.toggle('header__btn--active', view === 'avaliacao');
+      document.getElementById('btn-candidatos-admin').classList.toggle('header__btn--active', view === 'candidatos-admin');
 
-      if (view === 'admin') {
-        renderAdmin();
+      if (view === 'avaliacao') {
+        carregarAvaliacao();
+      } else if (view === 'candidatos-admin') {
+        carregarCandidatosAdmin();
+        carregarResultadosAdmin();
       }
     }
 
@@ -1328,6 +1728,380 @@
     // Export — via servidor
     function exportToExcel() {
       window.location.href = '/api/export';
+    }
+
+    // ============================================================
+    // Helpers gerais (avaliação de candidatos + gerenciar candidatos)
+    // ============================================================
+    function escHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2600);
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function apiDinamica(path, opts) {
+      const res = await fetch('/api/dinamica' + path, {
+        headers: { 'Content-Type': 'application/json' },
+        ...opts,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Erro na requisição.');
+      return data;
+    }
+
+    async function uploadArquivoAdmin(body) {
+      const res = await fetch('/api/arquivos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Erro ao enviar arquivo.');
+      return data;
+    }
+
+    // ============================================================
+    // Avaliação (qualquer colaborador logado)
+    // ============================================================
+    let avaliacaoCandidatos = [];
+
+    async function carregarAvaliacao() {
+      try {
+        avaliacaoCandidatos = await apiDinamica('/liberados?email=' + encodeURIComponent(currentUser || ''));
+        renderAvaliacao();
+      } catch (e) {
+        showToast('Erro ao carregar candidatos: ' + e.message);
+      }
+    }
+
+    function renderAvaliacao() {
+      const box = document.getElementById('avaliacao-lista');
+      const vazio = document.getElementById('avaliacao-vazio');
+      if (!avaliacaoCandidatos.length) {
+        box.innerHTML = '';
+        vazio.style.display = 'block';
+        return;
+      }
+      vazio.style.display = 'none';
+      box.innerHTML = avaliacaoCandidatos.map(c => candCardHtml(c)).join('');
+    }
+
+    function candCardHtml(c) {
+      const notas = [1, 2, 3, 4, 5];
+      const foto = c.foto_arquivo_id
+        ? `<img class="cand-card__foto" src="/api/arquivos/${c.foto_arquivo_id}" alt="">`
+        : `<span class="cand-card__foto cand-card__foto--placeholder material-icons-outlined">person</span>`;
+      return `
+        <div class="cand-card" id="cand-card-${c.id}">
+          <button type="button" class="cand-card__header" onclick="toggleCandCard('${c.id}')">
+            ${foto}
+            <span class="cand-card__nome">${escHtml(c.nome)}</span>
+            ${c.minha_nota != null ? `<span class="cand-card__badge">Nota ${c.minha_nota}</span>` : ''}
+            <span class="material-icons-outlined cand-card__chevron">expand_more</span>
+          </button>
+          <div class="cand-card__body">
+            ${(c.curso || c.faculdade || c.formacao) ? `<div style="font-size:13px; opacity:0.85; margin-bottom:4px;">${escHtml(c.curso || '')}${c.faculdade ? ' · ' + escHtml(c.faculdade) : ''}${c.formacao ? ' · Formação: ' + escHtml(c.formacao) : ''}</div>` : ''}
+            ${(c.turno || c.data_dinamica) ? `<div style="font-size:13px; opacity:0.7; margin-bottom:8px;">Dinâmica: ${escHtml(c.turno || '')}${c.data_dinamica ? ' · ' + new Date(c.data_dinamica).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : ''}</div>` : ''}
+            ${c.historico ? `<div class="cand-card__hist"><b>Histórico:</b> ${escHtml(c.historico)}</div>` : ''}
+            <div class="cand-card__links">
+              ${c.cv_arquivo_id ? `<a href="/api/arquivos/${c.cv_arquivo_id}" target="_blank"><span class="material-icons-outlined" style="font-size:16px;">description</span> Ver currículo</a>` : ''}
+              ${c.linkedin_url ? `<a href="${escHtml(c.linkedin_url)}" target="_blank" rel="noopener"><span class="material-icons-outlined" style="font-size:16px;">person</span> Ver LinkedIn</a>` : ''}
+            </div>
+            <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Qual nota você daria para o candidato?</div>
+            <div class="cand-nota-row">
+              ${notas.map(n => `<button type="button" class="cand-nota-btn ${c.minha_nota === n ? 'active' : ''}" onclick="votarCand('${c.id}',${n})">${n}</button>`).join('')}
+            </div>
+            <div class="cand-nota-labels"><span>1 (Baixo)</span><span>5 (Alto)</span></div>
+            <textarea class="cand-comentario" placeholder="Comentário (opcional)" onchange="comentarCand('${c.id}', this.value)">${escHtml(c.meu_comentario || '')}</textarea>
+            <div class="cand-save-status" id="cand-status-${c.id}"></div>
+          </div>
+        </div>`;
+    }
+
+    function toggleCandCard(id) {
+      const card = document.getElementById('cand-card-' + id);
+      if (card) card.classList.toggle('open');
+    }
+
+    async function votarCand(id, nota) {
+      const c = avaliacaoCandidatos.find(x => String(x.id) === String(id));
+      if (!c) return;
+      c.minha_nota = nota;
+      document.querySelectorAll('#cand-card-' + id + ' .cand-nota-btn').forEach((b, i) => b.classList.toggle('active', i + 1 === nota));
+      const badge = document.querySelector('#cand-card-' + id + ' .cand-card__badge');
+      if (!badge) {
+        const header = document.querySelector('#cand-card-' + id + ' .cand-card__header');
+        const span = document.createElement('span');
+        span.className = 'cand-card__badge';
+        span.textContent = 'Nota ' + nota;
+        header.insertBefore(span, header.querySelector('.cand-card__chevron'));
+      } else {
+        badge.textContent = 'Nota ' + nota;
+      }
+      await salvarNotaCand(id);
+    }
+
+    function comentarCand(id, texto) {
+      const c = avaliacaoCandidatos.find(x => String(x.id) === String(id));
+      if (!c) return;
+      c.meu_comentario = texto;
+      if (c.minha_nota == null) return;
+      salvarNotaCand(id);
+    }
+
+    async function salvarNotaCand(id) {
+      const c = avaliacaoCandidatos.find(x => String(x.id) === String(id));
+      const statusEl = document.getElementById('cand-status-' + id);
+      if (!c || !statusEl) return;
+      statusEl.textContent = 'Salvando...';
+      try {
+        await apiDinamica('/notas', {
+          method: 'POST',
+          body: JSON.stringify({
+            candidato_id: c.id,
+            avaliador_email: currentUser,
+            avaliador_nome: currentUserNome,
+            nota: c.minha_nota,
+            comentario: c.meu_comentario || '',
+          }),
+        });
+        statusEl.textContent = 'Salvo';
+      } catch (e) {
+        statusEl.textContent = 'Erro ao salvar: ' + e.message;
+      }
+    }
+
+    // ============================================================
+    // Gerenciar Candidatos (admin)
+    // ============================================================
+    let candidatosAdminLista = [];
+
+    async function carregarCandidatosAdmin() {
+      try {
+        candidatosAdminLista = await apiDinamica('/candidatos');
+        renderCandidatosAdmin();
+      } catch (e) {
+        showToast('Erro ao carregar candidatos: ' + e.message);
+      }
+    }
+
+    function renderCandidatosAdmin() {
+      document.getElementById('cand-stat-total').textContent = candidatosAdminLista.length;
+      document.getElementById('cand-stat-liberados').textContent = candidatosAdminLista.filter(c => c.liberado).length;
+
+      const body = document.getElementById('cand-table-body');
+      const empty = document.getElementById('cand-empty-state');
+      if (!candidatosAdminLista.length) {
+        body.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+      body.innerHTML = candidatosAdminLista.map(c => `
+        <tr>
+          <td>${c.foto_arquivo_id
+            ? `<img class="admin-cand-foto" src="/api/arquivos/${c.foto_arquivo_id}" alt="">`
+            : '<div class="admin-cand-foto--placeholder"></div>'}</td>
+          <td>${escHtml(c.nome)}</td>
+          <td>${escHtml(c.curso || '')}${c.faculdade ? ' · ' + escHtml(c.faculdade) : ''}</td>
+          <td>${escHtml(c.turno)}</td>
+          <td>${c.linkedin_url ? `<a href="${escHtml(c.linkedin_url)}" target="_blank" rel="noopener">Ver perfil</a>` : '—'}</td>
+          <td>${c.cv_arquivo_id ? `<a href="/api/arquivos/${c.cv_arquivo_id}" target="_blank">Ver CV</a>` : '—'}</td>
+          <td>
+            <label class="toggle-switch">
+              <input type="checkbox" ${c.liberado ? 'checked' : ''} onchange="toggleLiberadoAdmin('${c.id}', this.checked)">
+              <span class="toggle-switch__slider"></span>
+            </label>
+          </td>
+          <td style="white-space:nowrap;">
+            <button class="btn-secondary" style="padding:4px 12px;font-size:12px;" onclick="editarCandidatoAdmin('${c.id}')">Editar</button>
+            <button class="btn-secondary" style="padding:4px 12px;font-size:12px;color:#C0392B;border-color:#C0392B;" onclick="excluirCandidatoAdmin('${c.id}')">Excluir</button>
+          </td>
+        </tr>`).join('');
+    }
+
+    function limparFormCandidatoAdmin() {
+      document.getElementById('cand-form').reset();
+      document.getElementById('cand-id').value = '';
+      document.getElementById('cand-turno').value = '09h-11h';
+      document.getElementById('cand-form-title').textContent = 'Novo candidato';
+    }
+
+    function editarCandidatoAdmin(id) {
+      const c = candidatosAdminLista.find(x => String(x.id) === String(id));
+      if (!c) return;
+      document.getElementById('cand-id').value = c.id;
+      document.getElementById('cand-nome').value = c.nome || '';
+      document.getElementById('cand-curso').value = c.curso || '';
+      document.getElementById('cand-faculdade').value = c.faculdade || '';
+      document.getElementById('cand-formacao').value = c.formacao || '';
+      document.getElementById('cand-telefone').value = c.telefone || '';
+      document.getElementById('cand-email').value = c.email || '';
+      document.getElementById('cand-linkedin').value = c.linkedin_url || '';
+      document.getElementById('cand-turno').value = c.turno || '09h-11h';
+      document.getElementById('cand-data').value = c.data_dinamica ? String(c.data_dinamica).slice(0, 10) : '';
+      document.getElementById('cand-historico').value = c.historico || '';
+      document.getElementById('cand-liberado').checked = !!c.liberado;
+      document.getElementById('cand-form-title').textContent = 'Editar candidato';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function salvarCandidatoAdmin(e) {
+      e.preventDefault();
+      const id = document.getElementById('cand-id').value;
+      const payload = {
+        nome: document.getElementById('cand-nome').value.trim(),
+        curso: document.getElementById('cand-curso').value.trim(),
+        faculdade: document.getElementById('cand-faculdade').value.trim(),
+        formacao: document.getElementById('cand-formacao').value.trim(),
+        telefone: document.getElementById('cand-telefone').value.trim(),
+        email: document.getElementById('cand-email').value.trim(),
+        linkedin_url: document.getElementById('cand-linkedin').value.trim(),
+        turno: document.getElementById('cand-turno').value.trim() || '09h-11h',
+        data_dinamica: document.getElementById('cand-data').value,
+        historico: document.getElementById('cand-historico').value.trim(),
+        liberado: document.getElementById('cand-liberado').checked,
+      };
+
+      try {
+        const cvFile = document.getElementById('cand-cv').files[0];
+        if (cvFile) {
+          const dados = await fileToBase64(cvFile);
+          const arquivo = await uploadArquivoAdmin({ tipo: 'cv', nome: cvFile.name, mime: cvFile.type, dados });
+          payload.cv_arquivo_id = arquivo.id;
+
+          // Resumo automático do histórico via IA a partir do currículo (best-effort).
+          if (arquivo.resumo) {
+            const historicoEl = document.getElementById('cand-historico');
+            const podeSubstituir = !historicoEl.value.trim()
+              || confirm('Já existe um histórico preenchido. Substituir pelo resumo gerado pela IA a partir do currículo?');
+            if (podeSubstituir) {
+              historicoEl.value = arquivo.resumo;
+              payload.historico = arquivo.resumo;
+            }
+          }
+        }
+        const fotoFile = document.getElementById('cand-foto').files[0];
+        if (fotoFile) {
+          const dados = await fileToBase64(fotoFile);
+          const arquivo = await uploadArquivoAdmin({ tipo: 'foto', nome: fotoFile.name, mime: fotoFile.type, dados });
+          payload.foto_arquivo_id = arquivo.id;
+        }
+
+        if (id) {
+          await apiDinamica('/candidatos/' + id, { method: 'PUT', body: JSON.stringify(payload) });
+          showToast('Candidato atualizado.');
+        } else {
+          await apiDinamica('/candidatos', { method: 'POST', body: JSON.stringify(payload) });
+          showToast('Candidato cadastrado.');
+        }
+        limparFormCandidatoAdmin();
+        await carregarCandidatosAdmin();
+      } catch (e) {
+        showToast('Erro: ' + e.message);
+      }
+      return false;
+    }
+
+    async function excluirCandidatoAdmin(id) {
+      if (!confirm('Excluir este candidato? As notas dele também serão apagadas.')) return;
+      try {
+        await apiDinamica('/candidatos/' + id, { method: 'DELETE' });
+        showToast('Candidato excluído.');
+        await carregarCandidatosAdmin();
+      } catch (e) {
+        showToast('Erro: ' + e.message);
+      }
+    }
+
+    async function toggleLiberadoAdmin(id, liberado) {
+      try {
+        await apiDinamica('/candidatos/' + id, { method: 'PUT', body: JSON.stringify({ liberado }) });
+        const c = candidatosAdminLista.find(x => String(x.id) === String(id));
+        if (c) c.liberado = liberado;
+        document.getElementById('cand-stat-liberados').textContent = candidatosAdminLista.filter(x => x.liberado).length;
+        showToast(liberado ? 'Candidato liberado para avaliação.' : 'Candidato removido da avaliação.');
+      } catch (e) {
+        showToast('Erro: ' + e.message);
+        await carregarCandidatosAdmin();
+      }
+    }
+
+    async function importarLoteAdmin(e) {
+      e.preventDefault();
+      const turno = document.getElementById('bulk-turno').value.trim() || '09h-11h';
+      const data_dinamica = document.getElementById('bulk-data').value;
+      const files = Array.from(document.getElementById('bulk-files').files);
+      const statusEl = document.getElementById('bulk-status');
+      if (!files.length) return false;
+
+      statusEl.textContent = 'Enviando ' + files.length + ' currículo(s)...';
+      try {
+        const arquivos = await Promise.all(files.map(async f => ({
+          nome: f.name, mime: f.type, dados: await fileToBase64(f),
+        })));
+        const resultado = await apiDinamica('/candidatos/bulk', {
+          method: 'POST',
+          body: JSON.stringify({ turno, data_dinamica, arquivos }),
+        });
+        statusEl.textContent = resultado.criados + ' candidato(s) cadastrado(s).';
+        document.getElementById('cand-bulk-form').reset();
+        document.getElementById('bulk-turno').value = '09h-11h';
+        await carregarCandidatosAdmin();
+      } catch (e) {
+        statusEl.textContent = 'Erro: ' + e.message;
+      }
+      return false;
+    }
+
+    function faixaMediaCand(media) {
+      if (media == null) return '';
+      if (media >= 4) return 'color:#1E7A3D;';
+      if (media >= 2.5) return 'color:#9A6A00;';
+      return 'color:#C0392B;';
+    }
+
+    async function carregarResultadosAdmin() {
+      try {
+        const dados = await apiDinamica('/resultados');
+        const body = document.getElementById('resultados-table-body');
+        const empty = document.getElementById('resultados-empty-state');
+        const avaliados = dados.filter(c => c.qtd_avaliacoes > 0);
+        if (!avaliados.length) {
+          body.innerHTML = '';
+          empty.style.display = 'block';
+          return;
+        }
+        empty.style.display = 'none';
+        body.innerHTML = avaliados.map(c => `
+          <tr>
+            <td>${escHtml(c.nome)}</td>
+            <td>${escHtml(c.turno)}</td>
+            <td style="font-weight:700;${faixaMediaCand(c.media)}">${c.media != null ? c.media : '—'}</td>
+            <td>
+              ${c.qtd_avaliacoes} nota(s)
+              <div style="font-size:12px; color:var(--color-light-grey); margin-top:4px;">
+                ${(c.avaliacoes || []).map(a => `<div><b>${escHtml(a.avaliador || a.email)} (${a.nota}):</b> ${escHtml(a.comentario || '')}</div>`).join('')}
+              </div>
+            </td>
+          </tr>`).join('');
+      } catch (e) {
+        showToast('Erro ao carregar resultados: ' + e.message);
+      }
     }
 
     // Initialize

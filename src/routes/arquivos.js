@@ -1,18 +1,22 @@
 /**
- * API de arquivos (CVs dos candidatos), guardados no banco em base64.
+ * API de arquivos (CVs/fotos dos candidatos), guardados no banco em base64.
  * Persiste entre deploys — o disco do container é efêmero no Kubernetes.
  *   POST /api/arquivos       -> { tipo, nome, mime, dados(base64) } => { id }
  *   GET  /api/arquivos/:id   -> devolve o arquivo (Content-Type = mime)
- * Ambas exigem admin (ver src/server.js).
+ * Leitura: qualquer colaborador logado (isAuthenticated, aplicado em
+ * src/server.js). Upload: só admin (isAdmin aplicado aqui, não no
+ * server.js, porque a leitura não deve exigir admin).
  */
 const express = require('express');
 const router = express.Router();
 const db = require('../database/dinamica');
+const { isAdmin } = require('../auth/middleware');
+const { resumirCurriculo } = require('../services/resumoIA');
 
 // Limite de segurança do tamanho do arquivo (base64), ~12MB de payload.
 const MAX_B64 = 12 * 1024 * 1024;
 
-router.post('/', async (req, res) => {
+router.post('/', isAdmin, async (req, res) => {
   try {
     const { tipo, nome, mime } = req.body;
     let dados = req.body.dados;
@@ -26,7 +30,16 @@ router.post('/', async (req, res) => {
       return res.status(413).json({ error: 'Arquivo muito grande (máx. ~9MB).' });
     }
     const arquivo = await db.insertArquivo({ tipo, nome, mime, dados });
-    res.status(201).json({ id: arquivo.id, nome, mime });
+
+    // CV em PDF: gera um resumo automático do histórico via IA (best-effort —
+    // se não houver ANTHROPIC_API_KEY configurada, resumirCurriculo já
+    // retorna '' sem quebrar o upload).
+    let resumo = '';
+    if (tipo === 'cv' && mime === 'application/pdf') {
+      resumo = await resumirCurriculo(dados);
+    }
+
+    res.status(201).json({ id: arquivo.id, nome, mime, resumo });
   } catch (error) {
     console.error('[API] Erro ao salvar arquivo:', error.message);
     res.status(500).json({ error: 'Erro interno ao salvar arquivo.' });

@@ -1,8 +1,13 @@
 const { query } = require('./connection');
 
-// Auto-cria as tabelas da dinâmica de estágio (candidatos, gestores, notas e
+// Auto-cria/ajusta as tabelas da dinâmica de estágio (candidatos, notas e
 // arquivos). Segue o mesmo padrão de connection.js: idempotente, roda ao
 // carregar o módulo.
+//
+// Não cria mais dinamica_gestores nem usa gestor_id/token — o acesso do
+// gestor avaliador agora é pelo login normal do site (avaliador_email),
+// não por link pessoal. Se a tabela dinamica_gestores já existir de uma
+// versão anterior, fica órfã e inofensiva (não é apagada).
 query(`
   CREATE TABLE IF NOT EXISTS arquivos (
     id BIGSERIAL PRIMARY KEY,
@@ -27,31 +32,35 @@ query(`
     historico TEXT,
     cv_arquivo_id BIGINT REFERENCES arquivos(id) ON DELETE SET NULL,
     foto_arquivo_id BIGINT REFERENCES arquivos(id) ON DELETE SET NULL,
+    liberado BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
   );
 `)).then(() => query(`
   ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS foto_arquivo_id BIGINT REFERENCES arquivos(id) ON DELETE SET NULL;
 `)).then(() => query(`
-  CREATE TABLE IF NOT EXISTS dinamica_gestores (
-    id BIGSERIAL PRIMARY KEY,
-    nome TEXT NOT NULL,
-    email TEXT,
-    turno TEXT NOT NULL DEFAULT '09h-11h',
-    data_dinamica DATE,
-    token TEXT UNIQUE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-  );
+  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS liberado BOOLEAN NOT NULL DEFAULT false;
 `)).then(() => query(`
   CREATE TABLE IF NOT EXISTS dinamica_notas (
     id BIGSERIAL PRIMARY KEY,
     candidato_id BIGINT NOT NULL REFERENCES dinamica_candidatos(id) ON DELETE CASCADE,
-    gestor_id BIGINT NOT NULL REFERENCES dinamica_gestores(id) ON DELETE CASCADE,
+    avaliador_email TEXT NOT NULL,
+    avaliador_nome TEXT,
     nota INTEGER NOT NULL CHECK (nota BETWEEN 1 AND 5),
     comentario TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE (candidato_id, gestor_id)
+    UNIQUE (candidato_id, avaliador_email)
   );
+`)).then(() => query(`
+  ALTER TABLE dinamica_notas ADD COLUMN IF NOT EXISTS avaliador_email TEXT;
+`)).then(() => query(`
+  ALTER TABLE dinamica_notas ADD COLUMN IF NOT EXISTS avaliador_nome TEXT;
+`)).then(() => query(`
+  ALTER TABLE dinamica_notas DROP CONSTRAINT IF EXISTS dinamica_notas_candidato_id_gestor_id_key;
+`)).then(() => query(`
+  ALTER TABLE dinamica_notas DROP COLUMN IF EXISTS gestor_id;
+`)).then(() => query(`
+  CREATE UNIQUE INDEX IF NOT EXISTS dinamica_notas_candidato_avaliador_key ON dinamica_notas(candidato_id, avaliador_email);
 `)).then(() => {
   console.log('[DB] Tabelas da dinâmica de estágio OK.');
 }).catch(err => {
@@ -62,7 +71,7 @@ query(`
 
 const CAND_COLS = [
   'nome', 'curso', 'faculdade', 'formacao', 'telefone', 'email', 'linkedin_url',
-  'turno', 'data_dinamica', 'historico', 'cv_arquivo_id', 'foto_arquivo_id',
+  'turno', 'data_dinamica', 'historico', 'cv_arquivo_id', 'foto_arquivo_id', 'liberado',
 ];
 const CAND_NULLABLE_EMPTY = ['data_dinamica', 'cv_arquivo_id', 'foto_arquivo_id'];
 
@@ -112,51 +121,22 @@ async function deleteCandidato(id) {
   return result.rows[0];
 }
 
-// ---------- Gestores ----------
+// ---------- Liberados (visão do avaliador logado) ----------
 
-async function findGestores() {
-  const result = await query('SELECT * FROM dinamica_gestores ORDER BY turno, nome');
-  return result.rows;
-}
-
-async function insertGestor({ nome, email, turno, data_dinamica, token }) {
-  const result = await query(
-    `INSERT INTO dinamica_gestores (nome, email, turno, data_dinamica, token)
-     VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-    [nome, email || null, turno || '09h-11h', data_dinamica || null, token]
+async function findLiberados(avaliadorEmail) {
+  const { rows: candidatos } = await query(
+    `SELECT id, nome, curso, faculdade, formacao, telefone, email, linkedin_url, turno, data_dinamica, historico, cv_arquivo_id, foto_arquivo_id
+     FROM dinamica_candidatos WHERE liberado = true ORDER BY nome`
   );
-  return result.rows[0];
-}
 
-async function deleteGestor(id) {
-  const result = await query('DELETE FROM dinamica_gestores WHERE id=$1 RETURNING *', [id]);
-  return result.rows[0];
-}
-
-async function gestorPorToken(token) {
-  const result = await query('SELECT * FROM dinamica_gestores WHERE token=$1', [token]);
-  return result.rows[0] || null;
-}
-
-// ---------- Notas ----------
-
-async function candidatosDoGestor(gestor) {
-  const params = [gestor.turno];
-  let sql = `SELECT id, nome, curso, faculdade, formacao, telefone, email, linkedin_url, historico, cv_arquivo_id, foto_arquivo_id
-             FROM dinamica_candidatos WHERE turno=$1`;
-  if (gestor.data_dinamica) {
-    params.push(gestor.data_dinamica);
-    sql += ' AND data_dinamica=$2';
+  let notaPorCandidato = {};
+  if (avaliadorEmail) {
+    const { rows: notas } = await query(
+      'SELECT candidato_id, nota, comentario FROM dinamica_notas WHERE avaliador_email = $1',
+      [avaliadorEmail]
+    );
+    for (const n of notas) notaPorCandidato[n.candidato_id] = n;
   }
-  sql += ' ORDER BY nome';
-  const { rows: candidatos } = await query(sql, params);
-
-  const { rows: notas } = await query(
-    'SELECT candidato_id, nota, comentario FROM dinamica_notas WHERE gestor_id=$1',
-    [gestor.id]
-  );
-  const notaPorCandidato = {};
-  for (const n of notas) notaPorCandidato[n.candidato_id] = n;
 
   return candidatos.map((c) => ({
     ...c,
@@ -165,19 +145,19 @@ async function candidatosDoGestor(gestor) {
   }));
 }
 
-async function candidatoPertenceAoTurno(candidatoId, turno) {
-  const { rows } = await query('SELECT id, turno FROM dinamica_candidatos WHERE id=$1', [candidatoId]);
-  return rows.length > 0 && rows[0].turno === turno;
+async function candidatoEstaLiberado(candidatoId) {
+  const { rows } = await query('SELECT id FROM dinamica_candidatos WHERE id=$1 AND liberado=true', [candidatoId]);
+  return rows.length > 0;
 }
 
-async function upsertNota({ candidato_id, gestor_id, nota, comentario }) {
+async function upsertNota({ candidato_id, avaliador_email, avaliador_nome, nota, comentario }) {
   const result = await query(
-    `INSERT INTO dinamica_notas (candidato_id, gestor_id, nota, comentario)
-     VALUES ($1,$2,$3,$4)
-     ON CONFLICT (candidato_id, gestor_id)
-     DO UPDATE SET nota=$3, comentario=$4, updated_at=NOW()
+    `INSERT INTO dinamica_notas (candidato_id, avaliador_email, avaliador_nome, nota, comentario)
+     VALUES ($1,$2,$3,$4,$5)
+     ON CONFLICT (candidato_id, avaliador_email)
+     DO UPDATE SET nota=$4, comentario=$5, avaliador_nome=$3, updated_at=NOW()
      RETURNING *`,
-    [candidato_id, gestor_id, nota, comentario || '']
+    [candidato_id, avaliador_email, avaliador_nome || '', nota, comentario || '']
   );
   return result.rows[0];
 }
@@ -190,21 +170,20 @@ async function resultados() {
       ROUND(AVG(n.nota)::numeric, 2) AS media,
       COALESCE(
         json_agg(
-          json_build_object('gestor', g.nome, 'nota', n.nota, 'comentario', n.comentario)
-          ORDER BY g.nome
+          json_build_object('avaliador', n.avaliador_nome, 'email', n.avaliador_email, 'nota', n.nota, 'comentario', n.comentario)
+          ORDER BY n.avaliador_nome
         ) FILTER (WHERE n.id IS NOT NULL),
         '[]'
       ) AS avaliacoes
     FROM dinamica_candidatos c
     LEFT JOIN dinamica_notas n ON n.candidato_id = c.id
-    LEFT JOIN dinamica_gestores g ON g.id = n.gestor_id
     GROUP BY c.id
     ORDER BY media DESC NULLS LAST, c.nome
   `);
   return result.rows;
 }
 
-// ---------- Arquivos (CV) ----------
+// ---------- Arquivos (CV/foto) ----------
 
 async function insertArquivo({ tipo, nome, mime, dados }) {
   const result = await query(
@@ -221,7 +200,6 @@ async function findArquivo(id) {
 
 module.exports = {
   findCandidatos, insertCandidato, updateCandidato, deleteCandidato,
-  findGestores, insertGestor, deleteGestor, gestorPorToken,
-  candidatosDoGestor, candidatoPertenceAoTurno, upsertNota, resultados,
+  findLiberados, candidatoEstaLiberado, upsertNota, resultados,
   insertArquivo, findArquivo,
 };

@@ -8,7 +8,7 @@ const path = require('path');
 const apiRoutes = require('./routes/api');
 const dinamicaRoutes = require('./routes/dinamica');
 const arquivosRoutes = require('./routes/arquivos');
-const { isAuthenticated, isAdmin } = require('./auth/middleware');
+const { isAuthenticated } = require('./auth/middleware');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -26,20 +26,13 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Rotas da API
 app.use('/api', apiRoutes);
-// Arquivos (CVs) — só admin lê/escreve por aqui.
-app.use('/api/arquivos', isAuthenticated, isAdmin, arquivosRoutes);
-// Dinâmica de estágio — o router mistura rotas admin (autenticadas, exigidas
-// dentro do próprio arquivo) com rotas públicas (/publico/:token, sem login,
-// pois o gestor avaliador acessa só com o link pessoal). Por isso NÃO leva
-// isAuthenticated/isAdmin aqui.
+// Arquivos (CVs/fotos) — leitura exige só login; upload exige admin (checado
+// dentro do próprio router, ver src/routes/arquivos.js).
+app.use('/api/arquivos', isAuthenticated, arquivosRoutes);
+// Dinâmica de estágio — rotas admin (candidatos/resultados) e rotas de
+// qualquer colaborador logado (liberados/notas) convivem no mesmo router,
+// cada uma com seu próprio isAuthenticated/isAdmin (ver src/routes/dinamica.js).
 app.use('/api/dinamica', dinamicaRoutes);
-
-// Página que o gestor abre pelo link pessoal (token na URL) — sem login,
-// igual ao link de dinâmica do controle-vagas. O token é validado pela API
-// ao carregar os dados. Precisa vir antes do catch-all abaixo.
-app.get('/dinamica/:token', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'dinamica-gestor.html'));
-});
 
 // Rota principal — serve o frontend
 app.get('*', (req, res) => {
