@@ -18,8 +18,10 @@ app.use(helmet({
   contentSecurityPolicy: false
 }));
 app.use(cors());
-app.use(express.json({ limit: '15mb' }));
-app.use(express.urlencoded({ extended: true, limit: '15mb' }));
+// Limite alto pra caber o import em lote de currículos (vários PDFs em
+// base64 num único corpo JSON — ex.: 88 CVs reais já passaram de ~2.8MB).
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Arquivos estáticos (frontend)
 app.use(express.static(path.join(__dirname, '..', 'public')));
