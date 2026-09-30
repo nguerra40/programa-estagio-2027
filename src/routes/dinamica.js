@@ -56,7 +56,7 @@ router.post('/candidatos/bulk', isAuthenticated, isAdmin, async (req, res) => {
     for (const arq of arquivos) {
       let dados = arq.dados;
       const comma = typeof dados === 'string' ? dados.indexOf(',') : -1;
-      if (typeof dados === 'string' && dados.slice(0, 5) === 'data:' && comma >= 0) {
+      if (typeof dados === 'string' && dados.startsWith('data:') && comma >= 0) {
         dados = dados.slice(comma + 1);
       }
       const mime = arq.mime || 'application/pdf';

@@ -46,7 +46,7 @@ async function resumirCurriculo(dadosBase64) {
     }
 
     const data = await response.json();
-    const resumo = data.content && data.content[0] && data.content[0].text;
+    const resumo = data.content?.[0]?.text;
     return (resumo || '').trim();
   } catch (error) {
     console.error('[IA] Erro ao processar currículo:', error.message);

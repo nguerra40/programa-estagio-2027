@@ -1076,7 +1076,7 @@
       <!-- Filters -->
       <div class="admin-toolbar">
         <div class="filter-group">
-          <label id="label-gestor">Filtrar por Gestor</label>
+          <span id="label-gestor">Filtrar por Gestor</span>
           <div class="multi-select" id="ms-gestor" role="listbox" aria-labelledby="label-gestor">
             <div class="multi-select__trigger" role="button" tabindex="0" aria-expanded="false" onclick="toggleMultiSelect('ms-gestor')" onkeydown="if(event.key==='Enter')toggleMultiSelect('ms-gestor')">
               <span class="multi-select__text">Todos</span>
@@ -1086,7 +1086,7 @@
           </div>
         </div>
         <div class="filter-group">
-          <label id="label-area">Filtrar por Área</label>
+          <span id="label-area">Filtrar por Área</span>
           <div class="multi-select" id="ms-area" role="listbox" aria-labelledby="label-area">
             <div class="multi-select__trigger" role="button" tabindex="0" aria-expanded="false" onclick="toggleMultiSelect('ms-area')" onkeydown="if(event.key==='Enter')toggleMultiSelect('ms-area')">
               <span class="multi-select__text">Todas</span>
@@ -1096,7 +1096,7 @@
           </div>
         </div>
         <div class="filter-group">
-          <label id="label-vagas">Filtrar por Vagas</label>
+          <span id="label-vagas">Filtrar por Vagas</span>
           <div class="multi-select" id="ms-vagas" role="listbox" aria-labelledby="label-vagas">
             <div class="multi-select__trigger" role="button" tabindex="0" aria-expanded="false" onclick="toggleMultiSelect('ms-vagas')" onkeydown="if(event.key==='Enter')toggleMultiSelect('ms-vagas')">
               <span class="multi-select__text">Todas</span>
@@ -1149,7 +1149,7 @@
     </div>
   </section>
 
-  <!-- Avaliação View (todo colaborador logado) -->
+  <!-- Avaliação View (qualquer colaborador logado) -->
   <section class="view-avaliacao" id="view-avaliacao">
     <div class="container">
       <div class="form-banner">
@@ -1182,29 +1182,29 @@
         <form id="cand-form" onsubmit="return salvarCandidatoAdmin(event)">
           <input type="hidden" id="cand-id">
           <div class="form-group">
-            <label>Nome</label>
+            <label for="cand-nome">Nome</label>
             <input type="text" id="cand-nome" required>
           </div>
           <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
-            <div class="form-group"><label>Curso</label><input type="text" id="cand-curso"></div>
-            <div class="form-group"><label>Faculdade</label><input type="text" id="cand-faculdade"></div>
-            <div class="form-group"><label>Previsão de formação</label><input type="text" id="cand-formacao" placeholder="Ex.: Dez/2027"></div>
+            <div class="form-group"><label for="cand-curso">Curso</label><input type="text" id="cand-curso"></div>
+            <div class="form-group"><label for="cand-faculdade">Faculdade</label><input type="text" id="cand-faculdade"></div>
+            <div class="form-group"><label for="cand-formacao">Previsão de formação</label><input type="text" id="cand-formacao" placeholder="Ex.: Dez/2027"></div>
           </div>
           <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
-            <div class="form-group"><label>Telefone</label><input type="text" id="cand-telefone"></div>
-            <div class="form-group"><label>E-mail</label><input type="email" id="cand-email"></div>
-            <div class="form-group"><label>LinkedIn</label><input type="url" id="cand-linkedin" placeholder="https://linkedin.com/in/..."></div>
+            <div class="form-group"><label for="cand-telefone">Telefone</label><input type="text" id="cand-telefone"></div>
+            <div class="form-group"><label for="cand-email">E-mail</label><input type="email" id="cand-email"></div>
+            <div class="form-group"><label for="cand-linkedin">LinkedIn</label><input type="url" id="cand-linkedin" placeholder="https://linkedin.com/in/..."></div>
           </div>
           <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px;">
-            <div class="form-group"><label>Turno da dinâmica</label><input type="text" id="cand-turno" value="09h-11h"></div>
-            <div class="form-group"><label>Data da dinâmica</label><input type="date" id="cand-data"></div>
+            <div class="form-group"><label for="cand-turno">Turno da dinâmica</label><input type="text" id="cand-turno" value="09h-11h"></div>
+            <div class="form-group"><label for="cand-data">Data da dinâmica</label><input type="date" id="cand-data"></div>
           </div>
           <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px;">
-            <div class="form-group"><label>Currículo (PDF)</label><input type="file" id="cand-cv" accept="application/pdf"></div>
-            <div class="form-group"><label>Foto (opcional)</label><input type="file" id="cand-foto" accept="image/*"></div>
+            <div class="form-group"><label for="cand-cv">Currículo (PDF)</label><input type="file" id="cand-cv" accept="application/pdf"></div>
+            <div class="form-group"><label for="cand-foto">Foto (opcional)</label><input type="file" id="cand-foto" accept="image/*"></div>
           </div>
           <div class="form-group">
-            <label>Histórico profissional</label>
+            <label for="cand-historico">Histórico profissional</label>
             <textarea id="cand-historico" placeholder="Estágios anteriores, projetos, monitorias..."></textarea>
           </div>
           <div class="form-group" style="display:flex; align-items:center; gap:10px;">
@@ -1212,7 +1212,7 @@
               <input type="checkbox" id="cand-liberado">
               <span class="toggle-switch__slider"></span>
             </label>
-            <span style="font-size:14px; color:var(--color-spacial-grey);">Liberado para avaliação</span>
+            <label for="cand-liberado" style="font-size:14px; color:var(--color-spacial-grey);">Liberado para avaliação</label>
           </div>
           <button type="submit" class="btn-solid">Salvar candidato</button>
           <button type="button" class="btn-secondary" onclick="limparFormCandidatoAdmin()">Cancelar edição</button>
@@ -1224,9 +1224,9 @@
         <p style="font-size:13px; color:var(--color-light-grey); margin-bottom:16px;">Selecione vários PDFs de uma vez — um candidato é criado para cada arquivo, já com o currículo anexado.</p>
         <form id="cand-bulk-form" onsubmit="return importarLoteAdmin(event)">
           <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; align-items:end;">
-            <div class="form-group" style="margin-bottom:0;"><label>Turno (aplica a todos)</label><input type="text" id="bulk-turno" value="09h-11h"></div>
-            <div class="form-group" style="margin-bottom:0;"><label>Data da dinâmica</label><input type="date" id="bulk-data"></div>
-            <div class="form-group" style="margin-bottom:0;"><label>Currículos (PDF, vários)</label><input type="file" id="bulk-files" accept="application/pdf" multiple required></div>
+            <div class="form-group" style="margin-bottom:0;"><label for="bulk-turno">Turno (aplica a todos)</label><input type="text" id="bulk-turno" value="09h-11h"></div>
+            <div class="form-group" style="margin-bottom:0;"><label for="bulk-data">Data da dinâmica</label><input type="date" id="bulk-data"></div>
+            <div class="form-group" style="margin-bottom:0;"><label for="bulk-files">Currículos (PDF, vários)</label><input type="file" id="bulk-files" accept="application/pdf" multiple required></div>
           </div>
           <button type="submit" class="btn-solid" style="margin-top:16px;">Cadastrar todos</button>
           <span id="bulk-status" style="margin-left:12px; font-size:13px; color:var(--color-light-grey);"></span>
@@ -1235,6 +1235,7 @@
 
       <div class="table-wrapper">
         <table>
+          <caption class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">Lista de candidatos cadastrados</caption>
           <thead>
             <tr>
               <th>Foto</th><th>Nome</th><th>Curso</th><th>Turno</th><th>LinkedIn</th><th>CV</th><th>Liberado</th><th></th>
@@ -1257,6 +1258,7 @@
           </button>
         </div>
         <table>
+          <caption class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">Resultados das avaliações por candidato</caption>
           <thead>
             <tr><th>Candidato</th><th>Turno</th><th>Média</th><th>Avaliações</th></tr>
           </thead>
@@ -1632,6 +1634,12 @@
       renderTable(filtered);
     }
 
+    function statusColorFor(status) {
+      if (status === 'aprovado') return '#2E7D32';
+      if (status === 'reprovado') return '#C62828';
+      return '#525254';
+    }
+
     function renderTable(data) {
       const tbody = document.getElementById('table-body');
       const emptyState = document.getElementById('empty-state');
@@ -1644,7 +1652,7 @@
 
       emptyState.style.display = 'none';
       tbody.innerHTML = data.map(item => {
-        const statusColor = item.status === 'aprovado' ? '#2E7D32' : (item.status === 'reprovado' ? '#C62828' : '#525254');
+        const statusColor = statusColorFor(item.status);
         return `
         <tr>
           <td>${item.data}</td>
@@ -1800,22 +1808,41 @@
       box.innerHTML = avaliacaoCandidatos.map(c => candCardHtml(c)).join('');
     }
 
+    function candCardFoto(c) {
+      if (c.foto_arquivo_id) return `<img class="cand-card__foto" src="/api/arquivos/${c.foto_arquivo_id}" alt="">`;
+      return `<span class="cand-card__foto cand-card__foto--placeholder material-icons-outlined">person</span>`;
+    }
+
+    function candCardMeta(c) {
+      const partes = [];
+      if (c.curso) partes.push(escHtml(c.curso));
+      if (c.faculdade) partes.push(escHtml(c.faculdade));
+      if (c.formacao) partes.push('Formação: ' + escHtml(c.formacao));
+      if (!partes.length) return '';
+      return `<div style="font-size:13px; opacity:0.85; margin-bottom:4px;">${partes.join(' · ')}</div>`;
+    }
+
+    function candCardDinamica(c) {
+      const partes = [];
+      if (c.turno) partes.push(escHtml(c.turno));
+      if (c.data_dinamica) partes.push(new Date(c.data_dinamica).toLocaleDateString('pt-BR', { timeZone: 'UTC' }));
+      if (!partes.length) return '';
+      return `<div style="font-size:13px; opacity:0.7; margin-bottom:8px;">Dinâmica: ${partes.join(' · ')}</div>`;
+    }
+
     function candCardHtml(c) {
       const notas = [1, 2, 3, 4, 5];
-      const foto = c.foto_arquivo_id
-        ? `<img class="cand-card__foto" src="/api/arquivos/${c.foto_arquivo_id}" alt="">`
-        : `<span class="cand-card__foto cand-card__foto--placeholder material-icons-outlined">person</span>`;
       return `
         <div class="cand-card" id="cand-card-${c.id}">
           <button type="button" class="cand-card__header" onclick="toggleCandCard('${c.id}')">
-            ${foto}
+            ${candCardFoto(c)}
             <span class="cand-card__nome">${escHtml(c.nome)}</span>
             ${c.minha_nota != null ? `<span class="cand-card__badge">Nota ${c.minha_nota}</span>` : ''}
             <span class="material-icons-outlined cand-card__chevron">expand_more</span>
           </button>
           <div class="cand-card__body">
-            ${(c.curso || c.faculdade || c.formacao) ? `<div style="font-size:13px; opacity:0.85; margin-bottom:4px;">${escHtml(c.curso || '')}${c.faculdade ? ' · ' + escHtml(c.faculdade) : ''}${c.formacao ? ' · Formação: ' + escHtml(c.formacao) : ''}</div>` : ''}
-            ${(c.turno || c.data_dinamica) ? `<div style="font-size:13px; opacity:0.7; margin-bottom:8px;">Dinâmica: ${escHtml(c.turno || '')}${c.data_dinamica ? ' · ' + new Date(c.data_dinamica).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : ''}</div>` : ''}
+            ${candCardMeta(c)}
+            ${candCardDinamica(c)}
             ${c.historico ? `<div class="cand-card__hist"><b>Histórico:</b> ${escHtml(c.historico)}</div>` : ''}
             <div class="cand-card__links">
               ${c.cv_arquivo_id ? `<a href="/api/arquivos/${c.cv_arquivo_id}" target="_blank"><span class="material-icons-outlined" style="font-size:16px;">description</span> Ver currículo</a>` : ''}
@@ -2047,7 +2074,7 @@
       const data_dinamica = document.getElementById('bulk-data').value;
       const files = Array.from(document.getElementById('bulk-files').files);
       const statusEl = document.getElementById('bulk-status');
-      if (!files.length) return false;
+      if (!files.length) return;
 
       statusEl.textContent = 'Enviando ' + files.length + ' currículo(s)...';
       try {
@@ -2065,7 +2092,6 @@
       } catch (e) {
         statusEl.textContent = 'Erro: ' + e.message;
       }
-      return false;
     }
 
     function faixaMediaCand(media) {

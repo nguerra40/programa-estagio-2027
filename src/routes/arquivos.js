@@ -25,7 +25,7 @@ router.post('/', isAdmin, async (req, res) => {
     }
     // Aceita tanto "data:...;base64,XXXX" quanto só o base64.
     const comma = dados.indexOf(',');
-    if (dados.slice(0, 5) === 'data:' && comma >= 0) dados = dados.slice(comma + 1);
+    if (dados.startsWith('data:') && comma >= 0) dados = dados.slice(comma + 1);
     if (dados.length > MAX_B64) {
       return res.status(413).json({ error: 'Arquivo muito grande (máx. ~9MB).' });
     }
