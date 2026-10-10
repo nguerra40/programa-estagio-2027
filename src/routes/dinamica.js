@@ -36,7 +36,7 @@ router.get('/candidatos', isAuthenticated, isAdmin, async (req, res) => {
 
 router.post('/candidatos', isAuthenticated, isAdmin, async (req, res) => {
   try {
-    const candidato = await db.insertCandidato(req.body);
+    const candidato = await db.insertCandidato(req.body, req.body.admin_email);
     res.status(201).json(candidato);
   } catch (error) {
     console.error('[API] Erro ao criar candidato:', error.message);
@@ -44,15 +44,30 @@ router.post('/candidatos', isAuthenticated, isAdmin, async (req, res) => {
   }
 });
 
+// Libera/remove vários candidatos de uma vez.
+router.patch('/candidatos/liberar-lote', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body.ids) ? req.body.ids.map(Number).filter(Boolean) : [];
+    const liberado = !!req.body.liberado;
+    if (!ids.length) return res.status(400).json({ error: 'Nenhum candidato selecionado.' });
+    const atualizados = await db.liberarEmLote(ids, liberado, req.body.admin_email);
+    res.json({ atualizados: atualizados.length, candidatos: atualizados });
+  } catch (error) {
+    console.error('[API] Erro ao liberar em lote:', error.message);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
 // Import em lote: um candidato por CV enviado (nome inicial = nome do arquivo).
 router.post('/candidatos/bulk', isAuthenticated, isAdmin, async (req, res) => {
   try {
-    const { turno, data_dinamica, arquivos } = req.body;
+    const { turno, data_dinamica, arquivos, admin_email } = req.body;
     if (!Array.isArray(arquivos) || !arquivos.length) {
       return res.status(400).json({ error: 'Nenhum currículo enviado.' });
     }
 
     const criados = [];
+    const avisosDuplicata = [];
     for (const arq of arquivos) {
       let dados = arq.dados;
       const comma = typeof dados === 'string' ? dados.indexOf(',') : -1;
@@ -70,17 +85,23 @@ router.post('/candidatos/bulk', isAuthenticated, isAdmin, async (req, res) => {
       const historico = await resumirCurriculo(dados);
 
       const nomeCandidato = (arq.nome || 'Candidato').replace(/\.pdf$/i, '');
+
+      const duplicatas = await db.encontrarPossiveisDuplicatas(nomeCandidato, null, null);
+      if (duplicatas.length) {
+        avisosDuplicata.push({ nome: nomeCandidato, parecidoCom: duplicatas.map((d) => d.nome) });
+      }
+
       const candidato = await db.insertCandidato({
         nome: nomeCandidato,
         turno: turno || '09h-11h',
         data_dinamica: data_dinamica || null,
         cv_arquivo_id: arquivo.id,
         historico,
-      });
+      }, admin_email);
       criados.push(candidato);
     }
 
-    res.status(201).json({ criados: criados.length, candidatos: criados });
+    res.status(201).json({ criados: criados.length, candidatos: criados, avisos_duplicata: avisosDuplicata });
   } catch (error) {
     console.error('[API] Erro no import em lote:', error.message);
     res.status(500).json({ error: 'Erro interno no import em lote.' });
@@ -89,7 +110,7 @@ router.post('/candidatos/bulk', isAuthenticated, isAdmin, async (req, res) => {
 
 router.put('/candidatos/:id', isAuthenticated, isAdmin, async (req, res) => {
   try {
-    const updated = await db.updateCandidato(req.params.id, req.body);
+    const updated = await db.updateCandidato(req.params.id, req.body, req.body.admin_email);
     if (!updated) return res.status(404).json({ error: 'Candidato não encontrado.' });
     res.json(updated);
   } catch (error) {
@@ -118,6 +139,35 @@ router.get('/resultados', isAuthenticated, isAdmin, async (req, res) => {
   } catch (error) {
     console.error('[API] Erro ao calcular resultados:', error.message);
     res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
+router.get('/resultados/export', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    const dados = await db.resultados();
+
+    const BOM = '﻿';
+    const separator = ';';
+    const headers = ['Nome', 'Curso', 'Faculdade', 'Turno', 'Data', 'Média', 'Qtd. Avaliações', 'Avaliações'];
+
+    const rows = dados.map((c) => {
+      const dataFormatada = c.data_dinamica ? new Date(c.data_dinamica).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '';
+      const avaliacoes = (c.avaliacoes || [])
+        .map((a) => `${a.avaliador || a.email || '?'} (${a.nota}): ${a.comentario || ''}`)
+        .join(' | ');
+      return [c.nome, c.curso || '', c.faculdade || '', c.turno, dataFormatada, c.media != null ? c.media : '', c.qtd_avaliacoes, avaliacoes]
+        .map((val) => `"${String(val).replace(/"/g, '""')}"`)
+        .join(separator);
+    });
+
+    const csv = BOM + headers.join(separator) + '\n' + rows.join('\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename=resultados_dinamica_${new Date().toISOString().slice(0, 10)}.csv`);
+    res.send(csv);
+  } catch (error) {
+    console.error('[API] Erro ao exportar resultados:', error.message);
+    res.status(500).json({ error: 'Erro interno ao exportar.' });
   }
 });
 

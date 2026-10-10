@@ -40,6 +40,16 @@ query(`
 `)).then(() => query(`
   ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS liberado BOOLEAN NOT NULL DEFAULT false;
 `)).then(() => query(`
+  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS criado_por TEXT;
+`)).then(() => query(`
+  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS atualizado_por TEXT;
+`)).then(() => query(`
+  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS atualizado_em TIMESTAMP WITH TIME ZONE;
+`)).then(() => query(`
+  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS liberado_por TEXT;
+`)).then(() => query(`
+  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS liberado_em TIMESTAMP WITH TIME ZONE;
+`)).then(() => query(`
   CREATE TABLE IF NOT EXISTS dinamica_notas (
     id BIGSERIAL PRIMARY KEY,
     candidato_id BIGINT NOT NULL REFERENCES dinamica_candidatos(id) ON DELETE CASCADE,
@@ -104,9 +114,35 @@ async function findCandidatos() {
   return result.rows;
 }
 
-async function insertCandidato(body) {
+function normalizarNome(s) {
+  return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+// Heurística de duplicata — por nome (normalizado) ou e-mail igual, exceto o
+// próprio candidato (em edição). Não bloqueia nada, só avisa: nomes iguais
+// podem ser coincidência, e o admin decide.
+async function encontrarPossiveisDuplicatas(nome, email, excludeId) {
+  const nomeNorm = normalizarNome(nome);
+  if (!nomeNorm && !email) return [];
+  const { rows } = await query('SELECT id, nome, email FROM dinamica_candidatos');
+  return rows.filter((c) => {
+    if (excludeId && String(c.id) === String(excludeId)) return false;
+    const mesmoNome = nomeNorm && normalizarNome(c.nome) === nomeNorm;
+    const mesmoEmail = email && c.email && c.email.toLowerCase() === String(email).toLowerCase();
+    return mesmoNome || mesmoEmail;
+  });
+}
+
+async function insertCandidato(body, adminEmail) {
   const data = cleanCandidato(body);
   if (!data.nome) throw new Error('nome é obrigatório');
+  data.criado_por = adminEmail || null;
+  data.atualizado_por = adminEmail || null;
+  data.atualizado_em = new Date();
+  if (data.liberado) {
+    data.liberado_por = adminEmail || null;
+    data.liberado_em = new Date();
+  }
   const cols = Object.keys(data);
   const placeholders = cols.map((_, i) => `$${i + 1}`).join(',');
   const result = await query(
@@ -116,16 +152,33 @@ async function insertCandidato(body) {
   return result.rows[0];
 }
 
-async function updateCandidato(id, body) {
+async function updateCandidato(id, body, adminEmail) {
   const data = cleanCandidato(body);
+  if (!Object.keys(data).length) throw new Error('payload vazio');
+  data.atualizado_por = adminEmail || null;
+  data.atualizado_em = new Date();
+  if ('liberado' in data) {
+    data.liberado_por = adminEmail || null;
+    data.liberado_em = new Date();
+  }
   const cols = Object.keys(data);
-  if (!cols.length) throw new Error('payload vazio');
   const set = cols.map((c, i) => `${c}=$${i + 1}`).join(',');
   const result = await query(
     `UPDATE dinamica_candidatos SET ${set} WHERE id=$${cols.length + 1} RETURNING *`,
     [...cols.map((c) => data[c]), id]
   );
   return result.rows[0];
+}
+
+async function liberarEmLote(ids, liberado, adminEmail) {
+  const result = await query(
+    `UPDATE dinamica_candidatos
+     SET liberado=$1, liberado_por=$2, liberado_em=NOW(), atualizado_por=$2, atualizado_em=NOW()
+     WHERE id = ANY($3::bigint[])
+     RETURNING *`,
+    [liberado, adminEmail || null, ids]
+  );
+  return result.rows;
 }
 
 async function deleteCandidato(id) {
@@ -212,6 +265,7 @@ async function findArquivo(id) {
 
 module.exports = {
   findCandidatos, insertCandidato, updateCandidato, deleteCandidato,
+  liberarEmLote, encontrarPossiveisDuplicatas,
   findLiberados, candidatoEstaLiberado, upsertNota, resultados,
   insertArquivo, findArquivo,
 };

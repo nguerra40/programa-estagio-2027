@@ -934,7 +934,7 @@
     <main class="login-card">
       <img class="login-card__logo" src="logo_galapagos_login.png" alt="Galapagos Capital" />
       <h1 class="login-card__title">Programa de Estágio 2027</h1>
-      <div class="login-card__subtitle">Solicitação de Vagas</div>
+      <div class="login-card__subtitle">Avaliação de Candidatos</div>
       <button class="login-card__btn" onclick="doLogin()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0">
           <rect x="4" y="11" width="16" height="9" rx="2"/>
@@ -1155,7 +1155,8 @@
       <div class="form-banner">
         <img src="logo_programadeestagio.png" alt="Programa de Estágio 2027" class="form-banner__img">
       </div>
-      <h2 class="section-title" style="margin-bottom:24px;">Avaliação de Candidatos</h2>
+      <h2 class="section-title" style="margin-bottom:8px;">Avaliação de Candidatos</h2>
+      <p id="avaliacao-progresso" style="font-size:14px; color:rgba(255,255,255,0.75); margin-bottom:16px;"></p>
       <div id="avaliacao-lista" style="display:flex; flex-direction:column; gap:12px;"></div>
       <p id="avaliacao-vazio" style="font-size:14px; color:rgba(255,255,255,0.6); display:none;">Nenhum candidato liberado para avaliação no momento.</p>
     </div>
@@ -1174,6 +1175,10 @@
         <div class="stat-item">
           <span class="stat-item__label">Liberados para Avaliação</span>
           <span class="stat-item__value" id="cand-stat-liberados">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-item__label">Liberados já Avaliados</span>
+          <span class="stat-item__value" id="cand-stat-avaliados">0</span>
         </div>
       </div>
 
@@ -1231,13 +1236,21 @@
           <button type="submit" class="btn-solid" style="margin-top:16px;">Cadastrar todos</button>
           <span id="bulk-status" style="margin-left:12px; font-size:13px; color:var(--color-light-grey);"></span>
         </form>
+        <div id="bulk-avisos" style="display:none; margin-top:16px; padding:12px 16px; background:#FFF8E1; border:1px solid #F0D47A; border-radius:var(--radius-sm); font-size:13px; color:#7A5C00;"></div>
       </div>
 
-      <div class="table-wrapper">
+      <div class="table-wrapper" style="padding:16px;">
+        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
+          <input type="text" id="cand-busca" placeholder="Buscar por nome, curso, faculdade ou turno..." oninput="renderCandidatosAdmin()" style="flex:1; min-width:240px; font-family:var(--font-body); font-size:14px; padding:8px 12px; border:1.5px solid #D0D0D0; border-radius:var(--radius-sm); outline:none;">
+          <span id="cand-selecao-info" style="font-size:13px; color:var(--color-light-grey);"></span>
+          <button type="button" class="btn-secondary" onclick="liberarSelecionadosAdmin(true)">Liberar selecionados</button>
+          <button type="button" class="btn-secondary" onclick="liberarSelecionadosAdmin(false)">Remover liberação</button>
+        </div>
         <table>
           <caption class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">Lista de candidatos cadastrados</caption>
           <thead>
             <tr>
+              <th><input type="checkbox" id="cand-select-all" onchange="toggleSelecionarTodosAdmin(this.checked)"></th>
               <th>Foto</th><th>Nome</th><th>Curso</th><th>Turno</th><th>LinkedIn</th><th>CV</th><th>Liberado</th><th></th>
             </tr>
           </thead>
@@ -1252,10 +1265,16 @@
       <div class="table-wrapper" style="margin-top:32px; padding:24px;">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
           <h3 style="font-family:var(--font-primary); color:var(--color-deep-blue); font-size:16px; margin:0;">Resultados</h3>
-          <button class="btn-secondary" onclick="carregarResultadosAdmin()">
-            <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">refresh</span>
-            Atualizar
-          </button>
+          <div>
+            <button class="btn-secondary" onclick="carregarResultadosAdmin()">
+              <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">refresh</span>
+              Atualizar
+            </button>
+            <button class="btn-secondary" onclick="window.location.href='/api/dinamica/resultados/export'">
+              <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">download</span>
+              Exportar
+            </button>
+          </div>
         </div>
         <table>
           <caption class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">Resultados das avaliações por candidato</caption>
@@ -1808,13 +1827,22 @@
     function renderAvaliacao() {
       const box = document.getElementById('avaliacao-lista');
       const vazio = document.getElementById('avaliacao-vazio');
+      const progresso = document.getElementById('avaliacao-progresso');
       if (!avaliacaoCandidatos.length) {
         box.innerHTML = '';
         vazio.style.display = 'block';
+        progresso.textContent = '';
         return;
       }
       vazio.style.display = 'none';
       box.innerHTML = avaliacaoCandidatos.map(c => candCardHtml(c)).join('');
+      atualizarProgressoAvaliacao();
+    }
+
+    function atualizarProgressoAvaliacao() {
+      const progresso = document.getElementById('avaliacao-progresso');
+      const avaliados = avaliacaoCandidatos.filter(c => c.minha_nota != null).length;
+      progresso.textContent = `Você avaliou ${avaliados} de ${avaliacaoCandidatos.length} candidatos liberados.`;
     }
 
     function candCardFoto(c) {
@@ -1877,6 +1905,7 @@
       const c = avaliacaoCandidatos.find(x => String(x.id) === String(id));
       if (!c) return;
       c.minha_nota = nota;
+      atualizarProgressoAvaliacao();
       document.querySelectorAll('#cand-card-' + id + ' .cand-nota-btn').forEach((b, i) => b.classList.toggle('active', i + 1 === nota));
       const badge = document.querySelector('#cand-card-' + id + ' .cand-card__badge');
       if (!badge) {
@@ -1925,30 +1954,54 @@
     // Gerenciar Candidatos (admin)
     // ============================================================
     let candidatosAdminLista = [];
+    let candidatosSelecionados = new Set();
+    let resultadosAdminCache = [];
 
     async function carregarCandidatosAdmin() {
       try {
         candidatosAdminLista = await apiDinamica('/candidatos');
+        candidatosSelecionados.clear();
         renderCandidatosAdmin();
       } catch (e) {
         showToast('Erro ao carregar candidatos: ' + e.message);
       }
     }
 
+    function candidatosFiltradosAdmin() {
+      const termo = (document.getElementById('cand-busca').value || '').trim().toLowerCase();
+      if (!termo) return candidatosAdminLista;
+      return candidatosAdminLista.filter(c =>
+        [c.nome, c.curso, c.faculdade, c.turno].some(v => (v || '').toLowerCase().includes(termo))
+      );
+    }
+
+    function formatarDataHora(iso) {
+      if (!iso) return '';
+      return new Date(iso).toLocaleString('pt-BR');
+    }
+
+    function tituloLiberado(c) {
+      if (!c.liberado_por && !c.liberado_em) return 'Ainda não foi liberado/removido por ninguém.';
+      return `Último ajuste por ${c.liberado_por || '—'} em ${formatarDataHora(c.liberado_em)}`;
+    }
+
     function renderCandidatosAdmin() {
       document.getElementById('cand-stat-total').textContent = candidatosAdminLista.length;
       document.getElementById('cand-stat-liberados').textContent = candidatosAdminLista.filter(c => c.liberado).length;
 
+      const lista = candidatosFiltradosAdmin();
       const body = document.getElementById('cand-table-body');
       const empty = document.getElementById('cand-empty-state');
-      if (!candidatosAdminLista.length) {
+      if (!lista.length) {
         body.innerHTML = '';
         empty.style.display = 'block';
+        atualizarSelecaoInfoAdmin();
         return;
       }
       empty.style.display = 'none';
-      body.innerHTML = candidatosAdminLista.map(c => `
+      body.innerHTML = lista.map(c => `
         <tr>
+          <td><input type="checkbox" ${candidatosSelecionados.has(String(c.id)) ? 'checked' : ''} onchange="toggleSelecionarCandidatoAdmin('${c.id}', this.checked)"></td>
           <td>${c.foto_arquivo_id
             ? `<img class="admin-cand-foto" src="/api/arquivos/${c.foto_arquivo_id}" alt="">`
             : '<div class="admin-cand-foto--placeholder"></div>'}</td>
@@ -1957,7 +2010,7 @@
           <td>${escHtml(c.turno)}</td>
           <td>${isHttpUrl(c.linkedin_url) ? `<a href="${escHtml(c.linkedin_url)}" target="_blank" rel="noopener">Ver perfil</a>` : '—'}</td>
           <td>${c.cv_arquivo_id ? `<a href="/api/arquivos/${c.cv_arquivo_id}" target="_blank">Ver CV</a>` : '—'}</td>
-          <td>
+          <td title="${escHtml(tituloLiberado(c))}">
             <label class="toggle-switch">
               <input type="checkbox" ${c.liberado ? 'checked' : ''} onchange="toggleLiberadoAdmin('${c.id}', this.checked)">
               <span class="toggle-switch__slider"></span>
@@ -1968,6 +2021,43 @@
             <button class="btn-secondary" style="padding:4px 12px;font-size:12px;color:#C0392B;border-color:#C0392B;" onclick="excluirCandidatoAdmin('${c.id}')">Excluir</button>
           </td>
         </tr>`).join('');
+      atualizarSelecaoInfoAdmin();
+    }
+
+    function toggleSelecionarCandidatoAdmin(id, checked) {
+      if (checked) candidatosSelecionados.add(String(id));
+      else candidatosSelecionados.delete(String(id));
+      atualizarSelecaoInfoAdmin();
+    }
+
+    function toggleSelecionarTodosAdmin(checked) {
+      const lista = candidatosFiltradosAdmin();
+      if (checked) lista.forEach(c => candidatosSelecionados.add(String(c.id)));
+      else lista.forEach(c => candidatosSelecionados.delete(String(c.id)));
+      renderCandidatosAdmin();
+    }
+
+    function atualizarSelecaoInfoAdmin() {
+      const info = document.getElementById('cand-selecao-info');
+      info.textContent = candidatosSelecionados.size ? `${candidatosSelecionados.size} selecionado(s)` : '';
+    }
+
+    async function liberarSelecionadosAdmin(liberado) {
+      if (!candidatosSelecionados.size) {
+        showToast('Selecione pelo menos um candidato.');
+        return;
+      }
+      try {
+        const ids = Array.from(candidatosSelecionados);
+        await apiDinamica('/candidatos/liberar-lote', {
+          method: 'PATCH',
+          body: JSON.stringify({ ids, liberado, admin_email: currentUser }),
+        });
+        showToast(liberado ? `${ids.length} candidato(s) liberado(s).` : `${ids.length} candidato(s) removido(s) da avaliação.`);
+        await carregarCandidatosAdmin();
+      } catch (e) {
+        showToast('Erro: ' + e.message);
+      }
     }
 
     function limparFormCandidatoAdmin() {
@@ -1996,6 +2086,20 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    function normalizarNomeCand(s) {
+      return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    function acharDuplicataAdmin(nome, email, excludeId) {
+      const nomeNorm = normalizarNomeCand(nome);
+      return candidatosAdminLista.find(c => {
+        if (excludeId && String(c.id) === String(excludeId)) return false;
+        const mesmoNome = nomeNorm && normalizarNomeCand(c.nome) === nomeNorm;
+        const mesmoEmail = email && c.email && c.email.toLowerCase() === email.toLowerCase();
+        return mesmoNome || mesmoEmail;
+      });
+    }
+
     async function salvarCandidatoAdmin(e) {
       e.preventDefault();
       const id = document.getElementById('cand-id').value;
@@ -2011,7 +2115,13 @@
         data_dinamica: document.getElementById('cand-data').value,
         historico: document.getElementById('cand-historico').value.trim(),
         liberado: document.getElementById('cand-liberado').checked,
+        admin_email: currentUser,
       };
+
+      const duplicata = acharDuplicataAdmin(payload.nome, payload.email, id);
+      if (duplicata && !confirm(`Já existe um candidato parecido: "${duplicata.nome}". Deseja salvar mesmo assim?`)) {
+        return false;
+      }
 
       try {
         const cvFile = document.getElementById('cand-cv').files[0];
@@ -2066,7 +2176,7 @@
 
     async function toggleLiberadoAdmin(id, liberado) {
       try {
-        await apiDinamica('/candidatos/' + id, { method: 'PUT', body: JSON.stringify({ liberado }) });
+        await apiDinamica('/candidatos/' + id, { method: 'PUT', body: JSON.stringify({ liberado, admin_email: currentUser }) });
         const c = candidatosAdminLista.find(x => String(x.id) === String(id));
         if (c) c.liberado = liberado;
         document.getElementById('cand-stat-liberados').textContent = candidatosAdminLista.filter(x => x.liberado).length;
@@ -2086,17 +2196,27 @@
       if (!files.length) return;
 
       statusEl.textContent = 'Enviando ' + files.length + ' currículo(s)...';
+      const avisosEl = document.getElementById('bulk-avisos');
+      avisosEl.style.display = 'none';
       try {
         const arquivos = await Promise.all(files.map(async f => ({
           nome: f.name, mime: f.type, dados: await fileToBase64(f),
         })));
         const resultado = await apiDinamica('/candidatos/bulk', {
           method: 'POST',
-          body: JSON.stringify({ turno, data_dinamica, arquivos }),
+          body: JSON.stringify({ turno, data_dinamica, arquivos, admin_email: currentUser }),
         });
         statusEl.textContent = resultado.criados + ' candidato(s) cadastrado(s).';
         document.getElementById('cand-bulk-form').reset();
         document.getElementById('bulk-turno').value = '09h-11h';
+
+        const avisos = resultado.avisos_duplicata || [];
+        if (avisos.length) {
+          avisosEl.style.display = 'block';
+          avisosEl.innerHTML = '<b>Possíveis duplicatas encontradas — confira antes da dinâmica:</b><br>' +
+            avisos.map(a => `${escHtml(a.nome)} parece igual a: ${a.parecidoCom.map(escHtml).join(', ')}`).join('<br>');
+        }
+
         await carregarCandidatosAdmin();
       } catch (e) {
         statusEl.textContent = 'Erro: ' + e.message;
@@ -2110,9 +2230,16 @@
       return 'color:#C0392B;';
     }
 
+    function atualizarStatAvaliadosAdmin() {
+      const liberadosComNota = resultadosAdminCache.filter(c => c.liberado && c.qtd_avaliacoes > 0).length;
+      document.getElementById('cand-stat-avaliados').textContent = liberadosComNota;
+    }
+
     async function carregarResultadosAdmin() {
       try {
         const dados = await apiDinamica('/resultados');
+        resultadosAdminCache = dados;
+        atualizarStatAvaliadosAdmin();
         const body = document.getElementById('resultados-table-body');
         const empty = document.getElementById('resultados-empty-state');
         const avaliados = dados.filter(c => c.qtd_avaliacoes > 0);
