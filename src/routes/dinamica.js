@@ -155,7 +155,7 @@ router.get('/resultados/export', isAuthenticated, isAdmin, async (req, res) => {
     const rows = dados.map((c) => {
       const dataFormatada = c.data_dinamica ? new Date(c.data_dinamica).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '';
       const avaliacoes = (c.avaliacoes || [])
-        .map((a) => `${a.avaliador || a.email || '?'} (${a.nota}): ${a.comentario || ''}`)
+        .map((a) => `${a.avaliador || a.email || '?'} (${a.nota}${a.area_interesse ? ', interesse: ' + a.area_interesse : ''}): ${a.comentario || ''}`)
         .join(' | ');
       return [c.nome, c.curso || '', c.faculdade || '', c.turno, dataFormatada, c.media != null ? c.media : '', c.qtd_avaliacoes, avaliacoes]
         .map((val) => `"${String(val).replace(/"/g, '""')}"`)
@@ -193,6 +193,7 @@ router.post('/notas', isAuthenticated, async (req, res) => {
     const avaliadorEmail = String(req.body.avaliador_email || '').toLowerCase().trim();
     const avaliadorNome = String(req.body.avaliador_nome || '').slice(0, 255);
     const comentario = req.body.comentario == null ? '' : String(req.body.comentario).slice(0, 4000);
+    const areaInteresse = req.body.area_interesse == null ? '' : String(req.body.area_interesse).slice(0, 100);
 
     if (!candidatoId) return res.status(400).json({ error: 'candidato_id é obrigatório.' });
     if (!avaliadorEmail) return res.status(400).json({ error: 'avaliador_email é obrigatório.' });
@@ -211,6 +212,7 @@ router.post('/notas', isAuthenticated, async (req, res) => {
       avaliador_nome: avaliadorNome,
       nota,
       comentario,
+      area_interesse: areaInteresse,
     });
     res.json(registro);
   } catch (error) {

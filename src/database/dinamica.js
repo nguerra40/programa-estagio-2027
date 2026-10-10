@@ -66,6 +66,8 @@ query(`
 `)).then(() => query(`
   ALTER TABLE dinamica_notas ADD COLUMN IF NOT EXISTS avaliador_nome TEXT;
 `)).then(() => query(`
+  ALTER TABLE dinamica_notas ADD COLUMN IF NOT EXISTS area_interesse TEXT;
+`)).then(() => query(`
   ALTER TABLE dinamica_notas DROP CONSTRAINT IF EXISTS dinamica_notas_candidato_id_gestor_id_key;
 `)).then(() => query(`
   ALTER TABLE dinamica_notas DROP COLUMN IF EXISTS gestor_id;
@@ -202,7 +204,7 @@ async function findLiberados(avaliadorEmail) {
   let notaPorCandidato = {};
   if (avaliadorEmail) {
     const { rows: notas } = await query(
-      'SELECT candidato_id, nota, comentario FROM dinamica_notas WHERE avaliador_email = $1',
+      'SELECT candidato_id, nota, comentario, area_interesse FROM dinamica_notas WHERE avaliador_email = $1',
       [avaliadorEmail]
     );
     for (const n of notas) notaPorCandidato[n.candidato_id] = n;
@@ -212,6 +214,7 @@ async function findLiberados(avaliadorEmail) {
     ...c,
     minha_nota: notaPorCandidato[c.id] ? notaPorCandidato[c.id].nota : null,
     meu_comentario: notaPorCandidato[c.id] ? notaPorCandidato[c.id].comentario : '',
+    minha_area_interesse: notaPorCandidato[c.id] ? notaPorCandidato[c.id].area_interesse : '',
   }));
 }
 
@@ -220,14 +223,14 @@ async function candidatoEstaLiberado(candidatoId) {
   return rows.length > 0;
 }
 
-async function upsertNota({ candidato_id, avaliador_email, avaliador_nome, nota, comentario }) {
+async function upsertNota({ candidato_id, avaliador_email, avaliador_nome, nota, comentario, area_interesse }) {
   const result = await query(
-    `INSERT INTO dinamica_notas (candidato_id, avaliador_email, avaliador_nome, nota, comentario)
-     VALUES ($1,$2,$3,$4,$5)
+    `INSERT INTO dinamica_notas (candidato_id, avaliador_email, avaliador_nome, nota, comentario, area_interesse)
+     VALUES ($1,$2,$3,$4,$5,$6)
      ON CONFLICT (candidato_id, avaliador_email)
-     DO UPDATE SET nota=$4, comentario=$5, avaliador_nome=$3, updated_at=NOW()
+     DO UPDATE SET nota=$4, comentario=$5, area_interesse=$6, avaliador_nome=$3, updated_at=NOW()
      RETURNING *`,
-    [candidato_id, avaliador_email, avaliador_nome || '', nota, comentario || '']
+    [candidato_id, avaliador_email, avaliador_nome || '', nota, comentario || '', area_interesse || '']
   );
   return result.rows[0];
 }
@@ -240,7 +243,7 @@ async function resultados() {
       ROUND(AVG(n.nota)::numeric, 2) AS media,
       COALESCE(
         json_agg(
-          json_build_object('avaliador', n.avaliador_nome, 'email', n.avaliador_email, 'nota', n.nota, 'comentario', n.comentario)
+          json_build_object('avaliador', n.avaliador_nome, 'email', n.avaliador_email, 'nota', n.nota, 'comentario', n.comentario, 'area_interesse', n.area_interesse)
           ORDER BY n.avaliador_nome
         ) FILTER (WHERE n.id IS NOT NULL),
         '[]'
