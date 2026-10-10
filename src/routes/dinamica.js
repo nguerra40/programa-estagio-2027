@@ -110,6 +110,22 @@ router.post('/candidatos/bulk', isAuthenticated, isAdmin, async (req, res) => {
   }
 });
 
+// Import de planilha (ex.: lista de aprovados do RH, já com gênero/curso/
+// faculdade/dinâmica). O parse do arquivo acontece no navegador (SheetJS via
+// CDN, ver public/index.html) — aqui só chega um array já mapeado pros
+// campos do candidato, então essa rota nunca lida com o arquivo bruto.
+router.post('/candidatos/importar-planilha', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    const linhas = Array.isArray(req.body.linhas) ? req.body.linhas : [];
+    if (!linhas.length) return res.status(400).json({ error: 'Nenhuma linha para importar.' });
+    const resultado = await db.importarPlanilha(linhas, req.body.admin_email);
+    res.json(resultado);
+  } catch (error) {
+    console.error('[API] Erro ao importar planilha:', error.message);
+    res.status(500).json({ error: 'Erro interno ao importar planilha.' });
+  }
+});
+
 router.put('/candidatos/:id', isAuthenticated, isAdmin, async (req, res) => {
   try {
     const updated = await db.updateCandidato(req.params.id, req.body, req.body.admin_email);
@@ -135,10 +151,18 @@ router.delete('/candidatos/:id', isAuthenticated, isAdmin, async (req, res) => {
 // ============================================================
 // ADMIN — resultados (nota média por candidato, calculada no banco)
 // ============================================================
+function filtrosResultados(query) {
+  const filtros = {};
+  for (const campo of ['turno', 'genero', 'curso', 'faculdade']) {
+    const valor = (query[campo] || '').trim();
+    if (valor) filtros[campo] = valor;
+  }
+  return filtros;
+}
+
 router.get('/resultados', isAuthenticated, isAdmin, async (req, res) => {
   try {
-    const turno = (req.query.turno || '').trim() || undefined;
-    res.json(await db.resultados(turno));
+    res.json(await db.resultados(filtrosResultados(req.query)));
   } catch (error) {
     console.error('[API] Erro ao calcular resultados:', error.message);
     res.status(500).json({ error: 'Erro interno.' });
@@ -147,28 +171,28 @@ router.get('/resultados', isAuthenticated, isAdmin, async (req, res) => {
 
 router.get('/resultados/export', isAuthenticated, isAdmin, async (req, res) => {
   try {
-    const turno = (req.query.turno || '').trim() || undefined;
-    const dados = await db.resultados(turno);
+    const filtros = filtrosResultados(req.query);
+    const dados = await db.resultados(filtros);
 
     const BOM = '﻿';
     const separator = ';';
-    const headers = ['Nome', 'Curso', 'Faculdade', 'Turno', 'Data', 'Média', 'Qtd. Avaliações', 'Avaliações'];
+    const headers = ['Nome', 'Gênero', 'Curso', 'Faculdade', 'Turno', 'Data', 'Média', 'Qtd. Avaliações', 'Avaliações'];
 
     const rows = dados.map((c) => {
       const dataFormatada = c.data_dinamica ? new Date(c.data_dinamica).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '';
       const avaliacoes = (c.avaliacoes || [])
         .map((a) => `${a.avaliador || a.email || '?'} (${a.nota}${(a.areas_interesse && a.areas_interesse.length) ? ', interesse: ' + a.areas_interesse.join(' / ') : ''}): ${a.comentario || ''}`)
         .join(' | ');
-      return [c.nome, c.curso || '', c.faculdade || '', c.turno, dataFormatada, c.media != null ? c.media : '', c.qtd_avaliacoes, avaliacoes]
+      return [c.nome, c.genero || '', c.curso || '', c.faculdade || '', c.turno, dataFormatada, c.media != null ? c.media : '', c.qtd_avaliacoes, avaliacoes]
         .map((val) => `"${String(val).replace(/"/g, '""')}"`)
         .join(separator);
     });
 
     const csv = BOM + headers.join(separator) + '\n' + rows.join('\n');
 
-    const sufixoBanca = turno ? `_${turno.replace(/[^a-z0-9]+/gi, '-')}` : '';
+    const sufixoFiltros = Object.values(filtros).map((v) => `_${v.replace(/[^a-z0-9]+/gi, '-')}`).join('');
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename=resultados_dinamica${sufixoBanca}_${new Date().toISOString().slice(0, 10)}.csv`);
+    res.setHeader('Content-Disposition', `attachment; filename=resultados_dinamica${sufixoFiltros}_${new Date().toISOString().slice(0, 10)}.csv`);
     res.send(csv);
   } catch (error) {
     console.error('[API] Erro ao exportar resultados:', error.message);

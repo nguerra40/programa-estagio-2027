@@ -50,6 +50,8 @@ query(`
 `)).then(() => query(`
   ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS liberado_em TIMESTAMP WITH TIME ZONE;
 `)).then(() => query(`
+  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS genero TEXT;
+`)).then(() => query(`
   CREATE TABLE IF NOT EXISTS dinamica_notas (
     id BIGSERIAL PRIMARY KEY,
     candidato_id BIGINT NOT NULL REFERENCES dinamica_candidatos(id) ON DELETE CASCADE,
@@ -100,7 +102,7 @@ query(`
 // como o admin organiza quem participa de qual turno/dia da dinâmica.
 const CAND_COLS = [
   'nome', 'curso', 'faculdade', 'formacao', 'telefone', 'email', 'linkedin_url',
-  'turno', 'data_dinamica', 'cv_arquivo_id', 'foto_arquivo_id', 'liberado',
+  'turno', 'data_dinamica', 'cv_arquivo_id', 'foto_arquivo_id', 'liberado', 'genero',
 ];
 const CAND_NULLABLE_EMPTY = ['data_dinamica', 'cv_arquivo_id', 'foto_arquivo_id'];
 
@@ -205,6 +207,65 @@ async function deleteCandidato(id) {
   return result.rows[0];
 }
 
+// Import de planilha (ex.: lista de aprovados vinda do RH) — casa cada linha
+// com um candidato já existente por e-mail (prioridade) ou por nome exato
+// (normalizado); sem match, cria um candidato novo. Nomes repetidos sem
+// e-mail para desempatar viram aviso em vez de atualizar o errado.
+async function importarPlanilha(linhas, adminEmail) {
+  const { rows: existentes } = await query('SELECT id, nome, email FROM dinamica_candidatos');
+  const porEmail = new Map(existentes.filter((c) => c.email).map((c) => [c.email.toLowerCase(), c]));
+  const porNome = new Map();
+  for (const c of existentes) {
+    const chave = normalizarNome(c.nome);
+    if (!porNome.has(chave)) porNome.set(chave, []);
+    porNome.get(chave).push(c);
+  }
+
+  let criados = 0;
+  let atualizados = 0;
+  const avisos = [];
+
+  for (const linha of linhas) {
+    const nome = String(linha.nome || '').trim();
+    if (!nome) {
+      avisos.push({ nome: '(sem nome)', motivo: 'Linha sem nome — ignorada.' });
+      continue;
+    }
+    const email = linha.email ? String(linha.email).trim().toLowerCase() : '';
+
+    let match = email ? porEmail.get(email) : null;
+    if (!match) {
+      const comMesmoNome = porNome.get(normalizarNome(nome)) || [];
+      if (comMesmoNome.length === 1) match = comMesmoNome[0];
+      else if (comMesmoNome.length > 1) {
+        avisos.push({ nome, motivo: 'Mais de um candidato já cadastrado com esse nome — confira manualmente, não atualizei automaticamente.' });
+        continue;
+      }
+    }
+
+    const campos = {};
+    for (const [campo, valor] of Object.entries(linha)) {
+      if (campo === 'nome' || valor === undefined || valor === null || valor === '') continue;
+      campos[campo] = valor;
+    }
+
+    try {
+      if (match) {
+        await updateCandidato(match.id, campos, adminEmail);
+        atualizados++;
+      } else {
+        const criado = await insertCandidato({ nome, ...campos }, adminEmail);
+        porEmail.set(email, criado);
+        criados++;
+      }
+    } catch (error) {
+      avisos.push({ nome, motivo: error.message });
+    }
+  }
+
+  return { criados, atualizados, avisos };
+}
+
 // ---------- Liberados (visão do avaliador logado) ----------
 
 async function findLiberados(avaliadorEmail) {
@@ -247,12 +308,21 @@ async function upsertNota({ candidato_id, avaliador_email, avaliador_nome, nota,
   return result.rows[0];
 }
 
-// Sem `turno`: todos os candidatos, ranqueados pela média geral — visão da
+// Sem filtros: todos os candidatos, ranqueados pela média geral — visão da
 // reunião final de comitê, com todas as bancas juntas. Com `turno`: só os
 // candidatos daquela banca — visão do encontro logo após cada dinâmica.
-async function resultados(turno) {
-  const where = turno ? 'WHERE c.turno = $1' : '';
-  const params = turno ? [turno] : [];
+// `genero`/`curso`/`faculdade` recortam o ranking pros mesmos filtros do
+// painel (comparar como cada grupo se saiu, por exemplo).
+async function resultados(filtros = {}) {
+  const { turno, genero, curso, faculdade } = filtros;
+  const condicoes = [];
+  const params = [];
+  for (const [coluna, valor] of [['c.turno', turno], ['c.genero', genero], ['c.curso', curso], ['c.faculdade', faculdade]]) {
+    if (!valor) continue;
+    params.push(valor);
+    condicoes.push(`${coluna} = $${params.length}`);
+  }
+  const where = condicoes.length ? `WHERE ${condicoes.join(' AND ')}` : '';
   const result = await query(`
     SELECT
       c.*,
@@ -291,7 +361,7 @@ async function findArquivo(id) {
 
 module.exports = {
   findCandidatos, insertCandidato, updateCandidato, deleteCandidato,
-  liberarEmLote, encontrarPossiveisDuplicatas,
+  liberarEmLote, encontrarPossiveisDuplicatas, importarPlanilha,
   findLiberados, candidatoEstaLiberado, upsertNota, resultados,
   insertArquivo, findArquivo,
 };
