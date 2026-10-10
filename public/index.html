@@ -1375,7 +1375,12 @@
           <thead>
             <tr>
               <th><input type="checkbox" id="cand-select-all" onchange="toggleSelecionarTodosAdmin(this.checked)"></th>
-              <th>Foto</th><th>Nome</th><th>Curso</th><th>Turno</th><th>LinkedIn</th><th>CV</th><th>Liberado</th><th></th>
+              <th>Foto</th><th>Nome</th><th>Curso</th><th>Turno</th><th>LinkedIn</th><th>CV</th><th>Liberado</th>
+              <th style="text-align:right;">
+                <button type="button" id="cand-lista-toggle-btn" onclick="toggleListaCandidatosAdmin()" aria-expanded="true" aria-controls="cand-table-body" title="Mostrar/ocultar lista de candidatos" style="background:none; border:none; cursor:pointer; color:#fff; padding:4px; display:inline-flex; align-items:center;">
+                  <span class="material-icons-outlined" id="cand-lista-toggle-icon">expand_less</span>
+                </button>
+              </th>
             </tr>
           </thead>
           <tbody id="cand-table-body"></tbody>
@@ -2205,6 +2210,7 @@
         body.innerHTML = '';
         empty.style.display = 'block';
         atualizarSelecaoInfoAdmin();
+        aplicarColapsoListaCandidatos();
         return;
       }
       empty.style.display = 'none';
@@ -2231,6 +2237,33 @@
           </td>
         </tr>`).join('');
       atualizarSelecaoInfoAdmin();
+      aplicarColapsoListaCandidatos();
+    }
+
+    // Colapsar a lista de candidatos (pode passar de 100 linhas) deixa a
+    // página bem menor e traz o painel de Resultados pra mais perto do topo,
+    // sem precisar rolar por toda a tabela pra chegar nele.
+    let candidatosListaColapsada = false;
+
+    function aplicarColapsoListaCandidatos() {
+      const body = document.getElementById('cand-table-body');
+      const empty = document.getElementById('cand-empty-state');
+      const icon = document.getElementById('cand-lista-toggle-icon');
+      const btn = document.getElementById('cand-lista-toggle-btn');
+      if (candidatosListaColapsada) {
+        body.style.display = 'none';
+        empty.style.display = 'none';
+      } else {
+        body.style.display = '';
+      }
+      icon.textContent = candidatosListaColapsada ? 'expand_more' : 'expand_less';
+      btn.setAttribute('aria-expanded', String(!candidatosListaColapsada));
+      btn.title = candidatosListaColapsada ? 'Mostrar lista de candidatos' : 'Ocultar lista de candidatos';
+    }
+
+    function toggleListaCandidatosAdmin() {
+      candidatosListaColapsada = !candidatosListaColapsada;
+      renderCandidatosAdmin();
     }
 
     function toggleSelecionarCandidatoAdmin(id, checked) {
