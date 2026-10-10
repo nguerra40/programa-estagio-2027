@@ -675,7 +675,14 @@
       top: 100%;
       left: 0;
       right: 0;
+      /* "Vidro fosco": deixa transparecer o azul que estiver atrás (o
+         gradiente da página ou outro card), em vez de um tom sólido que
+         nunca bate certinho com o fundo. background sólido é só um
+         fallback pra navegador sem suporte a backdrop-filter. */
       background: var(--color-deep-blue);
+      background: rgba(8, 25, 56, 0.72);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255,255,255,0.25);
       border-radius: var(--radius-sm);
       margin-top: 4px;
@@ -683,6 +690,25 @@
       overflow-y: auto;
       z-index: 50;
       box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.4) transparent;
+    }
+
+    .cand-area-dropdown::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .cand-area-dropdown::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .cand-area-dropdown::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.3);
+      border-radius: 4px;
+    }
+
+    .cand-area-dropdown::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.5);
     }
 
     .cand-area-select.open .cand-area-dropdown {
