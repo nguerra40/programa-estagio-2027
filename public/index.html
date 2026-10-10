@@ -309,6 +309,34 @@
       border: 1.5px solid #E0E0E0;
     }
 
+    /* Setas da barra de rolagem horizontal das tabelas do admin, na cor
+       institucional (--color-deep-blue) em vez do cinza padrão do navegador.
+       Só funciona no Chrome/Edge (barra "clássica", não a flutuante). */
+    .table-wrapper::-webkit-scrollbar {
+      height: 14px;
+    }
+    .table-wrapper::-webkit-scrollbar-track {
+      background: #F2F2F2;
+    }
+    .table-wrapper::-webkit-scrollbar-thumb {
+      background: #BDBDBD;
+      border-radius: 7px;
+    }
+    .table-wrapper::-webkit-scrollbar-button {
+      display: block;
+      width: 14px;
+      height: 14px;
+      background-color: #F2F2F2;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+    .table-wrapper::-webkit-scrollbar-button:horizontal:start:decrement {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M7 1L2.5 5L7 9' stroke='%23183C80' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    }
+    .table-wrapper::-webkit-scrollbar-button:horizontal:end:increment {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3 1L7.5 5L3 9' stroke='%23183C80' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
