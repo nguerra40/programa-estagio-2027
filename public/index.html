@@ -340,6 +340,35 @@
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3 1L7.5 5L3 9' stroke='%23183C80' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     }
 
+    /* Barra de busca/ações da lista de candidatos — mesmo tratamento da
+       barra de filtros dos Resultados: um bloco com fundo próprio, não
+       solto em cima do cabeçalho azul da tabela logo abaixo. */
+    .cand-lista-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      background: var(--color-snow-white);
+      border: 1px solid #E0E0E0;
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      margin-bottom: 20px;
+    }
+    .cand-lista-toolbar input[type="text"] {
+      flex: 1;
+      min-width: 240px;
+      font-family: var(--font-body);
+      font-size: 14px;
+      padding: 8px 12px;
+      border: 1.5px solid #D0D5DD;
+      border-radius: var(--radius-sm);
+      outline: none;
+      background: #FFFFFF;
+    }
+    .cand-lista-toolbar input[type="text"]:focus {
+      border-color: var(--color-bright-blue);
+    }
+
     /* Barra de filtros do painel de Resultados — um bloco só, com fundo
        próprio, em vez de selects soltos boiando entre o título e a tabela. */
     .resultados-filtros {
@@ -1455,8 +1484,8 @@
       </div>
 
       <div class="table-wrapper" style="padding:16px;">
-        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
-          <input type="text" id="cand-busca" placeholder="Buscar por nome, curso, faculdade ou turno..." oninput="renderCandidatosAdmin()" style="flex:1; min-width:240px; font-family:var(--font-body); font-size:14px; padding:8px 12px; border:1.5px solid #D0D0D0; border-radius:var(--radius-sm); outline:none;">
+        <div class="cand-lista-toolbar">
+          <input type="text" id="cand-busca" placeholder="Buscar por nome, curso, faculdade ou turno..." oninput="renderCandidatosAdmin()">
           <span id="cand-selecao-info" style="font-size:13px; color:var(--color-light-grey);"></span>
           <button type="button" class="btn-secondary" onclick="liberarSelecionadosAdmin(true)">Liberar selecionados</button>
           <button type="button" class="btn-secondary" onclick="liberarSelecionadosAdmin(false)">Remover liberação</button>
