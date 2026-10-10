@@ -11,7 +11,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database/dinamica');
 const { isAdmin } = require('../auth/middleware');
-const { resumirCurriculo } = require('../services/resumoIA');
+const { analisarCurriculo } = require('../services/resumoIA');
 
 // Limite de segurança do tamanho do arquivo (base64), ~12MB de payload.
 const MAX_B64 = 12 * 1024 * 1024;
@@ -49,15 +49,15 @@ router.post('/', isAdmin, async (req, res) => {
     }
     const arquivo = await db.insertArquivo({ tipo, nome, mime, dados });
 
-    // CV em PDF: gera um resumo automático do histórico via IA (best-effort —
-    // se não houver ANTHROPIC_API_KEY configurada, resumirCurriculo já
-    // retorna '' sem quebrar o upload).
-    let resumo = '';
+    // CV em PDF: extrai curso/faculdade/formação e gera um resumo do
+    // histórico via IA (best-effort — se não houver ANTHROPIC_API_KEY
+    // configurada, analisarCurriculo já retorna {} sem quebrar o upload).
+    let analise = {};
     if (tipo === 'cv' && mime === 'application/pdf') {
-      resumo = await resumirCurriculo(dados);
+      analise = await analisarCurriculo(dados);
     }
 
-    res.status(201).json({ id: arquivo.id, nome, mime, resumo });
+    res.status(201).json({ id: arquivo.id, nome, mime, ...analise });
   } catch (error) {
     console.error('[API] Erro ao salvar arquivo:', error.message);
     res.status(500).json({ error: 'Erro interno ao salvar arquivo.' });

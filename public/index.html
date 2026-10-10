@@ -2130,6 +2130,21 @@
           const arquivo = await uploadArquivoAdmin({ tipo: 'cv', nome: cvFile.name, mime: cvFile.type, dados });
           payload.cv_arquivo_id = arquivo.id;
 
+          // Curso/faculdade/formação extraídos do currículo via IA (best-effort):
+          // só preenche campos que o admin deixou em branco, sem perguntar nada
+          // (ao contrário do histórico abaixo, que é texto mais longo e vale
+          // confirmar antes de substituir).
+          let preenchidoAuto = false;
+          for (const [elId, campo] of [['cand-curso', 'curso'], ['cand-faculdade', 'faculdade'], ['cand-formacao', 'formacao']]) {
+            if (!arquivo[campo]) continue;
+            const el = document.getElementById(elId);
+            if (el.value.trim()) continue;
+            el.value = arquivo[campo];
+            payload[campo] = arquivo[campo];
+            preenchidoAuto = true;
+          }
+          if (preenchidoAuto) showToast('Curso/faculdade/formação preenchidos a partir do currículo.');
+
           // Resumo automático do histórico via IA a partir do currículo (best-effort).
           if (arquivo.resumo) {
             const historicoEl = document.getElementById('cand-historico');
