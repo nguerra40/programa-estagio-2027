@@ -58,6 +58,21 @@ router.patch('/candidatos/liberar-lote', isAuthenticated, isAdmin, async (req, r
   }
 });
 
+// Define o status (Pendente/Aprovado/Reprovado/Ausente) de vários candidatos
+// de uma vez — mesmo espírito do liberar-lote acima.
+router.patch('/candidatos/status-lote', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body.ids) ? req.body.ids.map(Number).filter(Boolean) : [];
+    const status = String(req.body.status || '');
+    if (!ids.length) return res.status(400).json({ error: 'Nenhum candidato selecionado.' });
+    const atualizados = await db.statusEmLote(ids, status, req.body.admin_email);
+    res.json({ atualizados: atualizados.length, candidatos: atualizados });
+  } catch (error) {
+    console.error('[API] Erro ao definir status em lote:', error.message);
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // Import em lote: um candidato por CV enviado (nome inicial = nome do arquivo).
 router.post('/candidatos/bulk', isAuthenticated, isAdmin, async (req, res) => {
   try {
@@ -176,14 +191,14 @@ router.get('/resultados/export', isAuthenticated, isAdmin, async (req, res) => {
 
     const BOM = '﻿';
     const separator = ';';
-    const headers = ['Nome', 'Gênero', 'Curso', 'Faculdade', 'Turno', 'Data', 'Média', 'Qtd. Avaliações', 'Avaliações'];
+    const headers = ['Nome', 'Status', 'Gênero', 'Curso', 'Faculdade', 'Turno', 'Data', 'Média', 'Qtd. Avaliações', 'Avaliações'];
 
     const rows = dados.map((c) => {
       const dataFormatada = c.data_dinamica ? new Date(c.data_dinamica).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '';
       const avaliacoes = (c.avaliacoes || [])
         .map((a) => `${a.avaliador || a.email || '?'} (${a.nota}${(a.areas_interesse && a.areas_interesse.length) ? ', interesse: ' + a.areas_interesse.join(' / ') : ''}): ${a.comentario || ''}`)
         .join(' | ');
-      return [c.nome, c.genero || '', c.curso || '', c.faculdade || '', c.turno, dataFormatada, c.media != null ? c.media : '', c.qtd_avaliacoes, avaliacoes]
+      return [c.nome, c.status || '', c.genero || '', c.curso || '', c.faculdade || '', c.turno, dataFormatada, c.media != null ? c.media : '', c.qtd_avaliacoes, avaliacoes]
         .map((val) => `"${String(val).replace(/"/g, '""')}"`)
         .join(separator);
     });

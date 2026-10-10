@@ -52,6 +52,8 @@ query(`
 `)).then(() => query(`
   ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS genero TEXT;
 `)).then(() => query(`
+  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'Pendente';
+`)).then(() => query(`
   CREATE TABLE IF NOT EXISTS dinamica_notas (
     id BIGSERIAL PRIMARY KEY,
     candidato_id BIGINT NOT NULL REFERENCES dinamica_candidatos(id) ON DELETE CASCADE,
@@ -102,8 +104,10 @@ query(`
 // como o admin organiza quem participa de qual turno/dia da dinâmica.
 const CAND_COLS = [
   'nome', 'curso', 'faculdade', 'formacao', 'telefone', 'email', 'linkedin_url',
-  'turno', 'data_dinamica', 'cv_arquivo_id', 'foto_arquivo_id', 'liberado', 'genero',
+  'turno', 'data_dinamica', 'cv_arquivo_id', 'foto_arquivo_id', 'liberado', 'genero', 'status',
 ];
+
+const STATUS_VALIDOS = ['Pendente', 'Aprovado', 'Reprovado', 'Ausente'];
 const CAND_NULLABLE_EMPTY = ['data_dinamica', 'cv_arquivo_id', 'foto_arquivo_id'];
 
 // Só aceita LinkedIn com esquema http(s) — o campo é renderizado como link
@@ -121,11 +125,17 @@ function cleanCandidato(body) {
     if (c in body) {
       let v = body[c];
       if (v === '' && CAND_NULLABLE_EMPTY.includes(c)) v = null;
+      // status é NOT NULL — vazio significa "não mexe" (mantém o atual no
+      // update, ou cai no default 'Pendente' do banco na criação).
+      if (c === 'status' && v === '') continue;
       out[c] = v;
     }
   }
   if (out.linkedin_url && !isHttpUrl(out.linkedin_url)) {
     throw new Error('LinkedIn deve ser um link http(s) válido.');
+  }
+  if (out.status && !STATUS_VALIDOS.includes(out.status)) {
+    throw new Error('Status inválido.');
   }
   return out;
 }
@@ -198,6 +208,18 @@ async function liberarEmLote(ids, liberado, adminEmail) {
      WHERE id = ANY($3::bigint[])
      RETURNING *`,
     [liberado, adminEmail || null, ids]
+  );
+  return result.rows;
+}
+
+async function statusEmLote(ids, status, adminEmail) {
+  if (!STATUS_VALIDOS.includes(status)) throw new Error('Status inválido.');
+  const result = await query(
+    `UPDATE dinamica_candidatos
+     SET status=$1, atualizado_por=$2, atualizado_em=NOW()
+     WHERE id = ANY($3::bigint[])
+     RETURNING *`,
+    [status, adminEmail || null, ids]
   );
   return result.rows;
 }
@@ -361,7 +383,7 @@ async function findArquivo(id) {
 
 module.exports = {
   findCandidatos, insertCandidato, updateCandidato, deleteCandidato,
-  liberarEmLote, encontrarPossiveisDuplicatas, importarPlanilha,
+  liberarEmLote, statusEmLote, encontrarPossiveisDuplicatas, importarPlanilha,
   findLiberados, candidatoEstaLiberado, upsertNota, resultados,
   insertArquivo, findArquivo,
 };

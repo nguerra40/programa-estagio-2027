@@ -1387,20 +1387,22 @@
   <!-- Candidatos (Admin) View -->
   <section class="view-candidatos-admin" id="view-candidatos-admin">
     <div class="container container--wide">
-      <h2 class="section-title">Gerenciar Candidatos</h2>
-
       <div class="stats-bar">
         <div class="stat-item">
           <span class="stat-item__label">Total de Candidatos</span>
           <span class="stat-item__value" id="cand-stat-total">0</span>
         </div>
         <div class="stat-item">
-          <span class="stat-item__label">Liberados para Avaliação</span>
-          <span class="stat-item__value" id="cand-stat-liberados">0</span>
+          <span class="stat-item__label">Candidatos Avaliados</span>
+          <span class="stat-item__value" id="cand-stat-avaliados">0</span>
         </div>
         <div class="stat-item">
-          <span class="stat-item__label">Liberados já Avaliados</span>
-          <span class="stat-item__value" id="cand-stat-avaliados">0</span>
+          <span class="stat-item__label">Candidatos Aprovados</span>
+          <span class="stat-item__value" id="cand-stat-aprovados">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-item__label">Candidatos Ausentes</span>
+          <span class="stat-item__value" id="cand-stat-ausentes">0</span>
         </div>
       </div>
 
@@ -1422,7 +1424,7 @@
             <div class="form-group"><label for="cand-email">E-mail</label><input type="email" id="cand-email"></div>
             <div class="form-group"><label for="cand-linkedin">LinkedIn</label><input type="url" id="cand-linkedin" placeholder="https://linkedin.com/in/..."></div>
           </div>
-          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px;">
             <div class="form-group">
               <label for="cand-genero">Gênero</label>
               <select id="cand-genero">
@@ -1431,6 +1433,15 @@
                 <option value="Masculino">Masculino</option>
                 <option value="Outro">Outro</option>
                 <option value="Prefere não informar">Prefere não informar</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="cand-status">Status</label>
+              <select id="cand-status">
+                <option value="Pendente">Pendente</option>
+                <option value="Aprovado">Aprovado</option>
+                <option value="Reprovado">Reprovado</option>
+                <option value="Ausente">Ausente</option>
               </select>
             </div>
           </div>
@@ -1489,13 +1500,20 @@
           <span id="cand-selecao-info" style="font-size:13px; color:var(--color-light-grey);"></span>
           <button type="button" class="btn-secondary" onclick="liberarSelecionadosAdmin(true)">Liberar selecionados</button>
           <button type="button" class="btn-secondary" onclick="liberarSelecionadosAdmin(false)">Remover liberação</button>
+          <select id="cand-status-lote-valor" style="padding:7px 10px; border-radius:var(--radius-sm); border:1.5px solid #D0D5DD; font-size:13px; font-family:var(--font-body);">
+            <option value="Pendente">Pendente</option>
+            <option value="Aprovado">Aprovado</option>
+            <option value="Reprovado">Reprovado</option>
+            <option value="Ausente">Ausente</option>
+          </select>
+          <button type="button" class="btn-secondary" onclick="statusSelecionadosAdmin()">Aplicar status aos selecionados</button>
         </div>
         <table>
           <caption class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">Lista de candidatos cadastrados</caption>
           <thead>
             <tr>
               <th><input type="checkbox" id="cand-select-all" onchange="toggleSelecionarTodosAdmin(this.checked)"></th>
-              <th>Foto</th><th>Nome</th><th>Curso</th><th>Turno</th><th>LinkedIn</th><th>CV</th><th>Liberado</th>
+              <th>Foto</th><th>Nome</th><th>Curso</th><th>Turno</th><th>Status</th><th>LinkedIn</th><th>CV</th><th>Liberado</th>
               <th style="text-align:right; width:44px;">
                 <button type="button" class="cand-lista-toggle-btn" id="cand-lista-toggle-btn" onclick="toggleListaCandidatosAdmin()" aria-expanded="true" aria-controls="cand-table-body" title="Mostrar/ocultar lista de candidatos">
                   <span class="material-icons-outlined" id="cand-lista-toggle-icon">expand_less</span>
@@ -2314,6 +2332,18 @@
       return new Date(iso).toLocaleString('pt-BR');
     }
 
+    const STATUS_CAND_CORES = {
+      Aprovado: '#1E7A3D',
+      Reprovado: '#C0392B',
+      Ausente: '#7A5C00',
+      Pendente: '#525254',
+    };
+
+    function badgeStatusCand(status) {
+      const cor = STATUS_CAND_CORES[status] || STATUS_CAND_CORES.Pendente;
+      return `<span style="display:inline-block; padding:2px 10px; border-radius:999px; font-size:12px; font-weight:600; color:#fff; background:${cor};">${escHtml(status || 'Pendente')}</span>`;
+    }
+
     function tituloLiberado(c) {
       if (!c.liberado_por && !c.liberado_em) return 'Ainda não foi liberado/removido por ninguém.';
       return `Último ajuste por ${c.liberado_por || '—'} em ${formatarDataHora(c.liberado_em)}`;
@@ -2321,7 +2351,8 @@
 
     function renderCandidatosAdmin() {
       document.getElementById('cand-stat-total').textContent = candidatosAdminLista.length;
-      document.getElementById('cand-stat-liberados').textContent = candidatosAdminLista.filter(c => c.liberado).length;
+      document.getElementById('cand-stat-aprovados').textContent = candidatosAdminLista.filter(c => c.status === 'Aprovado').length;
+      document.getElementById('cand-stat-ausentes').textContent = candidatosAdminLista.filter(c => c.status === 'Ausente').length;
 
       const lista = candidatosFiltradosAdmin();
       const body = document.getElementById('cand-table-body');
@@ -2343,6 +2374,7 @@
           <td>${escHtml(c.nome)}</td>
           <td>${escHtml(c.curso || '')}${c.faculdade ? ' · ' + escHtml(c.faculdade) : ''}</td>
           <td>${escHtml(c.turno)}</td>
+          <td>${badgeStatusCand(c.status)}</td>
           <td>${isHttpUrl(c.linkedin_url) ? `<a href="${escHtml(c.linkedin_url)}" target="_blank" rel="noopener">Ver perfil</a>` : '—'}</td>
           <td>${c.cv_arquivo_id ? `<a href="/api/arquivos/${c.cv_arquivo_id}" target="_blank">Ver CV</a>` : '—'}</td>
           <td title="${escHtml(tituloLiberado(c))}">
@@ -2422,6 +2454,25 @@
       }
     }
 
+    async function statusSelecionadosAdmin() {
+      if (!candidatosSelecionados.size) {
+        showToast('Selecione pelo menos um candidato.');
+        return;
+      }
+      try {
+        const ids = Array.from(candidatosSelecionados);
+        const status = document.getElementById('cand-status-lote-valor').value;
+        await apiDinamica('/candidatos/status-lote', {
+          method: 'PATCH',
+          body: JSON.stringify({ ids, status, admin_email: currentUser }),
+        });
+        showToast(`${ids.length} candidato(s) marcado(s) como "${status}".`);
+        await carregarCandidatosAdmin();
+      } catch (e) {
+        showToast('Erro: ' + e.message);
+      }
+    }
+
     function limparFormCandidatoAdmin() {
       document.getElementById('cand-form').reset();
       document.getElementById('cand-id').value = '';
@@ -2441,6 +2492,7 @@
       document.getElementById('cand-email').value = c.email || '';
       document.getElementById('cand-linkedin').value = c.linkedin_url || '';
       document.getElementById('cand-genero').value = c.genero || '';
+      document.getElementById('cand-status').value = c.status || 'Pendente';
       document.getElementById('cand-turno').value = c.turno || '09h-11h';
       document.getElementById('cand-data').value = c.data_dinamica ? String(c.data_dinamica).slice(0, 10) : '';
       document.getElementById('cand-liberado').checked = !!c.liberado;
@@ -2474,6 +2526,7 @@
         email: document.getElementById('cand-email').value.trim(),
         linkedin_url: document.getElementById('cand-linkedin').value.trim(),
         genero: document.getElementById('cand-genero').value,
+        status: document.getElementById('cand-status').value,
         turno: document.getElementById('cand-turno').value.trim() || '09h-11h',
         data_dinamica: document.getElementById('cand-data').value,
         liberado: document.getElementById('cand-liberado').checked,
@@ -2543,7 +2596,6 @@
         await apiDinamica('/candidatos/' + id, { method: 'PUT', body: JSON.stringify({ liberado, admin_email: currentUser }) });
         const c = candidatosAdminLista.find(x => String(x.id) === String(id));
         if (c) c.liberado = liberado;
-        document.getElementById('cand-stat-liberados').textContent = candidatosAdminLista.filter(x => x.liberado).length;
         showToast(liberado ? 'Candidato liberado para avaliação.' : 'Candidato removido da avaliação.');
       } catch (e) {
         showToast('Erro: ' + e.message);
@@ -2713,8 +2765,8 @@
     }
 
     function atualizarStatAvaliadosAdmin() {
-      const liberadosComNota = resultadosAdminCache.filter(c => c.liberado && c.qtd_avaliacoes > 0).length;
-      document.getElementById('cand-stat-avaliados').textContent = liberadosComNota;
+      const avaliados = resultadosAdminCache.filter(c => c.qtd_avaliacoes > 0).length;
+      document.getElementById('cand-stat-avaliados').textContent = avaliados;
     }
 
     async function carregarResultadosAdmin() {
