@@ -675,15 +675,13 @@
       top: 100%;
       left: 0;
       right: 0;
-      /* "Vidro fosco": deixa transparecer o azul que estiver atrás (o
-         gradiente da página ou outro card), em vez de um tom sólido que
-         nunca bate certinho com o fundo. background sólido é só um
-         fallback pra navegador sem suporte a backdrop-filter. */
-      background: var(--color-deep-blue);
-      background: rgba(8, 25, 56, 0.72);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.25);
+      /* Mesma cor do .cand-comentario/.cand-area-trigger (rgba(255,255,255,0.08)
+         sobre o azul do card), só que sólida — como o painel flutua por cima
+         de conteúdo que não é o card (texto de trás, outro card, etc.), um
+         fundo translúcido deixava tudo vazar por trás. Calculado batendo
+         0.08 de branco sobre o azul do gradiente da página. */
+      background: #2a66a8;
+      border: 1px solid rgba(255,255,255,0.3);
       border-radius: var(--radius-sm);
       margin-top: 4px;
       max-height: 220px;
