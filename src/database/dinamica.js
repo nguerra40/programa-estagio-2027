@@ -66,7 +66,19 @@ query(`
 `)).then(() => query(`
   ALTER TABLE dinamica_notas ADD COLUMN IF NOT EXISTS avaliador_nome TEXT;
 `)).then(() => query(`
-  ALTER TABLE dinamica_notas ADD COLUMN IF NOT EXISTS area_interesse TEXT;
+  ALTER TABLE dinamica_notas ADD COLUMN IF NOT EXISTS area_interesse TEXT[];
+`)).then(() => query(`
+  -- area_interesse começou como TEXT (um valor só); agora é TEXT[] (vários
+  -- valores). Converte só se ainda estiver no formato antigo — idempotente,
+  -- não faz nada em bancos que já tenham a coluna como array.
+  DO $$
+  BEGIN
+    IF (SELECT data_type FROM information_schema.columns
+        WHERE table_name = 'dinamica_notas' AND column_name = 'area_interesse') = 'text' THEN
+      ALTER TABLE dinamica_notas ALTER COLUMN area_interesse TYPE TEXT[] USING
+        CASE WHEN area_interesse IS NULL OR area_interesse = '' THEN ARRAY[]::text[] ELSE ARRAY[area_interesse] END;
+    END IF;
+  END $$;
 `)).then(() => query(`
   ALTER TABLE dinamica_notas DROP CONSTRAINT IF EXISTS dinamica_notas_candidato_id_gestor_id_key;
 `)).then(() => query(`
@@ -214,7 +226,7 @@ async function findLiberados(avaliadorEmail) {
     ...c,
     minha_nota: notaPorCandidato[c.id] ? notaPorCandidato[c.id].nota : null,
     meu_comentario: notaPorCandidato[c.id] ? notaPorCandidato[c.id].comentario : '',
-    minha_area_interesse: notaPorCandidato[c.id] ? notaPorCandidato[c.id].area_interesse : '',
+    minhas_areas_interesse: notaPorCandidato[c.id] ? notaPorCandidato[c.id].area_interesse || [] : [],
   }));
 }
 
@@ -223,14 +235,14 @@ async function candidatoEstaLiberado(candidatoId) {
   return rows.length > 0;
 }
 
-async function upsertNota({ candidato_id, avaliador_email, avaliador_nome, nota, comentario, area_interesse }) {
+async function upsertNota({ candidato_id, avaliador_email, avaliador_nome, nota, comentario, areas_interesse }) {
   const result = await query(
     `INSERT INTO dinamica_notas (candidato_id, avaliador_email, avaliador_nome, nota, comentario, area_interesse)
-     VALUES ($1,$2,$3,$4,$5,$6)
+     VALUES ($1,$2,$3,$4,$5,$6::text[])
      ON CONFLICT (candidato_id, avaliador_email)
-     DO UPDATE SET nota=$4, comentario=$5, area_interesse=$6, avaliador_nome=$3, updated_at=NOW()
+     DO UPDATE SET nota=$4, comentario=$5, area_interesse=$6::text[], avaliador_nome=$3, updated_at=NOW()
      RETURNING *`,
-    [candidato_id, avaliador_email, avaliador_nome || '', nota, comentario || '', area_interesse || '']
+    [candidato_id, avaliador_email, avaliador_nome || '', nota, comentario || '', areas_interesse || []]
   );
   return result.rows[0];
 }
@@ -243,7 +255,7 @@ async function resultados() {
       ROUND(AVG(n.nota)::numeric, 2) AS media,
       COALESCE(
         json_agg(
-          json_build_object('avaliador', n.avaliador_nome, 'email', n.avaliador_email, 'nota', n.nota, 'comentario', n.comentario, 'area_interesse', n.area_interesse)
+          json_build_object('avaliador', n.avaliador_nome, 'email', n.avaliador_email, 'nota', n.nota, 'comentario', n.comentario, 'areas_interesse', n.area_interesse)
           ORDER BY n.avaliador_nome
         ) FILTER (WHERE n.id IS NOT NULL),
         '[]'

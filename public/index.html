@@ -628,7 +628,19 @@
       color: rgba(255,255,255,0.5);
     }
 
-    .cand-area-interesse {
+    /* Seletor de múltiplas áreas de interesse — mesmo espírito dos filtros
+       multi-select do painel de vagas (trigger + painel flutuante com
+       checkboxes), só que com o trigger no estilo escuro do card. */
+    .cand-area-select {
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .cand-area-trigger {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
       width: 100%;
       font-family: inherit;
       font-size: 13px;
@@ -637,11 +649,62 @@
       border: 1px solid rgba(255,255,255,0.3);
       background: rgba(255,255,255,0.08);
       color: #FFFFFF;
-      margin-bottom: 10px;
+      cursor: pointer;
+      transition: var(--transition);
     }
 
-    .cand-area-interesse option {
+    .cand-area-trigger:hover {
+      border-color: rgba(255,255,255,0.55);
+    }
+
+    .cand-area-trigger .material-icons-outlined {
+      font-size: 18px;
+      flex-shrink: 0;
+      transition: var(--transition);
+    }
+
+    .cand-area-select.open .cand-area-trigger .material-icons-outlined {
+      transform: rotate(180deg);
+    }
+
+    .cand-area-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #FFFFFF;
+      border-radius: var(--radius-sm);
+      margin-top: 4px;
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 50;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    .cand-area-select.open .cand-area-dropdown {
+      display: block;
+    }
+
+    .cand-area-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      cursor: pointer;
       color: var(--color-spacial-grey);
+    }
+
+    .cand-area-option:hover {
+      background: rgba(0,113,187,0.05);
+    }
+
+    .cand-area-option input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--color-bright-blue);
+      flex-shrink: 0;
     }
 
     .cand-save-status {
@@ -1867,6 +1930,26 @@
       return `<span class="cand-card__foto cand-card__foto--placeholder material-icons-outlined">person</span>`;
     }
 
+    function areaTriggerLabel(areas) {
+      if (!areas || !areas.length) return 'Selecione uma ou mais áreas...';
+      if (areas.length <= 2) return areas.join(', ');
+      return areas.length + ' áreas selecionadas';
+    }
+
+    function candAreaSelectHtml(c) {
+      const areas = c.minhas_areas_interesse || [];
+      return `
+        <div class="cand-area-select" id="cand-area-${c.id}">
+          <div class="cand-area-trigger" role="button" tabindex="0" onclick="toggleAreaDropdown(this)" onkeydown="if(event.key==='Enter')toggleAreaDropdown(this)">
+            <span class="cand-area-trigger__text">${escHtml(areaTriggerLabel(areas))}</span>
+            <span class="material-icons-outlined">expand_more</span>
+          </div>
+          <div class="cand-area-dropdown">
+            ${AREAS_GALAPAGOS.map(a => `<label class="cand-area-option"><input type="checkbox" value="${escHtml(a)}" ${areas.includes(a) ? 'checked' : ''} onchange="areaInteresseCand('${c.id}', this)"> ${escHtml(a)}</label>`).join('')}
+          </div>
+        </div>`;
+    }
+
     function candCardMeta(c) {
       const partes = [];
       if (c.curso) partes.push(escHtml(c.curso));
@@ -1897,11 +1980,8 @@
               ${notas.map(n => `<button type="button" class="cand-nota-btn ${c.minha_nota === n ? 'active' : ''}" onclick="votarCand('${c.id}',${n})">${n}</button>`).join('')}
             </div>
             <div class="cand-nota-labels"><span>1 (Baixo)</span><span>5 (Alto)</span></div>
-            <label style="display:block; font-size:12px; opacity:0.8; margin-bottom:4px;">Área de interesse (opcional)</label>
-            <select class="cand-area-interesse" onchange="areaInteresseCand('${c.id}', this.value)">
-              <option value=""${c.minha_area_interesse ? '' : ' selected'}>Selecione uma área...</option>
-              ${AREAS_GALAPAGOS.map(a => `<option value="${escHtml(a)}"${c.minha_area_interesse === a ? ' selected' : ''}>${escHtml(a)}</option>`).join('')}
-            </select>
+            <label style="display:block; font-size:12px; opacity:0.8; margin-bottom:4px;">Área(s) de interesse (opcional)</label>
+            ${candAreaSelectHtml(c)}
             <textarea class="cand-comentario" placeholder="Comentário (opcional)" onchange="comentarCand('${c.id}', this.value)">${escHtml(c.meu_comentario || '')}</textarea>
             <div class="cand-save-status" id="cand-status-${c.id}"></div>
           </div>
@@ -1940,10 +2020,31 @@
       salvarNotaCand(id);
     }
 
-    function areaInteresseCand(id, valor) {
+    function toggleAreaDropdown(triggerEl) {
+      const container = triggerEl.closest('.cand-area-select');
+      const isOpen = container.classList.contains('open');
+      document.querySelectorAll('.cand-area-select').forEach(el => el.classList.remove('open'));
+      if (!isOpen) container.classList.add('open');
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.cand-area-select')) {
+        document.querySelectorAll('.cand-area-select').forEach(el => el.classList.remove('open'));
+      }
+    });
+
+    function areaInteresseCand(id, checkbox) {
       const c = avaliacaoCandidatos.find(x => String(x.id) === String(id));
       if (!c) return;
-      c.minha_area_interesse = valor;
+      if (!Array.isArray(c.minhas_areas_interesse)) c.minhas_areas_interesse = [];
+      if (checkbox.checked) {
+        if (!c.minhas_areas_interesse.includes(checkbox.value)) c.minhas_areas_interesse.push(checkbox.value);
+      } else {
+        c.minhas_areas_interesse = c.minhas_areas_interesse.filter(a => a !== checkbox.value);
+      }
+      const trigger = document.querySelector('#cand-area-' + id + ' .cand-area-trigger__text');
+      if (trigger) trigger.textContent = areaTriggerLabel(c.minhas_areas_interesse);
+
       if (c.minha_nota == null) {
         showToast('Dê uma nota primeiro para salvar a área de interesse.');
         return;
@@ -1965,7 +2066,7 @@
             avaliador_nome: currentUserNome,
             nota: c.minha_nota,
             comentario: c.meu_comentario || '',
-            area_interesse: c.minha_area_interesse || '',
+            areas_interesse: c.minhas_areas_interesse || [],
           }),
         });
         statusEl.textContent = 'Salvo';
@@ -2281,7 +2382,7 @@
             <td>
               ${c.qtd_avaliacoes} nota(s)
               <div style="font-size:12px; color:var(--color-light-grey); margin-top:4px;">
-                ${(c.avaliacoes || []).map(a => `<div><b>${escHtml(a.avaliador || a.email)} (${a.nota})${a.area_interesse ? ' · interesse: ' + escHtml(a.area_interesse) : ''}:</b> ${escHtml(a.comentario || '')}</div>`).join('')}
+                ${(c.avaliacoes || []).map(a => `<div><b>${escHtml(a.avaliador || a.email)} (${a.nota})${(a.areas_interesse && a.areas_interesse.length) ? ' · interesse: ' + escHtml(a.areas_interesse.join(' / ')) : ''}:</b> ${escHtml(a.comentario || '')}</div>`).join('')}
               </div>
             </td>
           </tr>`).join('');
