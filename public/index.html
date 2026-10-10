@@ -340,6 +340,27 @@
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3 1L7.5 5L3 9' stroke='%23183C80' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     }
 
+    .cand-lista-toggle-btn {
+      background: rgba(255,255,255,0.12);
+      border: none;
+      cursor: pointer;
+      color: #fff;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease;
+    }
+    .cand-lista-toggle-btn:hover,
+    .cand-lista-toggle-btn:focus-visible {
+      background: rgba(255,255,255,0.25);
+    }
+    .cand-lista-toggle-btn .material-icons-outlined {
+      font-size: 20px;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -1407,8 +1428,8 @@
             <tr>
               <th><input type="checkbox" id="cand-select-all" onchange="toggleSelecionarTodosAdmin(this.checked)"></th>
               <th>Foto</th><th>Nome</th><th>Curso</th><th>Turno</th><th>LinkedIn</th><th>CV</th><th>Liberado</th>
-              <th style="text-align:right;">
-                <button type="button" id="cand-lista-toggle-btn" onclick="toggleListaCandidatosAdmin()" aria-expanded="true" aria-controls="cand-table-body" title="Mostrar/ocultar lista de candidatos" style="background:none; border:none; cursor:pointer; color:#fff; padding:4px; display:inline-flex; align-items:center;">
+              <th style="text-align:right; width:44px;">
+                <button type="button" class="cand-lista-toggle-btn" id="cand-lista-toggle-btn" onclick="toggleListaCandidatosAdmin()" aria-expanded="true" aria-controls="cand-table-body" title="Mostrar/ocultar lista de candidatos">
                   <span class="material-icons-outlined" id="cand-lista-toggle-icon">expand_less</span>
                 </button>
               </th>
