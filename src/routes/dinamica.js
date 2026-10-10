@@ -137,7 +137,8 @@ router.delete('/candidatos/:id', isAuthenticated, isAdmin, async (req, res) => {
 // ============================================================
 router.get('/resultados', isAuthenticated, isAdmin, async (req, res) => {
   try {
-    res.json(await db.resultados());
+    const turno = (req.query.turno || '').trim() || undefined;
+    res.json(await db.resultados(turno));
   } catch (error) {
     console.error('[API] Erro ao calcular resultados:', error.message);
     res.status(500).json({ error: 'Erro interno.' });
@@ -146,7 +147,8 @@ router.get('/resultados', isAuthenticated, isAdmin, async (req, res) => {
 
 router.get('/resultados/export', isAuthenticated, isAdmin, async (req, res) => {
   try {
-    const dados = await db.resultados();
+    const turno = (req.query.turno || '').trim() || undefined;
+    const dados = await db.resultados(turno);
 
     const BOM = '﻿';
     const separator = ';';
@@ -164,8 +166,9 @@ router.get('/resultados/export', isAuthenticated, isAdmin, async (req, res) => {
 
     const csv = BOM + headers.join(separator) + '\n' + rows.join('\n');
 
+    const sufixoBanca = turno ? `_${turno.replace(/[^a-z0-9]+/gi, '-')}` : '';
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename=resultados_dinamica_${new Date().toISOString().slice(0, 10)}.csv`);
+    res.setHeader('Content-Disposition', `attachment; filename=resultados_dinamica${sufixoBanca}_${new Date().toISOString().slice(0, 10)}.csv`);
     res.send(csv);
   } catch (error) {
     console.error('[API] Erro ao exportar resultados:', error.message);

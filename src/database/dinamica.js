@@ -247,7 +247,12 @@ async function upsertNota({ candidato_id, avaliador_email, avaliador_nome, nota,
   return result.rows[0];
 }
 
-async function resultados() {
+// Sem `turno`: todos os candidatos, ranqueados pela média geral — visão da
+// reunião final de comitê, com todas as bancas juntas. Com `turno`: só os
+// candidatos daquela banca — visão do encontro logo após cada dinâmica.
+async function resultados(turno) {
+  const where = turno ? 'WHERE c.turno = $1' : '';
+  const params = turno ? [turno] : [];
   const result = await query(`
     SELECT
       c.*,
@@ -262,9 +267,10 @@ async function resultados() {
       ) AS avaliacoes
     FROM dinamica_candidatos c
     LEFT JOIN dinamica_notas n ON n.candidato_id = c.id
+    ${where}
     GROUP BY c.id
     ORDER BY media DESC NULLS LAST, c.nome
-  `);
+  `, params);
   return result.rows;
 }
 

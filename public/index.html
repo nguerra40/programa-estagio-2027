@@ -1357,14 +1357,18 @@
       </div>
 
       <div class="table-wrapper" style="margin-top:32px; padding:24px;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
           <h3 style="font-family:var(--font-primary); color:var(--color-deep-blue); font-size:16px; margin:0;">Resultados</h3>
-          <div>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <label for="resultados-filtro-banca" style="font-size:13px; color:var(--color-light-grey);">Banca:</label>
+            <select id="resultados-filtro-banca" onchange="filtrarResultadosPorBanca(this.value)" style="padding:6px 10px; border-radius:var(--radius-sm); border:1px solid #D0D5DD; font-size:13px;">
+              <option value="">Todas as bancas (comitê final)</option>
+            </select>
             <button class="btn-secondary" onclick="carregarResultadosAdmin()">
               <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">refresh</span>
               Atualizar
             </button>
-            <button class="btn-secondary" onclick="window.location.href='/api/dinamica/resultados/export'">
+            <button class="btn-secondary" onclick="exportarResultadosAdmin()">
               <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">download</span>
               Exportar
             </button>
@@ -1373,7 +1377,7 @@
         <table>
           <caption class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">Resultados das avaliações por candidato</caption>
           <thead>
-            <tr><th>Candidato</th><th>Turno</th><th>Média</th><th>Avaliações</th></tr>
+            <tr><th>#</th><th>Candidato</th><th>Turno</th><th>Média</th><th>Avaliações</th></tr>
           </thead>
           <tbody id="resultados-table-body"></tbody>
         </table>
@@ -2108,6 +2112,7 @@
     let candidatosAdminLista = [];
     let candidatosSelecionados = new Set();
     let resultadosAdminCache = [];
+    let filtroBancaResultados = '';
 
     async function carregarCandidatosAdmin() {
       try {
@@ -2392,30 +2397,61 @@
         const dados = await apiDinamica('/resultados');
         resultadosAdminCache = dados;
         atualizarStatAvaliadosAdmin();
-        const body = document.getElementById('resultados-table-body');
-        const empty = document.getElementById('resultados-empty-state');
-        const avaliados = dados.filter(c => c.qtd_avaliacoes > 0);
-        if (!avaliados.length) {
-          body.innerHTML = '';
-          empty.style.display = 'block';
-          return;
-        }
-        empty.style.display = 'none';
-        body.innerHTML = avaliados.map(c => `
-          <tr>
-            <td>${escHtml(c.nome)}</td>
-            <td>${escHtml(c.turno)}</td>
-            <td style="font-weight:700;${faixaMediaCand(c.media)}">${c.media != null ? c.media : '—'}</td>
-            <td>
-              ${c.qtd_avaliacoes} nota(s)
-              <div style="font-size:12px; color:var(--color-light-grey); margin-top:4px;">
-                ${(c.avaliacoes || []).map(a => `<div><b>${escHtml(a.avaliador || a.email)} (${a.nota})${(a.areas_interesse && a.areas_interesse.length) ? ' · interesse: ' + escHtml(a.areas_interesse.join(' / ')) : ''}:</b> ${escHtml(a.comentario || '')}</div>`).join('')}
-              </div>
-            </td>
-          </tr>`).join('');
+        atualizarFiltroBancaResultados(dados);
+        renderResultadosTable();
       } catch (e) {
         showToast('Erro ao carregar resultados: ' + e.message);
       }
+    }
+
+    // Opções da banca = valores distintos de "Turno" entre todos os
+    // candidatos cadastrados (não só os já avaliados), pra já aparecer a
+    // banca assim que ela é criada, antes da primeira nota chegar.
+    function atualizarFiltroBancaResultados(dados) {
+      const select = document.getElementById('resultados-filtro-banca');
+      const bancas = [...new Set(dados.map(c => c.turno).filter(Boolean))].sort();
+      const valorAtual = filtroBancaResultados;
+      select.innerHTML = '<option value="">Todas as bancas (comitê final)</option>'
+        + bancas.map(b => `<option value="${escHtml(b)}">${escHtml(b)}</option>`).join('');
+      if (bancas.includes(valorAtual)) select.value = valorAtual;
+      else filtroBancaResultados = '';
+    }
+
+    function filtrarResultadosPorBanca(valor) {
+      filtroBancaResultados = valor;
+      renderResultadosTable();
+    }
+
+    function renderResultadosTable() {
+      const body = document.getElementById('resultados-table-body');
+      const empty = document.getElementById('resultados-empty-state');
+      const avaliados = resultadosAdminCache
+        .filter(c => c.qtd_avaliacoes > 0)
+        .filter(c => !filtroBancaResultados || c.turno === filtroBancaResultados);
+      if (!avaliados.length) {
+        body.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+      body.innerHTML = avaliados.map((c, i) => `
+        <tr>
+          <td>${i + 1}º</td>
+          <td>${escHtml(c.nome)}</td>
+          <td>${escHtml(c.turno)}</td>
+          <td style="font-weight:700;${faixaMediaCand(c.media)}">${c.media != null ? c.media : '—'}</td>
+          <td>
+            ${c.qtd_avaliacoes} nota(s)
+            <div style="font-size:12px; color:var(--color-light-grey); margin-top:4px;">
+              ${(c.avaliacoes || []).map(a => `<div><b>${escHtml(a.avaliador || a.email)} (${a.nota})${(a.areas_interesse && a.areas_interesse.length) ? ' · interesse: ' + escHtml(a.areas_interesse.join(' / ')) : ''}:</b> ${escHtml(a.comentario || '')}</div>`).join('')}
+            </div>
+          </td>
+        </tr>`).join('');
+    }
+
+    function exportarResultadosAdmin() {
+      const query = filtroBancaResultados ? `?turno=${encodeURIComponent(filtroBancaResultados)}` : '';
+      window.location.href = `/api/dinamica/resultados/export${query}`;
     }
 
     // Initialize
