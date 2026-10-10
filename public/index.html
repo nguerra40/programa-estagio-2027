@@ -557,14 +557,6 @@
       display: block;
     }
 
-    .cand-card__hist {
-      font-size: 13px;
-      opacity: 0.85;
-      margin-bottom: 12px;
-      padding-top: 12px;
-      border-top: 1px solid rgba(255,255,255,0.15);
-    }
-
     .cand-card__links {
       display: flex;
       gap: 20px;
@@ -1207,10 +1199,6 @@
           <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px;">
             <div class="form-group"><label for="cand-cv">Currículo (PDF)</label><input type="file" id="cand-cv" accept="application/pdf"></div>
             <div class="form-group"><label for="cand-foto">Foto (opcional)</label><input type="file" id="cand-foto" accept="image/*"></div>
-          </div>
-          <div class="form-group">
-            <label for="cand-historico">Histórico profissional</label>
-            <textarea id="cand-historico" placeholder="Estágios anteriores, projetos, monitorias..."></textarea>
           </div>
           <div class="form-group" style="display:flex; align-items:center; gap:10px;">
             <label class="toggle-switch">
@@ -1859,14 +1847,6 @@
       return `<div style="font-size:13px; opacity:0.85; margin-bottom:4px;">${partes.join(' · ')}</div>`;
     }
 
-    function candCardDinamica(c) {
-      const partes = [];
-      if (c.turno) partes.push(escHtml(c.turno));
-      if (c.data_dinamica) partes.push(new Date(c.data_dinamica).toLocaleDateString('pt-BR', { timeZone: 'UTC' }));
-      if (!partes.length) return '';
-      return `<div style="font-size:13px; opacity:0.7; margin-bottom:8px;">Dinâmica: ${partes.join(' · ')}</div>`;
-    }
-
     function candCardHtml(c) {
       const notas = [1, 2, 3, 4, 5];
       return `
@@ -1879,8 +1859,6 @@
           </button>
           <div class="cand-card__body">
             ${candCardMeta(c)}
-            ${candCardDinamica(c)}
-            ${c.historico ? `<div class="cand-card__hist"><b>Histórico:</b> ${escHtml(c.historico)}</div>` : ''}
             <div class="cand-card__links">
               ${c.cv_arquivo_id ? `<a href="/api/arquivos/${c.cv_arquivo_id}" target="_blank"><span class="material-icons-outlined" style="font-size:16px;">description</span> Ver currículo</a>` : ''}
               ${isHttpUrl(c.linkedin_url) ? `<a href="${escHtml(c.linkedin_url)}" target="_blank" rel="noopener"><span class="material-icons-outlined" style="font-size:16px;">person</span> Ver LinkedIn</a>` : ''}
@@ -2080,7 +2058,6 @@
       document.getElementById('cand-linkedin').value = c.linkedin_url || '';
       document.getElementById('cand-turno').value = c.turno || '09h-11h';
       document.getElementById('cand-data').value = c.data_dinamica ? String(c.data_dinamica).slice(0, 10) : '';
-      document.getElementById('cand-historico').value = c.historico || '';
       document.getElementById('cand-liberado').checked = !!c.liberado;
       document.getElementById('cand-form-title').textContent = 'Editar candidato';
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2113,7 +2090,6 @@
         linkedin_url: document.getElementById('cand-linkedin').value.trim(),
         turno: document.getElementById('cand-turno').value.trim() || '09h-11h',
         data_dinamica: document.getElementById('cand-data').value,
-        historico: document.getElementById('cand-historico').value.trim(),
         liberado: document.getElementById('cand-liberado').checked,
         admin_email: currentUser,
       };
@@ -2131,9 +2107,7 @@
           payload.cv_arquivo_id = arquivo.id;
 
           // Curso/faculdade/formação extraídos do currículo via IA (best-effort):
-          // só preenche campos que o admin deixou em branco, sem perguntar nada
-          // (ao contrário do histórico abaixo, que é texto mais longo e vale
-          // confirmar antes de substituir).
+          // só preenche campos que o admin deixou em branco, sem perguntar nada.
           let preenchidoAuto = false;
           for (const [elId, campo] of [['cand-curso', 'curso'], ['cand-faculdade', 'faculdade'], ['cand-formacao', 'formacao']]) {
             if (!arquivo[campo]) continue;
@@ -2144,17 +2118,6 @@
             preenchidoAuto = true;
           }
           if (preenchidoAuto) showToast('Curso/faculdade/formação preenchidos a partir do currículo.');
-
-          // Resumo automático do histórico via IA a partir do currículo (best-effort).
-          if (arquivo.resumo) {
-            const historicoEl = document.getElementById('cand-historico');
-            const podeSubstituir = !historicoEl.value.trim()
-              || confirm('Já existe um histórico preenchido. Substituir pelo resumo gerado pela IA a partir do currículo?');
-            if (podeSubstituir) {
-              historicoEl.value = arquivo.resumo;
-              payload.historico = arquivo.resumo;
-            }
-          }
         }
         const fotoFile = document.getElementById('cand-foto').files[0];
         if (fotoFile) {

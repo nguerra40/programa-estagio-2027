@@ -81,8 +81,7 @@ router.post('/candidatos/bulk', isAuthenticated, isAdmin, async (req, res) => {
       const mime = 'application/pdf';
       const arquivo = await db.insertArquivo({ tipo: 'cv', nome: arq.nome, mime, dados });
 
-      // Extrai curso/faculdade/formação e resume o histórico via IA
-      // (best-effort, ver services/resumoIA.js).
+      // Extrai curso/faculdade/formação via IA (best-effort, ver services/resumoIA.js).
       const analise = await analisarCurriculo(dados);
 
       const nomeCandidato = (arq.nome || 'Candidato').replace(/\.pdf$/i, '');
@@ -97,7 +96,6 @@ router.post('/candidatos/bulk', isAuthenticated, isAdmin, async (req, res) => {
         turno: turno || '09h-11h',
         data_dinamica: data_dinamica || null,
         cv_arquivo_id: arquivo.id,
-        historico: analise.resumo || '',
         curso: analise.curso || '',
         faculdade: analise.faculdade || '',
         formacao: analise.formacao || '',

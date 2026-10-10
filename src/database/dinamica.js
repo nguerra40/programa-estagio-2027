@@ -79,9 +79,14 @@ query(`
 
 // ---------- Candidatos ----------
 
+// historico saiu do produto (não faz mais parte do cadastro) — a coluna
+// continua existindo no banco com os dados antigos (inofensivo, mesmo
+// padrão já usado aqui pra outras colunas descontinuadas), só não é mais
+// lida nem gravada daqui pra frente. turno/data_dinamica continuam — são
+// como o admin organiza quem participa de qual turno/dia da dinâmica.
 const CAND_COLS = [
   'nome', 'curso', 'faculdade', 'formacao', 'telefone', 'email', 'linkedin_url',
-  'turno', 'data_dinamica', 'historico', 'cv_arquivo_id', 'foto_arquivo_id', 'liberado',
+  'turno', 'data_dinamica', 'cv_arquivo_id', 'foto_arquivo_id', 'liberado',
 ];
 const CAND_NULLABLE_EMPTY = ['data_dinamica', 'cv_arquivo_id', 'foto_arquivo_id'];
 
@@ -190,7 +195,7 @@ async function deleteCandidato(id) {
 
 async function findLiberados(avaliadorEmail) {
   const { rows: candidatos } = await query(
-    `SELECT id, nome, curso, faculdade, formacao, telefone, email, linkedin_url, turno, data_dinamica, historico, cv_arquivo_id, foto_arquivo_id
+    `SELECT id, nome, curso, faculdade, formacao, telefone, email, linkedin_url, cv_arquivo_id, foto_arquivo_id
      FROM dinamica_candidatos WHERE liberado = true ORDER BY nome`
   );
 

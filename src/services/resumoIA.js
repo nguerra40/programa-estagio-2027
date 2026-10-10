@@ -1,7 +1,6 @@
 /**
  * Analisa o PDF do currículo de um candidato usando a API da Anthropic
- * (Claude) e devolve, numa só chamada: curso, faculdade, previsão de
- * formação e um resumo do histórico acadêmico/profissional.
+ * (Claude) e devolve curso, faculdade e previsão de formação.
  *
  * Requer ANTHROPIC_API_KEY no .env. Sem a chave configurada (ou se qualquer
  * etapa falhar — PDF corrompido, texto vazio, API fora do ar, resposta que
@@ -42,15 +41,14 @@ async function analisarCurriculo(dadosBase64) {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 500,
+        max_tokens: 200,
         messages: [{
           role: 'user',
           content: 'Leia o currículo abaixo e responda APENAS com um JSON válido (sem markdown, sem texto antes ou depois), exatamente neste formato:\n'
-            + '{"curso": "", "faculdade": "", "formacao": "", "resumo": ""}\n\n'
+            + '{"curso": "", "faculdade": "", "formacao": ""}\n\n'
             + '- curso: nome do curso de graduação do candidato (ex.: "Administração"). Vazio se não encontrar.\n'
             + '- faculdade: nome da instituição de ensino superior. Vazio se não encontrar.\n'
-            + '- formacao: previsão ou data de formatura, no formato "Mês/Ano" (ex.: "Dez/2027"). Vazio se não encontrar.\n'
-            + '- resumo: 3 a 4 frases corridas em português (sem tópicos, sem introduções como "o candidato possui") resumindo as experiências acadêmicas e profissionais mais relevantes.\n\n'
+            + '- formacao: previsão ou data de formatura, no formato "Mês/Ano" (ex.: "Dez/2027"). Vazio se não encontrar.\n\n'
             + 'Currículo:\n\n' + texto,
         }],
       }),
@@ -68,7 +66,6 @@ async function analisarCurriculo(dadosBase64) {
       curso: String(json.curso || '').trim(),
       faculdade: String(json.faculdade || '').trim(),
       formacao: String(json.formacao || '').trim(),
-      resumo: String(json.resumo || '').trim(),
     };
   } catch (error) {
     console.error('[IA] Erro ao processar currículo:', error.message);
