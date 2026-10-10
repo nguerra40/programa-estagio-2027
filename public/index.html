@@ -495,7 +495,9 @@
       border: 1px solid rgba(255,255,255,0.2);
       border-radius: var(--radius-md);
       color: #FFFFFF;
-      overflow: hidden;
+      /* Sem overflow:hidden — o cabeçalho não tem fundo próprio (fica
+         transparente sobre o card), então não precisa de clipping, e isso
+         cortava o painel flutuante do seletor de área de interesse. */
     }
 
     .cand-card__header {
