@@ -75,6 +75,15 @@ const CAND_COLS = [
 ];
 const CAND_NULLABLE_EMPTY = ['data_dinamica', 'cv_arquivo_id', 'foto_arquivo_id'];
 
+// Só aceita LinkedIn com esquema http(s) — o campo é renderizado como link
+// clicável pra qualquer avaliador, então um "javascript:" ou "data:" aqui
+// vira execução de código na sessão de quem clicar. Ver também a checagem
+// espelhada no front-end (isHttpUrl em public/index.html), já que um
+// registro gravado antes dessa validação não pode virar link mesmo assim.
+function isHttpUrl(url) {
+  return /^https?:\/\//i.test(url);
+}
+
 function cleanCandidato(body) {
   const out = {};
   for (const c of CAND_COLS) {
@@ -83,6 +92,9 @@ function cleanCandidato(body) {
       if (v === '' && CAND_NULLABLE_EMPTY.includes(c)) v = null;
       out[c] = v;
     }
+  }
+  if (out.linkedin_url && !isHttpUrl(out.linkedin_url)) {
+    throw new Error('LinkedIn deve ser um link http(s) válido.');
   }
   return out;
 }

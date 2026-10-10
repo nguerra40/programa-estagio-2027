@@ -1745,6 +1745,15 @@
       return String(s == null ? '' : s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
     }
 
+    // Só renderiza como link clicável se for http(s) — evita que um
+    // "javascript:" salvo no campo LinkedIn (direto pela API, por exemplo)
+    // vire execução de código ao ser clicado. Validado também no servidor
+    // (src/database/dinamica.js), mas candidatos já salvos antes dessa
+    // checagem não podem virar link mesmo assim.
+    function isHttpUrl(url) {
+      return /^https?:\/\//i.test(url || '');
+    }
+
     function showToast(msg) {
       const t = document.getElementById('toast');
       t.textContent = msg;
@@ -1846,7 +1855,7 @@
             ${c.historico ? `<div class="cand-card__hist"><b>Histórico:</b> ${escHtml(c.historico)}</div>` : ''}
             <div class="cand-card__links">
               ${c.cv_arquivo_id ? `<a href="/api/arquivos/${c.cv_arquivo_id}" target="_blank"><span class="material-icons-outlined" style="font-size:16px;">description</span> Ver currículo</a>` : ''}
-              ${c.linkedin_url ? `<a href="${escHtml(c.linkedin_url)}" target="_blank" rel="noopener"><span class="material-icons-outlined" style="font-size:16px;">person</span> Ver LinkedIn</a>` : ''}
+              ${isHttpUrl(c.linkedin_url) ? `<a href="${escHtml(c.linkedin_url)}" target="_blank" rel="noopener"><span class="material-icons-outlined" style="font-size:16px;">person</span> Ver LinkedIn</a>` : ''}
             </div>
             <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Qual nota você daria para o candidato?</div>
             <div class="cand-nota-row">
@@ -1946,7 +1955,7 @@
           <td>${escHtml(c.nome)}</td>
           <td>${escHtml(c.curso || '')}${c.faculdade ? ' · ' + escHtml(c.faculdade) : ''}</td>
           <td>${escHtml(c.turno)}</td>
-          <td>${c.linkedin_url ? `<a href="${escHtml(c.linkedin_url)}" target="_blank" rel="noopener">Ver perfil</a>` : '—'}</td>
+          <td>${isHttpUrl(c.linkedin_url) ? `<a href="${escHtml(c.linkedin_url)}" target="_blank" rel="noopener">Ver perfil</a>` : '—'}</td>
           <td>${c.cv_arquivo_id ? `<a href="/api/arquivos/${c.cv_arquivo_id}" target="_blank">Ver CV</a>` : '—'}</td>
           <td>
             <label class="toggle-switch">
