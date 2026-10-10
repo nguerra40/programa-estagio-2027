@@ -675,13 +675,14 @@
       top: 100%;
       left: 0;
       right: 0;
-      background: #FFFFFF;
+      background: var(--color-deep-blue);
+      border: 1px solid rgba(255,255,255,0.25);
       border-radius: var(--radius-sm);
       margin-top: 4px;
       max-height: 220px;
       overflow-y: auto;
       z-index: 50;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
     }
 
     .cand-area-select.open .cand-area-dropdown {
@@ -695,17 +696,17 @@
       padding: 8px 12px;
       font-size: 13px;
       cursor: pointer;
-      color: var(--color-spacial-grey);
+      color: #FFFFFF;
     }
 
     .cand-area-option:hover {
-      background: rgba(0,113,187,0.05);
+      background: rgba(255,255,255,0.1);
     }
 
     .cand-area-option input[type="checkbox"] {
       width: 15px;
       height: 15px;
-      accent-color: var(--color-bright-blue);
+      accent-color: #FFFFFF;
       flex-shrink: 0;
     }
 
