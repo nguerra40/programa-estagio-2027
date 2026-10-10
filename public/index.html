@@ -340,6 +340,45 @@
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3 1L7.5 5L3 9' stroke='%23183C80' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     }
 
+    /* Barra de filtros do painel de Resultados — um bloco só, com fundo
+       próprio, em vez de selects soltos boiando entre o título e a tabela. */
+    .resultados-filtros {
+      display: flex;
+      align-items: flex-end;
+      gap: 24px;
+      flex-wrap: wrap;
+      background: var(--color-snow-white);
+      border: 1px solid #E0E0E0;
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      margin-bottom: 20px;
+    }
+    .resultados-filtros__item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .resultados-filtros__item label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--color-deep-blue);
+    }
+    .resultados-filtros__item select {
+      padding: 7px 10px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid #D0D5DD;
+      font-size: 13px;
+      font-family: var(--font-body);
+      background: #FFFFFF;
+      min-width: 160px;
+    }
+    .resultados-filtros__item select:focus {
+      outline: none;
+      border-color: var(--color-bright-blue);
+    }
+
     .cand-lista-toggle-btn {
       background: rgba(255,255,255,0.12);
       border: none;
@@ -1457,28 +1496,28 @@
             </button>
           </div>
         </div>
-        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:16px;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <label for="resultados-filtro-turno" style="font-size:13px; color:var(--color-light-grey);">Banca:</label>
-            <select id="resultados-filtro-turno" onchange="filtrarResultados('turno', this.value)" style="padding:6px 10px; border-radius:var(--radius-sm); border:1px solid #D0D5DD; font-size:13px;">
+        <div class="resultados-filtros">
+          <div class="resultados-filtros__item">
+            <label for="resultados-filtro-turno">Banca</label>
+            <select id="resultados-filtro-turno" onchange="filtrarResultados('turno', this.value)">
               <option value="">Todas as bancas (comitê final)</option>
             </select>
           </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <label for="resultados-filtro-genero" style="font-size:13px; color:var(--color-light-grey);">Gênero:</label>
-            <select id="resultados-filtro-genero" onchange="filtrarResultados('genero', this.value)" style="padding:6px 10px; border-radius:var(--radius-sm); border:1px solid #D0D5DD; font-size:13px;">
+          <div class="resultados-filtros__item">
+            <label for="resultados-filtro-genero">Gênero</label>
+            <select id="resultados-filtro-genero" onchange="filtrarResultados('genero', this.value)">
               <option value="">Todos</option>
             </select>
           </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <label for="resultados-filtro-curso" style="font-size:13px; color:var(--color-light-grey);">Curso:</label>
-            <select id="resultados-filtro-curso" onchange="filtrarResultados('curso', this.value)" style="padding:6px 10px; border-radius:var(--radius-sm); border:1px solid #D0D5DD; font-size:13px;">
+          <div class="resultados-filtros__item">
+            <label for="resultados-filtro-curso">Curso</label>
+            <select id="resultados-filtro-curso" onchange="filtrarResultados('curso', this.value)">
               <option value="">Todos</option>
             </select>
           </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <label for="resultados-filtro-faculdade" style="font-size:13px; color:var(--color-light-grey);">Faculdade:</label>
-            <select id="resultados-filtro-faculdade" onchange="filtrarResultados('faculdade', this.value)" style="padding:6px 10px; border-radius:var(--radius-sm); border:1px solid #D0D5DD; font-size:13px;">
+          <div class="resultados-filtros__item">
+            <label for="resultados-filtro-faculdade">Faculdade</label>
+            <select id="resultados-filtro-faculdade" onchange="filtrarResultados('faculdade', this.value)">
               <option value="">Todas</option>
             </select>
           </div>
