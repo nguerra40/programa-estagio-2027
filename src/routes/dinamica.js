@@ -59,11 +59,15 @@ router.post('/candidatos/bulk', isAuthenticated, isAdmin, async (req, res) => {
       if (typeof dados === 'string' && dados.startsWith('data:') && comma >= 0) {
         dados = dados.slice(comma + 1);
       }
-      const mime = arq.mime || 'application/pdf';
+      // Força sempre application/pdf (esse endpoint só existe pra CV em PDF)
+      // em vez de confiar no mime que o cliente mandou — o arquivo é servido
+      // de volta com esse Content-Type, então aceitar qualquer valor aqui
+      // abriria a mesma brecha de XSS corrigida em routes/arquivos.js.
+      const mime = 'application/pdf';
       const arquivo = await db.insertArquivo({ tipo: 'cv', nome: arq.nome, mime, dados });
 
       // Resumo automático do histórico via IA (best-effort, ver services/resumoIA.js).
-      const historico = mime === 'application/pdf' ? await resumirCurriculo(dados) : '';
+      const historico = await resumirCurriculo(dados);
 
       const nomeCandidato = (arq.nome || 'Candidato').replace(/\.pdf$/i, '');
       const candidato = await db.insertCandidato({
