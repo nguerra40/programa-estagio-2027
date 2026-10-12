@@ -484,6 +484,15 @@
       outline: none;
       border-color: var(--color-bright-blue);
     }
+    .ranking-nota-comite-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .ranking-nota-comite-status {
+      font-size: 18px;
+      color: #1E7A3D;
+    }
     .ranking-expand-btn {
       background: none;
       border: none;
@@ -3060,8 +3069,12 @@
       if (btn) btn.classList.toggle('aberto', !aberta);
     }
 
+    // Salva assim que você sai do campo (Tab ou clicando fora) — não tem
+    // botão de salvar separado. O ícone verde confirma que gravou no banco;
+    // ele some de novo assim que você mexe na nota, até salvar de novo.
     async function salvarNotaComiteAdmin(id, valorStr) {
       const valor = valorStr.trim();
+      const status = document.getElementById('nota-comite-status-' + id);
       if (valor && (!/^[1-5]$/.test(valor))) {
         showToast('Nota do comitê deve ser um número de 1 a 5.');
         await carregarResultadosAdmin();
@@ -3074,6 +3087,7 @@
         });
         const c = resultadosAdminCache.find(x => String(x.id) === String(id));
         if (c) c.nota_comite = valor ? Number(valor) : null;
+        if (status) status.style.display = 'inline';
         showToast('Nota do comitê salva.');
       } catch (e) {
         showToast('Erro: ' + e.message);
@@ -3240,7 +3254,12 @@
             </div>
           </td>
           <td>
-            <input type="number" class="ranking-nota-comite" min="1" max="5" step="1" value="${c.nota_comite != null ? c.nota_comite : ''}" onchange="salvarNotaComiteAdmin('${c.id}', this.value)">
+            <div class="ranking-nota-comite-wrap">
+              <input type="number" class="ranking-nota-comite" min="1" max="5" step="1" value="${c.nota_comite != null ? c.nota_comite : ''}"
+                oninput="document.getElementById('nota-comite-status-${c.id}').style.display='none'"
+                onchange="salvarNotaComiteAdmin('${c.id}', this.value)">
+              <span class="material-icons-outlined ranking-nota-comite-status" id="nota-comite-status-${c.id}" style="display:none;" title="Salvo">check_circle</span>
+            </div>
           </td>
           <td>
             <button type="button" class="ranking-expand-btn" id="ranking-expand-${c.id}" onclick="toggleDetalheRanking('${c.id}')" aria-label="Ver notas e comentários dos avaliadores">
