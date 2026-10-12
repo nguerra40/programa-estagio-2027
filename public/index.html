@@ -408,6 +408,94 @@
       border-color: var(--color-bright-blue);
     }
 
+    /* Ranking de aprovados — lista com barra proporcional à média, em vez
+       da tabela densa de antes. Cada linha abre pra mostrar a nota e o
+       comentário de cada avaliador (sem isso, acaba escondendo informação
+       que já existia na versão em tabela). */
+    .ranking-row {
+      border-bottom: 1px solid #EFEFEF;
+    }
+    .ranking-row:last-child {
+      border-bottom: none;
+    }
+    .ranking-row__main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 4px;
+      cursor: pointer;
+    }
+    .ranking-row__posicao {
+      width: 24px;
+      flex-shrink: 0;
+      font-size: 12px;
+      color: var(--color-light-grey);
+      text-align: right;
+    }
+    .ranking-row__nome {
+      width: 220px;
+      flex-shrink: 0;
+      min-width: 0;
+    }
+    .ranking-row__nome b {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-spacial-grey);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ranking-row__nome span {
+      display: block;
+      font-size: 11px;
+      color: var(--color-light-grey);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ranking-row__barra {
+      flex: 1;
+      height: 8px;
+      background: var(--color-snow-white);
+      border-radius: 999px;
+      overflow: hidden;
+      min-width: 60px;
+    }
+    .ranking-row__barra div {
+      height: 100%;
+    }
+    .ranking-row__media {
+      width: 34px;
+      flex-shrink: 0;
+      text-align: right;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .ranking-row__chevron {
+      flex-shrink: 0;
+      color: var(--color-light-grey);
+      transition: transform 0.15s ease;
+    }
+    .ranking-row--aberta .ranking-row__chevron {
+      transform: rotate(180deg);
+    }
+    .ranking-row__detalhe {
+      display: none;
+      padding: 0 4px 14px 40px;
+      font-size: 12px;
+      color: var(--color-light-grey);
+    }
+    .ranking-row--aberta .ranking-row__detalhe {
+      display: block;
+    }
+    .ranking-row__detalhe div {
+      padding: 4px 0;
+    }
+    .ranking-row__detalhe b {
+      color: var(--color-spacial-grey);
+    }
+
     .cand-lista-toggle-btn {
       background: rgba(255,255,255,0.12);
       border: none;
@@ -1652,13 +1740,7 @@
                 </select>
               </div>
             </div>
-            <table>
-              <caption class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">Resultados das avaliações por candidato</caption>
-              <thead>
-                <tr><th>#</th><th>Candidato</th><th>Gênero</th><th>Curso</th><th>Faculdade</th><th>Turno</th><th>Média</th><th>Avaliações</th></tr>
-              </thead>
-              <tbody id="resultados-table-body"></tbody>
-            </table>
+            <div class="ranking-list" id="resultados-table-body" role="list" aria-label="Ranking de candidatos, ordenado pela média das notas dos gestores"></div>
             <div class="empty-state" id="resultados-empty-state" style="display:none;">
               <span class="material-icons-outlined">inbox</span>
               <p>Nenhum candidato avaliado ainda.</p>
@@ -2873,6 +2955,18 @@
       return 'color:#C0392B;';
     }
 
+    function corMedia(media) {
+      if (media == null) return '#B0B0B0';
+      if (media >= 4) return '#1E7A3D';
+      if (media >= 2.5) return '#9A6A00';
+      return '#C0392B';
+    }
+
+    function toggleDetalheRanking(id) {
+      const linha = document.getElementById('ranking-row-' + id);
+      if (linha) linha.classList.toggle('ranking-row--aberta');
+    }
+
     function atualizarStatAvaliadosAdmin() {
       const avaliados = resultadosAdminCache.filter(c => c.qtd_avaliacoes > 0).length;
       document.getElementById('cand-stat-avaliados').textContent = avaliados;
@@ -2931,22 +3025,29 @@
         return;
       }
       empty.style.display = 'none';
-      body.innerHTML = avaliados.map((c, i) => `
-        <tr>
-          <td>${i + 1}º</td>
-          <td>${escHtml(c.nome)}</td>
-          <td>${escHtml(c.genero || '—')}</td>
-          <td>${escHtml(c.curso || '—')}</td>
-          <td>${escHtml(c.faculdade || '—')}</td>
-          <td>${escHtml(c.turno)}</td>
-          <td style="font-weight:700;${faixaMediaCand(c.media)}">${c.media != null ? c.media : '—'}</td>
-          <td>
-            ${c.qtd_avaliacoes} nota(s)
-            <div style="font-size:12px; color:var(--color-light-grey); margin-top:4px;">
-              ${(c.avaliacoes || []).map(a => `<div><b>${escHtml(a.avaliador || a.email)} (${a.nota})${(a.areas_interesse && a.areas_interesse.length) ? ' · interesse: ' + escHtml(a.areas_interesse.join(' / ')) : ''}:</b> ${escHtml(a.comentario || '')}</div>`).join('')}
-            </div>
-          </td>
-        </tr>`).join('');
+      body.innerHTML = avaliados.map((c, i) => {
+        const media = c.media != null ? c.media : 0;
+        const largura = Math.max(4, Math.min(100, (media / 5) * 100));
+        const cor = corMedia(c.media);
+        const linhaSecundaria = [c.curso, c.faculdade, c.turno].filter(Boolean).join(' · ');
+        return `
+        <div class="ranking-row" id="ranking-row-${c.id}">
+          <div class="ranking-row__main" onclick="toggleDetalheRanking('${c.id}')">
+            <span class="ranking-row__posicao">${i + 1}º</span>
+            <span class="ranking-row__nome">
+              <b>${escHtml(c.nome)}</b>
+              <span>${escHtml(linhaSecundaria || '—')}</span>
+            </span>
+            <span class="ranking-row__barra"><div style="width:${largura}%; background:${cor};"></div></span>
+            <span class="ranking-row__media" style="color:${cor};">${c.media != null ? c.media : '—'}</span>
+            <span class="material-icons-outlined ranking-row__chevron" aria-hidden="true">expand_more</span>
+          </div>
+          <div class="ranking-row__detalhe">
+            <div>${escHtml(c.genero || 'Gênero não informado')} · ${c.qtd_avaliacoes} nota(s)</div>
+            ${(c.avaliacoes || []).map(a => `<div><b>${escHtml(a.avaliador || a.email)} (${a.nota})</b>${(a.areas_interesse && a.areas_interesse.length) ? ' · interesse: ' + escHtml(a.areas_interesse.join(' / ')) : ''}${a.comentario ? ': ' + escHtml(a.comentario) : ''}</div>`).join('')}
+          </div>
+        </div>`;
+      }).join('');
     }
 
     function exportarResultadosAdmin() {
