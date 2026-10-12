@@ -369,130 +369,90 @@
       border-color: var(--color-bright-blue);
     }
 
-    /* Barra de filtros do painel de Resultados — um bloco só, com fundo
-       próprio, em vez de selects soltos boiando entre o título e a tabela. */
-    .resultados-filtros {
-      display: flex;
-      align-items: flex-end;
-      gap: 24px;
-      flex-wrap: wrap;
-      background: var(--color-snow-white);
-      border: 1px solid #E0E0E0;
+    /* Ranking de aprovados — os filtros ficam dentro do próprio cabeçalho
+       da tabela (um select por coluna filtrável), em vez de um bloco solto
+       acima dela. Resolve o "desenquadrado" de ter uma caixa flutuando sem
+       se encaixar no resto do card. */
+    .ranking-table thead th select {
+      display: block;
+      margin-top: 6px;
+      width: 100%;
+      padding: 4px 6px;
       border-radius: var(--radius-sm);
-      padding: 14px 18px;
-      margin-bottom: 20px;
+      border: none;
+      font-size: 11px;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: normal;
+      font-family: var(--font-body);
+      background: rgba(255,255,255,0.15);
+      color: #FFFFFF;
     }
-    .resultados-filtros__item {
+    .ranking-table thead th select:focus {
+      outline: 1px solid rgba(255,255,255,0.6);
+    }
+    .ranking-table thead th select option {
+      color: var(--color-spacial-grey);
+    }
+    .ranking-table tbody td {
+      font-size: 13px;
+    }
+    .ranking-table .ranking-nome span {
+      display: block;
+      font-size: 11px;
+      color: var(--color-light-grey);
+    }
+    .ranking-bar-cell {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
+      align-items: center;
+      gap: 8px;
     }
-    .resultados-filtros__item label {
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      color: var(--color-deep-blue);
+    .ranking-bar {
+      width: 70px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--color-snow-white);
+      overflow: hidden;
+      flex-shrink: 0;
     }
-    .resultados-filtros__item select {
-      padding: 7px 10px;
+    .ranking-bar div {
+      height: 100%;
+    }
+    .ranking-nota-comite {
+      width: 48px;
+      padding: 5px 6px;
       border-radius: var(--radius-sm);
       border: 1.5px solid #D0D5DD;
       font-size: 13px;
       font-family: var(--font-body);
-      background: #FFFFFF;
-      min-width: 160px;
+      text-align: center;
     }
-    .resultados-filtros__item select:focus {
+    .ranking-nota-comite:focus {
       outline: none;
       border-color: var(--color-bright-blue);
     }
-
-    /* Ranking de aprovados — lista com barra proporcional à média, em vez
-       da tabela densa de antes. Cada linha abre pra mostrar a nota e o
-       comentário de cada avaliador (sem isso, acaba escondendo informação
-       que já existia na versão em tabela). */
-    .ranking-row {
-      border-bottom: 1px solid #EFEFEF;
-    }
-    .ranking-row:last-child {
-      border-bottom: none;
-    }
-    .ranking-row__main {
+    .ranking-expand-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--color-light-grey);
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 10px 4px;
-      cursor: pointer;
-    }
-    .ranking-row__posicao {
-      width: 24px;
-      flex-shrink: 0;
-      font-size: 12px;
-      color: var(--color-light-grey);
-      text-align: right;
-    }
-    .ranking-row__nome {
-      width: 220px;
-      flex-shrink: 0;
-      min-width: 0;
-    }
-    .ranking-row__nome b {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--color-spacial-grey);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .ranking-row__nome span {
-      display: block;
-      font-size: 11px;
-      color: var(--color-light-grey);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .ranking-row__barra {
-      flex: 1;
-      height: 8px;
-      background: var(--color-snow-white);
-      border-radius: 999px;
-      overflow: hidden;
-      min-width: 60px;
-    }
-    .ranking-row__barra div {
-      height: 100%;
-    }
-    .ranking-row__media {
-      width: 34px;
-      flex-shrink: 0;
-      text-align: right;
-      font-size: 13px;
-      font-weight: 600;
-    }
-    .ranking-row__chevron {
-      flex-shrink: 0;
-      color: var(--color-light-grey);
       transition: transform 0.15s ease;
     }
-    .ranking-row--aberta .ranking-row__chevron {
+    .ranking-expand-btn.aberto {
       transform: rotate(180deg);
     }
-    .ranking-row__detalhe {
-      display: none;
-      padding: 0 4px 14px 40px;
+    .ranking-detalhe-row td {
+      background: var(--color-snow-white);
       font-size: 12px;
       color: var(--color-light-grey);
+      padding: 10px 16px;
     }
-    .ranking-row--aberta .ranking-row__detalhe {
-      display: block;
+    .ranking-detalhe-row div {
+      padding: 2px 0;
     }
-    .ranking-row__detalhe div {
-      padding: 4px 0;
-    }
-    .ranking-row__detalhe b {
+    .ranking-detalhe-row b {
       color: var(--color-spacial-grey);
     }
 
@@ -1714,33 +1674,44 @@
                 </button>
               </div>
             </div>
-            <div class="resultados-filtros">
-              <div class="resultados-filtros__item">
-                <label for="resultados-filtro-turno">Banca</label>
-                <select id="resultados-filtro-turno" onchange="filtrarResultados('turno', this.value)">
-                  <option value="">Todas as bancas (comitê final)</option>
-                </select>
-              </div>
-              <div class="resultados-filtros__item">
-                <label for="resultados-filtro-genero">Gênero</label>
-                <select id="resultados-filtro-genero" onchange="filtrarResultados('genero', this.value)">
-                  <option value="">Todos</option>
-                </select>
-              </div>
-              <div class="resultados-filtros__item">
-                <label for="resultados-filtro-curso">Curso</label>
-                <select id="resultados-filtro-curso" onchange="filtrarResultados('curso', this.value)">
-                  <option value="">Todos</option>
-                </select>
-              </div>
-              <div class="resultados-filtros__item">
-                <label for="resultados-filtro-faculdade">Faculdade</label>
-                <select id="resultados-filtro-faculdade" onchange="filtrarResultados('faculdade', this.value)">
-                  <option value="">Todas</option>
-                </select>
-              </div>
-            </div>
-            <div class="ranking-list" id="resultados-table-body" role="list" aria-label="Ranking de candidatos, ordenado pela média das notas dos gestores"></div>
+            <table class="ranking-table">
+              <caption class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">Ranking de candidatos, ordenado pela média das notas dos gestores</caption>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Candidato</th>
+                  <th>
+                    Gênero
+                    <select id="resultados-filtro-genero" onchange="filtrarResultados('genero', this.value)">
+                      <option value="">Todos</option>
+                    </select>
+                  </th>
+                  <th>
+                    Curso
+                    <select id="resultados-filtro-curso" onchange="filtrarResultados('curso', this.value)">
+                      <option value="">Todos</option>
+                    </select>
+                  </th>
+                  <th>
+                    Faculdade
+                    <select id="resultados-filtro-faculdade" onchange="filtrarResultados('faculdade', this.value)">
+                      <option value="">Todas</option>
+                    </select>
+                  </th>
+                  <th>
+                    Banca
+                    <select id="resultados-filtro-turno" onchange="filtrarResultados('turno', this.value)">
+                      <option value="">Todas (comitê final)</option>
+                    </select>
+                  </th>
+                  <th>Área</th>
+                  <th>Nota gestores</th>
+                  <th>Nota comitê</th>
+                  <th style="width:32px;"></th>
+                </tr>
+              </thead>
+              <tbody id="resultados-table-body"></tbody>
+            </table>
             <div class="empty-state" id="resultados-empty-state" style="display:none;">
               <span class="material-icons-outlined">inbox</span>
               <p>Nenhum candidato avaliado ainda.</p>
@@ -2963,8 +2934,33 @@
     }
 
     function toggleDetalheRanking(id) {
-      const linha = document.getElementById('ranking-row-' + id);
-      if (linha) linha.classList.toggle('ranking-row--aberta');
+      const detalhe = document.getElementById('ranking-detalhe-' + id);
+      const btn = document.getElementById('ranking-expand-' + id);
+      if (!detalhe) return;
+      const aberta = detalhe.style.display !== 'none';
+      detalhe.style.display = aberta ? 'none' : 'table-row';
+      if (btn) btn.classList.toggle('aberto', !aberta);
+    }
+
+    async function salvarNotaComiteAdmin(id, valorStr) {
+      const valor = valorStr.trim();
+      if (valor && (!/^[1-5]$/.test(valor))) {
+        showToast('Nota do comitê deve ser um número de 1 a 5.');
+        await carregarResultadosAdmin();
+        return;
+      }
+      try {
+        await apiDinamica('/candidatos/' + id, {
+          method: 'PUT',
+          body: JSON.stringify({ nota_comite: valor || '', admin_email: currentUser }),
+        });
+        const c = resultadosAdminCache.find(x => String(x.id) === String(id));
+        if (c) c.nota_comite = valor ? Number(valor) : null;
+        showToast('Nota do comitê salva.');
+      } catch (e) {
+        showToast('Erro: ' + e.message);
+        await carregarResultadosAdmin();
+      }
     }
 
     function atualizarStatAvaliadosAdmin() {
@@ -3029,24 +3025,37 @@
         const media = c.media != null ? c.media : 0;
         const largura = Math.max(4, Math.min(100, (media / 5) * 100));
         const cor = corMedia(c.media);
-        const linhaSecundaria = [c.curso, c.faculdade, c.turno].filter(Boolean).join(' · ');
+        const areas = [...new Set((c.avaliacoes || []).flatMap(a => a.areas_interesse || []))];
         return `
-        <div class="ranking-row" id="ranking-row-${c.id}">
-          <div class="ranking-row__main" onclick="toggleDetalheRanking('${c.id}')">
-            <span class="ranking-row__posicao">${i + 1}º</span>
-            <span class="ranking-row__nome">
-              <b>${escHtml(c.nome)}</b>
-              <span>${escHtml(linhaSecundaria || '—')}</span>
-            </span>
-            <span class="ranking-row__barra"><div style="width:${largura}%; background:${cor};"></div></span>
-            <span class="ranking-row__media" style="color:${cor};">${c.media != null ? c.media : '—'}</span>
-            <span class="material-icons-outlined ranking-row__chevron" aria-hidden="true">expand_more</span>
-          </div>
-          <div class="ranking-row__detalhe">
-            <div>${escHtml(c.genero || 'Gênero não informado')} · ${c.qtd_avaliacoes} nota(s)</div>
+        <tr>
+          <td>${i + 1}º</td>
+          <td class="ranking-nome"><b>${escHtml(c.nome)}</b></td>
+          <td>${escHtml(c.genero || '—')}</td>
+          <td>${escHtml(c.curso || '—')}</td>
+          <td>${escHtml(c.faculdade || '—')}</td>
+          <td>${escHtml(c.turno)}</td>
+          <td>${areas.length ? escHtml(areas.join(' / ')) : '—'}</td>
+          <td>
+            <div class="ranking-bar-cell">
+              <span class="ranking-bar"><div style="width:${largura}%; background:${cor};"></div></span>
+              <span style="color:${cor}; font-weight:600;">${c.media != null ? c.media : '—'}</span>
+            </div>
+          </td>
+          <td>
+            <input type="number" class="ranking-nota-comite" min="1" max="5" step="1" value="${c.nota_comite != null ? c.nota_comite : ''}" onchange="salvarNotaComiteAdmin('${c.id}', this.value)">
+          </td>
+          <td>
+            <button type="button" class="ranking-expand-btn" id="ranking-expand-${c.id}" onclick="toggleDetalheRanking('${c.id}')" aria-label="Ver notas e comentários dos avaliadores">
+              <span class="material-icons-outlined" aria-hidden="true">expand_more</span>
+            </button>
+          </td>
+        </tr>
+        <tr class="ranking-detalhe-row" id="ranking-detalhe-${c.id}" style="display:none;">
+          <td colspan="10">
+            <div>${c.qtd_avaliacoes} nota(s) dos gestores:</div>
             ${(c.avaliacoes || []).map(a => `<div><b>${escHtml(a.avaliador || a.email)} (${a.nota})</b>${(a.areas_interesse && a.areas_interesse.length) ? ' · interesse: ' + escHtml(a.areas_interesse.join(' / ')) : ''}${a.comentario ? ': ' + escHtml(a.comentario) : ''}</div>`).join('')}
-          </div>
-        </div>`;
+          </td>
+        </tr>`;
       }).join('');
     }
 

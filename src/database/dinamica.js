@@ -54,6 +54,11 @@ query(`
 `)).then(() => query(`
   ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'Pendente';
 `)).then(() => query(`
+  -- Nota do comitê (reunião final, após todas as bancas) — separada da
+  -- média dos gestores, não entra nesse cálculo. Editável direto na tela
+  -- de ranking.
+  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS nota_comite INTEGER;
+`)).then(() => query(`
   CREATE TABLE IF NOT EXISTS dinamica_notas (
     id BIGSERIAL PRIMARY KEY,
     candidato_id BIGINT NOT NULL REFERENCES dinamica_candidatos(id) ON DELETE CASCADE,
@@ -105,10 +110,11 @@ query(`
 const CAND_COLS = [
   'nome', 'curso', 'faculdade', 'formacao', 'telefone', 'email', 'linkedin_url',
   'turno', 'data_dinamica', 'cv_arquivo_id', 'foto_arquivo_id', 'liberado', 'genero', 'status',
+  'nota_comite',
 ];
 
 const STATUS_VALIDOS = ['Pendente', 'Aprovado', 'Reprovado', 'Ausente'];
-const CAND_NULLABLE_EMPTY = ['data_dinamica', 'cv_arquivo_id', 'foto_arquivo_id'];
+const CAND_NULLABLE_EMPTY = ['data_dinamica', 'cv_arquivo_id', 'foto_arquivo_id', 'nota_comite'];
 
 // Só aceita LinkedIn com esquema http(s) — o campo é renderizado como link
 // clicável pra qualquer avaliador, então um "javascript:" ou "data:" aqui
@@ -136,6 +142,13 @@ function cleanCandidato(body) {
   }
   if (out.status && !STATUS_VALIDOS.includes(out.status)) {
     throw new Error('Status inválido.');
+  }
+  if (out.nota_comite != null) {
+    const n = Number(out.nota_comite);
+    if (!Number.isInteger(n) || n < 1 || n > 5) {
+      throw new Error('Nota do comitê deve ser um número inteiro de 1 a 5.');
+    }
+    out.nota_comite = n;
   }
   return out;
 }
