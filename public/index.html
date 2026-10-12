@@ -369,35 +369,27 @@
       border-color: var(--color-bright-blue);
     }
 
-    /* Ranking de aprovados — os filtros ficam dentro do próprio cabeçalho
-       da tabela (um select por coluna filtrável), em vez de um bloco solto
-       acima dela. Resolve o "desenquadrado" de ter uma caixa flutuando sem
-       se encaixar no resto do card. */
-    .ranking-table thead th select {
-      display: block;
-      margin-top: 6px;
+    /* Ranking de aprovados — os filtros são uma linha própria, logo abaixo
+       dos rótulos das colunas (não um select dentro da mesma célula do
+       rótulo — isso que parecia "um filtro dentro do outro"). */
+    .ranking-filtros-row td {
+      background: var(--color-snow-white);
+      border-bottom: 1px solid #E0E0E0;
+      padding: 6px 12px;
+    }
+    .ranking-filtros-row select {
       width: 100%;
-      padding: 2px 0 4px;
-      border-radius: 0;
-      border: none;
-      border-bottom: 1px solid rgba(255,255,255,0.45);
-      font-size: 11px;
-      font-weight: 400;
-      text-transform: none;
-      letter-spacing: normal;
+      padding: 5px 6px;
+      border-radius: var(--radius-sm);
+      border: 1px solid #D0D5DD;
+      font-size: 12px;
       font-family: var(--font-body);
-      background: transparent;
-      color: rgba(255,255,255,0.85);
-      -webkit-appearance: menulist;
-      appearance: auto;
-    }
-    .ranking-table thead th select:focus {
-      outline: none;
-      border-bottom-color: #FFFFFF;
-      color: #FFFFFF;
-    }
-    .ranking-table thead th select option {
+      background: #FFFFFF;
       color: var(--color-spacial-grey);
+    }
+    .ranking-filtros-row select:focus {
+      outline: none;
+      border-color: var(--color-bright-blue);
     }
     .ranking-table tbody td {
       font-size: 13px;
@@ -1685,34 +1677,42 @@
                 <tr>
                   <th>#</th>
                   <th>Candidato</th>
-                  <th>
-                    Gênero
-                    <select id="resultados-filtro-genero" onchange="filtrarResultados('genero', this.value)">
-                      <option value="">Todos</option>
-                    </select>
-                  </th>
-                  <th>
-                    Curso
-                    <select id="resultados-filtro-curso" onchange="filtrarResultados('curso', this.value)">
-                      <option value="">Todos</option>
-                    </select>
-                  </th>
-                  <th>
-                    Faculdade
-                    <select id="resultados-filtro-faculdade" onchange="filtrarResultados('faculdade', this.value)">
-                      <option value="">Todas</option>
-                    </select>
-                  </th>
-                  <th>
-                    Banca
-                    <select id="resultados-filtro-turno" onchange="filtrarResultados('turno', this.value)">
-                      <option value="">Todas (comitê final)</option>
-                    </select>
-                  </th>
+                  <th>Gênero</th>
+                  <th>Curso</th>
+                  <th>Faculdade</th>
+                  <th>Banca</th>
                   <th>Área</th>
                   <th>Nota gestores</th>
                   <th>Nota comitê</th>
                   <th style="width:32px;"></th>
+                </tr>
+                <tr class="ranking-filtros-row">
+                  <td></td>
+                  <td></td>
+                  <td>
+                    <select id="resultados-filtro-genero" onchange="filtrarResultados('genero', this.value)">
+                      <option value="">Todos</option>
+                    </select>
+                  </td>
+                  <td>
+                    <select id="resultados-filtro-curso" onchange="filtrarResultados('curso', this.value)">
+                      <option value="">Todos</option>
+                    </select>
+                  </td>
+                  <td>
+                    <select id="resultados-filtro-faculdade" onchange="filtrarResultados('faculdade', this.value)">
+                      <option value="">Todas</option>
+                    </select>
+                  </td>
+                  <td>
+                    <select id="resultados-filtro-turno" onchange="filtrarResultados('turno', this.value)">
+                      <option value="">Todas (comitê final)</option>
+                    </select>
+                  </td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
                 </tr>
               </thead>
               <tbody id="resultados-table-body"></tbody>
