@@ -369,17 +369,32 @@
       border-color: var(--color-bright-blue);
     }
 
-    /* Ranking de aprovados — os filtros são uma linha própria, logo abaixo
-       dos rótulos das colunas (não um select dentro da mesma célula do
-       rótulo — isso que parecia "um filtro dentro do outro"). */
-    .ranking-filtros-row td {
+    /* Ranking de aprovados — filtros fora da tabela (mesmo tratamento já
+       usado na barra de busca da aba Gerenciar), e as colunas é que ficam
+       ordenáveis (clica no rótulo, igual à tabela de solicitações). */
+    .ranking-filtros {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
       background: var(--color-snow-white);
-      border-bottom: 1px solid #E0E0E0;
-      padding: 6px 12px;
+      border: 1px solid #E0E0E0;
+      border-radius: var(--radius-sm);
+      padding: 12px 18px;
+      margin-bottom: 16px;
     }
-    .ranking-filtros-row select {
-      width: 100%;
-      padding: 5px 6px;
+    .ranking-filtros__item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ranking-filtros__item label {
+      font-size: 12px;
+      color: var(--color-light-grey);
+      white-space: nowrap;
+    }
+    .ranking-filtros__item select {
+      padding: 6px 8px;
       border-radius: var(--radius-sm);
       border: 1px solid #D0D5DD;
       font-size: 12px;
@@ -387,7 +402,7 @@
       background: #FFFFFF;
       color: var(--color-spacial-grey);
     }
-    .ranking-filtros-row select:focus {
+    .ranking-filtros__item select:focus {
       outline: none;
       border-color: var(--color-bright-blue);
     }
@@ -1671,48 +1686,46 @@
                 </button>
               </div>
             </div>
+            <div class="ranking-filtros">
+              <div class="ranking-filtros__item">
+                <label for="resultados-filtro-genero">Gênero</label>
+                <select id="resultados-filtro-genero" onchange="filtrarResultados('genero', this.value)">
+                  <option value="">Todos</option>
+                </select>
+              </div>
+              <div class="ranking-filtros__item">
+                <label for="resultados-filtro-curso">Curso</label>
+                <select id="resultados-filtro-curso" onchange="filtrarResultados('curso', this.value)">
+                  <option value="">Todos</option>
+                </select>
+              </div>
+              <div class="ranking-filtros__item">
+                <label for="resultados-filtro-faculdade">Faculdade</label>
+                <select id="resultados-filtro-faculdade" onchange="filtrarResultados('faculdade', this.value)">
+                  <option value="">Todas</option>
+                </select>
+              </div>
+              <div class="ranking-filtros__item">
+                <label for="resultados-filtro-turno">Banca</label>
+                <select id="resultados-filtro-turno" onchange="filtrarResultados('turno', this.value)">
+                  <option value="">Todas (comitê final)</option>
+                </select>
+              </div>
+            </div>
             <table class="ranking-table">
               <caption class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">Ranking de candidatos, ordenado pela média das notas dos gestores</caption>
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Candidato</th>
-                  <th>Gênero</th>
-                  <th>Curso</th>
-                  <th>Faculdade</th>
-                  <th>Banca</th>
-                  <th>Área</th>
-                  <th>Nota gestores</th>
-                  <th>Nota comitê</th>
+                  <th class="sortable" onclick="sortRanking('nome')">Candidato <span class="sort-icon" id="ranking-sort-icon-nome">↕</span></th>
+                  <th class="sortable" onclick="sortRanking('genero')">Gênero <span class="sort-icon" id="ranking-sort-icon-genero">↕</span></th>
+                  <th class="sortable" onclick="sortRanking('curso')">Curso <span class="sort-icon" id="ranking-sort-icon-curso">↕</span></th>
+                  <th class="sortable" onclick="sortRanking('faculdade')">Faculdade <span class="sort-icon" id="ranking-sort-icon-faculdade">↕</span></th>
+                  <th class="sortable" onclick="sortRanking('turno')">Banca <span class="sort-icon" id="ranking-sort-icon-turno">↕</span></th>
+                  <th class="sortable" onclick="sortRanking('area')">Área <span class="sort-icon" id="ranking-sort-icon-area">↕</span></th>
+                  <th class="sortable active" onclick="sortRanking('media')">Nota gestores <span class="sort-icon" id="ranking-sort-icon-media">↓</span></th>
+                  <th class="sortable" onclick="sortRanking('nota_comite')">Nota comitê <span class="sort-icon" id="ranking-sort-icon-nota_comite">↕</span></th>
                   <th style="width:32px;"></th>
-                </tr>
-                <tr class="ranking-filtros-row">
-                  <td></td>
-                  <td></td>
-                  <td>
-                    <select id="resultados-filtro-genero" onchange="filtrarResultados('genero', this.value)">
-                      <option value="">Todos</option>
-                    </select>
-                  </td>
-                  <td>
-                    <select id="resultados-filtro-curso" onchange="filtrarResultados('curso', this.value)">
-                      <option value="">Todos</option>
-                    </select>
-                  </td>
-                  <td>
-                    <select id="resultados-filtro-faculdade" onchange="filtrarResultados('faculdade', this.value)">
-                      <option value="">Todas</option>
-                    </select>
-                  </td>
-                  <td>
-                    <select id="resultados-filtro-turno" onchange="filtrarResultados('turno', this.value)">
-                      <option value="">Todas (comitê final)</option>
-                    </select>
-                  </td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
                 </tr>
               </thead>
               <tbody id="resultados-table-body"></tbody>
@@ -2475,6 +2488,12 @@
     let candidatosSelecionados = new Set();
     let resultadosAdminCache = [];
     let filtrosResultados = { turno: '', genero: '', curso: '', faculdade: '' };
+    // Ordenação da tabela de ranking — o padrão (media, desc) é o que
+    // garante que o ranking continua atrelado à média das notas dos
+    // gestores; clicar numa coluna só muda a ordem de exibição, a posição
+    // (#) sempre reflete o lugar real de cada um nessa média.
+    let rankingSortField = 'media';
+    let rankingSortOrder = 'desc';
 
     async function carregarCandidatosAdmin() {
       try {
@@ -2938,6 +2957,29 @@
       return '#C0392B';
     }
 
+    function sortRanking(field) {
+      if (rankingSortField === field) {
+        rankingSortOrder = rankingSortOrder === 'asc' ? 'desc' : 'asc';
+      } else {
+        rankingSortField = field;
+        rankingSortOrder = field === 'media' || field === 'nota_comite' ? 'desc' : 'asc';
+      }
+      document.querySelectorAll('.ranking-table .sort-icon').forEach((icon) => { icon.textContent = '↕'; });
+      document.querySelectorAll('.ranking-table thead th.sortable').forEach((th) => th.classList.remove('active'));
+      const icone = document.getElementById('ranking-sort-icon-' + field);
+      if (icone) {
+        icone.textContent = rankingSortOrder === 'asc' ? '↑' : '↓';
+        icone.closest('th').classList.add('active');
+      }
+      renderResultadosTable();
+    }
+
+    // Deriva o valor comparável pra ordenar cada coluna do ranking.
+    function valorOrdenacaoRanking(c, field) {
+      if (field === 'area') return [...new Set((c.avaliacoes || []).flatMap((a) => a.areas_interesse || []))].join(', ');
+      return c[field];
+    }
+
     function toggleDetalheRanking(id) {
       const detalhe = document.getElementById('ranking-detalhe-' + id);
       const btn = document.getElementById('ranking-expand-' + id);
@@ -3017,6 +3059,10 @@
     function renderResultadosTable() {
       const body = document.getElementById('resultados-table-body');
       const empty = document.getElementById('resultados-empty-state');
+      // resultadosAdminCache já vem do servidor ordenado por média DESC —
+      // é a partir dessa ordem (antes de qualquer clique em coluna) que a
+      // posição "#" de cada um é calculada, pra nunca perder o vínculo com
+      // a média dos gestores, mesmo exibindo em outra ordem por enquanto.
       const avaliados = resultadosAdminCache
         .filter(c => c.qtd_avaliacoes > 0)
         .filter(c => Object.entries(filtrosResultados).every(([campo, valor]) => !valor || c[campo] === valor));
@@ -3026,14 +3072,30 @@
         return;
       }
       empty.style.display = 'none';
-      body.innerHTML = avaliados.map((c, i) => {
+
+      const posicaoPorMedia = new Map();
+      avaliados.forEach((c, i) => posicaoPorMedia.set(c.id, i + 1));
+
+      const exibidos = [...avaliados].sort((a, b) => {
+        const valA = valorOrdenacaoRanking(a, rankingSortField);
+        const valB = valorOrdenacaoRanking(b, rankingSortField);
+        if (valA == null && valB == null) return 0;
+        if (valA == null) return 1;
+        if (valB == null) return -1;
+        let cmp;
+        if (typeof valA === 'number' && typeof valB === 'number') cmp = valA - valB;
+        else cmp = String(valA).localeCompare(String(valB), 'pt-BR');
+        return rankingSortOrder === 'asc' ? cmp : -cmp;
+      });
+
+      body.innerHTML = exibidos.map((c) => {
         const media = c.media != null ? c.media : 0;
         const largura = Math.max(4, Math.min(100, (media / 5) * 100));
         const cor = corMedia(c.media);
         const areas = [...new Set((c.avaliacoes || []).flatMap(a => a.areas_interesse || []))];
         return `
         <tr>
-          <td>${i + 1}º</td>
+          <td>${posicaoPorMedia.get(c.id)}º</td>
           <td class="ranking-nome"><b>${escHtml(c.nome)}</b></td>
           <td>${escHtml(c.genero || '—')}</td>
           <td>${escHtml(c.curso || '—')}</td>
