@@ -346,16 +346,34 @@ async function upsertNota({ candidato_id, avaliador_email, avaliador_nome, nota,
 // Sem filtros: todos os candidatos, ranqueados pela média geral — visão da
 // reunião final de comitê, com todas as bancas juntas. Com `turno`: só os
 // candidatos daquela banca — visão do encontro logo após cada dinâmica.
-// `genero`/`curso`/`faculdade` recortam o ranking pros mesmos filtros do
-// painel (comparar como cada grupo se saiu, por exemplo).
+// `genero`/`curso`/`faculdade`/`area` recortam o ranking pros mesmos
+// filtros do painel (comparar como cada grupo se saiu, por exemplo).
+// Campos de múltipla seleção chegam como string separada por "|" (um ou
+// mais valores); `nome` é busca livre (substring, maiúsc./minúsc.).
 async function resultados(filtros = {}) {
-  const { turno, genero, curso, faculdade } = filtros;
+  const { turno, genero, curso, faculdade, nome, area } = filtros;
   const condicoes = [];
   const params = [];
   for (const [coluna, valor] of [['c.turno', turno], ['c.genero', genero], ['c.curso', curso], ['c.faculdade', faculdade]]) {
     if (!valor) continue;
-    params.push(valor);
-    condicoes.push(`${coluna} = $${params.length}`);
+    const valores = String(valor).split('|').filter(Boolean);
+    if (!valores.length) continue;
+    params.push(valores);
+    condicoes.push(`${coluna} = ANY($${params.length}::text[])`);
+  }
+  if (nome) {
+    params.push(`%${nome}%`);
+    condicoes.push(`c.nome ILIKE $${params.length}`);
+  }
+  if (area) {
+    const valores = String(area).split('|').filter(Boolean);
+    if (valores.length) {
+      params.push(valores);
+      condicoes.push(`EXISTS (
+        SELECT 1 FROM dinamica_notas n2
+        WHERE n2.candidato_id = c.id AND n2.area_interesse && $${params.length}::text[]
+      )`);
+    }
   }
   const where = condicoes.length ? `WHERE ${condicoes.join(' AND ')}` : '';
   const result = await query(`

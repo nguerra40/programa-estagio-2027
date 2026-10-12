@@ -369,42 +369,83 @@
       border-color: var(--color-bright-blue);
     }
 
-    /* Ranking de aprovados — filtros fora da tabela (mesmo tratamento já
-       usado na barra de busca da aba Gerenciar), e as colunas é que ficam
-       ordenáveis (clica no rótulo, igual à tabela de solicitações). */
-    .ranking-filtros {
-      display: flex;
+    /* Ranking de aprovados — um botão "Filtros" ao lado de Exportar abre um
+       painel com busca por nome e seleção múltipla por checkbox pra cada
+       campo, além da ordenação A-Z/Z-A. As colunas da tabela continuam
+       ordenáveis clicando no rótulo. */
+    .ranking-filtros-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    .ranking-filtros-badge {
+      display: inline-flex;
       align-items: center;
-      gap: 20px;
-      flex-wrap: wrap;
-      background: var(--color-snow-white);
+      justify-content: center;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      margin-left: 6px;
+      border-radius: 999px;
+      background: var(--color-bright-blue);
+      color: #FFFFFF;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .ranking-filtros-popover {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      z-index: 50;
+      width: 280px;
+      max-height: 70vh;
+      overflow-y: auto;
+      background: #FFFFFF;
       border: 1px solid #E0E0E0;
       border-radius: var(--radius-sm);
-      padding: 12px 18px;
-      margin-bottom: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      padding: 16px;
+      text-align: left;
     }
-    .ranking-filtros__item {
+    .ranking-filtro-grupo {
+      margin-bottom: 14px;
+    }
+    .ranking-filtro-grupo > label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-deep-blue);
+      margin-bottom: 6px;
+    }
+    .ranking-filtro-grupo input[type="text"] {
+      width: 100%;
+      padding: 7px 10px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid #D0D5DD;
+      font-size: 13px;
+      font-family: var(--font-body);
+    }
+    .ranking-filtro-opcoes {
+      max-height: 110px;
+      overflow-y: auto;
+      border: 1px solid #E8E8E8;
+      border-radius: var(--radius-sm);
+      padding: 4px 8px;
+    }
+    .ranking-filtro-opcoes label {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--color-spacial-grey);
+      padding: 3px 0;
+      cursor: pointer;
+      text-transform: none;
     }
-    .ranking-filtros__item label {
+    .ranking-filtro-opcoes--vazio {
       font-size: 12px;
       color: var(--color-light-grey);
-      white-space: nowrap;
-    }
-    .ranking-filtros__item select {
-      padding: 6px 8px;
-      border-radius: var(--radius-sm);
-      border: 1px solid #D0D5DD;
-      font-size: 12px;
-      font-family: var(--font-body);
-      background: #FFFFFF;
-      color: var(--color-spacial-grey);
-    }
-    .ranking-filtros__item select:focus {
-      outline: none;
-      border-color: var(--color-bright-blue);
+      padding: 4px 0;
     }
     .ranking-table tbody td {
       font-size: 13px;
@@ -1680,36 +1721,50 @@
                   <span class="material-icons-outlined" style="font-size:15px;vertical-align:middle;margin-right:4px;">refresh</span>
                   Atualizar
                 </button>
+                <span class="ranking-filtros-wrap">
+                  <button class="btn-secondary" onclick="toggleFiltrosRanking()">
+                    <span class="material-icons-outlined" style="font-size:15px;vertical-align:middle;margin-right:4px;">filter_list</span>
+                    Filtros<span class="ranking-filtros-badge" id="ranking-filtros-badge" style="display:none;"></span>
+                  </button>
+                  <div class="ranking-filtros-popover" id="ranking-filtros-popover" style="display:none;">
+                    <div class="ranking-filtro-grupo">
+                      <label for="resultados-filtro-nome">Nome do candidato</label>
+                      <input type="text" id="resultados-filtro-nome" placeholder="Buscar por nome..." oninput="filtrarRankingNome(this.value)">
+                    </div>
+                    <div class="ranking-filtro-grupo">
+                      <label>Gênero</label>
+                      <div class="ranking-filtro-opcoes" id="ranking-filtro-opcoes-genero"></div>
+                    </div>
+                    <div class="ranking-filtro-grupo">
+                      <label>Curso</label>
+                      <div class="ranking-filtro-opcoes" id="ranking-filtro-opcoes-curso"></div>
+                    </div>
+                    <div class="ranking-filtro-grupo">
+                      <label>Faculdade</label>
+                      <div class="ranking-filtro-opcoes" id="ranking-filtro-opcoes-faculdade"></div>
+                    </div>
+                    <div class="ranking-filtro-grupo">
+                      <label>Banca</label>
+                      <div class="ranking-filtro-opcoes" id="ranking-filtro-opcoes-turno"></div>
+                    </div>
+                    <div class="ranking-filtro-grupo">
+                      <label>Área</label>
+                      <div class="ranking-filtro-opcoes" id="ranking-filtro-opcoes-area"></div>
+                    </div>
+                    <div class="ranking-filtro-grupo">
+                      <label>Ordenar por nome</label>
+                      <div style="display:flex; gap:8px;">
+                        <button type="button" class="btn-secondary" style="flex:1; padding:6px;" onclick="ordenarRankingDirecao('nome','asc')">A → Z</button>
+                        <button type="button" class="btn-secondary" style="flex:1; padding:6px;" onclick="ordenarRankingDirecao('nome','desc')">Z → A</button>
+                      </div>
+                    </div>
+                    <button type="button" class="btn-secondary" style="width:100%;" onclick="limparFiltrosRanking()">Limpar filtros</button>
+                  </div>
+                </span>
                 <button class="btn-secondary" onclick="exportarResultadosAdmin()">
                   <span class="material-icons-outlined" style="font-size:15px;vertical-align:middle;margin-right:4px;">download</span>
                   Exportar
                 </button>
-              </div>
-            </div>
-            <div class="ranking-filtros">
-              <div class="ranking-filtros__item">
-                <label for="resultados-filtro-genero">Gênero</label>
-                <select id="resultados-filtro-genero" onchange="filtrarResultados('genero', this.value)">
-                  <option value="">Todos</option>
-                </select>
-              </div>
-              <div class="ranking-filtros__item">
-                <label for="resultados-filtro-curso">Curso</label>
-                <select id="resultados-filtro-curso" onchange="filtrarResultados('curso', this.value)">
-                  <option value="">Todos</option>
-                </select>
-              </div>
-              <div class="ranking-filtros__item">
-                <label for="resultados-filtro-faculdade">Faculdade</label>
-                <select id="resultados-filtro-faculdade" onchange="filtrarResultados('faculdade', this.value)">
-                  <option value="">Todas</option>
-                </select>
-              </div>
-              <div class="ranking-filtros__item">
-                <label for="resultados-filtro-turno">Banca</label>
-                <select id="resultados-filtro-turno" onchange="filtrarResultados('turno', this.value)">
-                  <option value="">Todas (comitê final)</option>
-                </select>
               </div>
             </div>
             <table class="ranking-table">
@@ -2487,7 +2542,10 @@
     let candidatosAdminLista = [];
     let candidatosSelecionados = new Set();
     let resultadosAdminCache = [];
-    let filtrosResultados = { turno: '', genero: '', curso: '', faculdade: '' };
+    // Cada campo de múltipla seleção guarda um array de valores marcados —
+    // array vazio = sem filtro nesse campo (mostra todo mundo). "nome" é
+    // o único campo livre (busca por substring, não por seleção).
+    let filtrosResultados = { nome: '', turno: [], genero: [], curso: [], faculdade: [], area: [] };
     // Ordenação da tabela de ranking — o padrão (media, desc) é o que
     // garante que o ranking continua atrelado à média das notas dos
     // gestores; clicar numa coluna só muda a ordem de exibição, a posição
@@ -2980,6 +3038,19 @@
       return c[field];
     }
 
+    function candidatoPassaFiltrosRanking(c) {
+      if (filtrosResultados.nome && !normalizarNomeCand(c.nome).includes(normalizarNomeCand(filtrosResultados.nome))) return false;
+      if (filtrosResultados.genero.length && !filtrosResultados.genero.includes(c.genero)) return false;
+      if (filtrosResultados.curso.length && !filtrosResultados.curso.includes(c.curso)) return false;
+      if (filtrosResultados.faculdade.length && !filtrosResultados.faculdade.includes(c.faculdade)) return false;
+      if (filtrosResultados.turno.length && !filtrosResultados.turno.includes(c.turno)) return false;
+      if (filtrosResultados.area.length) {
+        const areasCandidato = (c.avaliacoes || []).flatMap((a) => a.areas_interesse || []);
+        if (!filtrosResultados.area.some((a) => areasCandidato.includes(a))) return false;
+      }
+      return true;
+    }
+
     function toggleDetalheRanking(id) {
       const detalhe = document.getElementById('ranking-detalhe-' + id);
       const btn = document.getElementById('ranking-expand-' + id);
@@ -3027,13 +3098,14 @@
       }
     }
 
-    // Mapeia cada filtro pro campo do candidato e ao texto da opção "todos"
-    // do seletor — assim adicionar um filtro novo não duplica lógica.
+    // Cada campo de múltipla seleção mapeia pro id do container de
+    // checkboxes e pra como extrair os valores distintos dos candidatos.
     const FILTROS_RESULTADOS_CONFIG = {
-      turno: { campo: 'turno', selectId: 'resultados-filtro-turno', opcaoTodos: 'Todas as bancas (comitê final)' },
-      genero: { campo: 'genero', selectId: 'resultados-filtro-genero', opcaoTodos: 'Todos' },
-      curso: { campo: 'curso', selectId: 'resultados-filtro-curso', opcaoTodos: 'Todos' },
-      faculdade: { campo: 'faculdade', selectId: 'resultados-filtro-faculdade', opcaoTodos: 'Todas' },
+      genero: { containerId: 'ranking-filtro-opcoes-genero', valores: (c) => [c.genero] },
+      curso: { containerId: 'ranking-filtro-opcoes-curso', valores: (c) => [c.curso] },
+      faculdade: { containerId: 'ranking-filtro-opcoes-faculdade', valores: (c) => [c.faculdade] },
+      turno: { containerId: 'ranking-filtro-opcoes-turno', valores: (c) => [c.turno] },
+      area: { containerId: 'ranking-filtro-opcoes-area', valores: (c) => (c.avaliacoes || []).flatMap((a) => a.areas_interesse || []) },
     };
 
     // Opções de cada filtro = valores distintos entre todos os candidatos
@@ -3041,20 +3113,79 @@
     // candidato é criado, antes da primeira nota chegar.
     function atualizarFiltrosResultados(dados) {
       for (const [chave, cfg] of Object.entries(FILTROS_RESULTADOS_CONFIG)) {
-        const select = document.getElementById(cfg.selectId);
-        const opcoes = [...new Set(dados.map(c => c[cfg.campo]).filter(Boolean))].sort();
-        const valorAtual = filtrosResultados[chave];
-        select.innerHTML = `<option value="">${cfg.opcaoTodos}</option>`
-          + opcoes.map(o => `<option value="${escHtml(o)}">${escHtml(o)}</option>`).join('');
-        if (opcoes.includes(valorAtual)) select.value = valorAtual;
-        else filtrosResultados[chave] = '';
+        const container = document.getElementById(cfg.containerId);
+        const opcoes = [...new Set(dados.flatMap((c) => cfg.valores(c)).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+        filtrosResultados[chave] = filtrosResultados[chave].filter((v) => opcoes.includes(v));
+        if (!opcoes.length) {
+          container.innerHTML = '<div class="ranking-filtro-opcoes--vazio">Nenhuma opção ainda</div>';
+          continue;
+        }
+        container.innerHTML = opcoes.map((o) => `
+          <label>
+            <input type="checkbox" value="${escHtml(o)}" ${filtrosResultados[chave].includes(o) ? 'checked' : ''} onchange="toggleFiltroRankingValor('${chave}', this.value, this.checked)">
+            ${escHtml(o)}
+          </label>`).join('');
       }
+      atualizarBadgeFiltrosRanking();
     }
 
-    function filtrarResultados(campo, valor) {
-      filtrosResultados[campo] = valor;
+    function toggleFiltroRankingValor(campo, valor, marcado) {
+      const lista = filtrosResultados[campo];
+      if (marcado && !lista.includes(valor)) lista.push(valor);
+      else if (!marcado) filtrosResultados[campo] = lista.filter((v) => v !== valor);
+      atualizarBadgeFiltrosRanking();
       renderResultadosTable();
     }
+
+    function filtrarRankingNome(valor) {
+      filtrosResultados.nome = valor;
+      atualizarBadgeFiltrosRanking();
+      renderResultadosTable();
+    }
+
+    function ordenarRankingDirecao(field, order) {
+      rankingSortField = field;
+      rankingSortOrder = order;
+      document.querySelectorAll('.ranking-table .sort-icon').forEach((icon) => { icon.textContent = '↕'; });
+      document.querySelectorAll('.ranking-table thead th.sortable').forEach((th) => th.classList.remove('active'));
+      const icone = document.getElementById('ranking-sort-icon-' + field);
+      if (icone) {
+        icone.textContent = order === 'asc' ? '↑' : '↓';
+        icone.closest('th').classList.add('active');
+      }
+      renderResultadosTable();
+    }
+
+    function limparFiltrosRanking() {
+      filtrosResultados = { nome: '', turno: [], genero: [], curso: [], faculdade: [], area: [] };
+      document.getElementById('resultados-filtro-nome').value = '';
+      document.querySelectorAll('.ranking-filtro-opcoes input[type="checkbox"]').forEach((cb) => { cb.checked = false; });
+      atualizarBadgeFiltrosRanking();
+      renderResultadosTable();
+    }
+
+    function atualizarBadgeFiltrosRanking() {
+      const ativos = (filtrosResultados.nome ? 1 : 0)
+        + filtrosResultados.turno.length + filtrosResultados.genero.length
+        + filtrosResultados.curso.length + filtrosResultados.faculdade.length
+        + filtrosResultados.area.length;
+      const badge = document.getElementById('ranking-filtros-badge');
+      badge.textContent = ativos;
+      badge.style.display = ativos ? 'inline-flex' : 'none';
+    }
+
+    function toggleFiltrosRanking() {
+      const popover = document.getElementById('ranking-filtros-popover');
+      popover.style.display = popover.style.display === 'none' ? 'block' : 'none';
+    }
+
+    document.addEventListener('click', (e) => {
+      const wrap = document.querySelector('.ranking-filtros-wrap');
+      const popover = document.getElementById('ranking-filtros-popover');
+      if (wrap && popover && popover.style.display !== 'none' && !wrap.contains(e.target)) {
+        popover.style.display = 'none';
+      }
+    });
 
     function renderResultadosTable() {
       const body = document.getElementById('resultados-table-body');
@@ -3065,7 +3196,7 @@
       // a média dos gestores, mesmo exibindo em outra ordem por enquanto.
       const avaliados = resultadosAdminCache
         .filter(c => c.qtd_avaliacoes > 0)
-        .filter(c => Object.entries(filtrosResultados).every(([campo, valor]) => !valor || c[campo] === valor));
+        .filter(c => candidatoPassaFiltrosRanking(c));
       if (!avaliados.length) {
         body.innerHTML = '';
         empty.style.display = 'block';
@@ -3128,8 +3259,9 @@
 
     function exportarResultadosAdmin() {
       const params = new URLSearchParams();
-      for (const [campo, valor] of Object.entries(filtrosResultados)) {
-        if (valor) params.set(campo, valor);
+      if (filtrosResultados.nome) params.set('nome', filtrosResultados.nome);
+      for (const campo of ['turno', 'genero', 'curso', 'faculdade', 'area']) {
+        if (filtrosResultados[campo].length) params.set(campo, filtrosResultados[campo].join('|'));
       }
       const query = params.toString() ? `?${params.toString()}` : '';
       window.location.href = `/api/dinamica/resultados/export${query}`;

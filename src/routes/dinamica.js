@@ -168,7 +168,7 @@ router.delete('/candidatos/:id', isAuthenticated, isAdmin, async (req, res) => {
 // ============================================================
 function filtrosResultados(query) {
   const filtros = {};
-  for (const campo of ['turno', 'genero', 'curso', 'faculdade']) {
+  for (const campo of ['turno', 'genero', 'curso', 'faculdade', 'nome', 'area']) {
     const valor = (query[campo] || '').trim();
     if (valor) filtros[campo] = valor;
   }
