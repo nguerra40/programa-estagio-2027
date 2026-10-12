@@ -497,21 +497,22 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 26px;
       height: 26px;
+      padding: 0 10px;
       border: 1.5px solid var(--color-bright-blue);
       border-radius: var(--radius-sm);
       background: #FFFFFF;
       color: var(--color-bright-blue);
+      font-family: var(--font-body);
+      font-size: 11px;
+      font-weight: 600;
       cursor: pointer;
       flex-shrink: 0;
+      white-space: nowrap;
     }
     .ranking-nota-comite-salvar:hover {
       background: var(--color-bright-blue);
       color: #FFFFFF;
-    }
-    .ranking-nota-comite-salvar .material-icons-outlined {
-      font-size: 16px;
     }
     .ranking-expand-btn {
       background: none;
@@ -3278,9 +3279,7 @@
               <input type="number" class="ranking-nota-comite" id="nota-comite-input-${c.id}" min="1" max="5" step="1" value="${c.nota_comite != null ? c.nota_comite : ''}"
                 oninput="document.getElementById('nota-comite-status-${c.id}').style.display='none'"
                 onkeydown="if(event.key==='Enter'){ event.preventDefault(); salvarNotaComiteAdmin('${c.id}', this.value); }">
-              <button type="button" class="ranking-nota-comite-salvar" title="Salvar nota do comitê" aria-label="Salvar nota do comitê" onclick="salvarNotaComiteAdmin('${c.id}', document.getElementById('nota-comite-input-${c.id}').value)">
-                <span class="material-icons-outlined" aria-hidden="true">save</span>
-              </button>
+              <button type="button" class="ranking-nota-comite-salvar" onclick="salvarNotaComiteAdmin('${c.id}', document.getElementById('nota-comite-input-${c.id}').value)">Salvar</button>
               <span class="material-icons-outlined ranking-nota-comite-status" id="nota-comite-status-${c.id}" style="display:none;" title="Salvo">check_circle</span>
             </div>
           </td>
