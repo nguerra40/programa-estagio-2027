@@ -529,6 +529,83 @@
       color: rgba(255,255,255,0.85);
     }
 
+    /* Admin de candidatos — menu lateral fixo + conteúdo trocando por aba,
+       pra nunca ter duas telas parecidas (cadastro/lista/ranking) uma em
+       cima da outra, e com densidade mais compacta que o resto do admin. */
+    .candadmin-shell {
+      display: flex;
+      align-items: flex-start;
+      min-height: calc(100vh - 82px);
+      background: var(--color-snow-white);
+    }
+    .candadmin-sidebar {
+      width: 168px;
+      flex-shrink: 0;
+      background: var(--color-deep-blue);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 16px 8px;
+      position: sticky;
+      top: 82px;
+    }
+    .candadmin-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: #CBD8EE;
+      font-family: var(--font-body);
+      font-size: 13px;
+      cursor: pointer;
+      text-align: left;
+      transition: var(--transition);
+    }
+    .candadmin-nav .material-icons-outlined {
+      font-size: 18px;
+    }
+    .candadmin-nav:hover {
+      background: rgba(255,255,255,0.08);
+      color: #FFFFFF;
+    }
+    .candadmin-nav--active {
+      background: var(--color-bright-blue);
+      color: #FFFFFF;
+    }
+    .candadmin-content {
+      flex: 1;
+      min-width: 0;
+      padding: 20px;
+    }
+    .candadmin-pane {
+      display: none;
+    }
+    .candadmin-pane--active {
+      display: block;
+    }
+    .candadmin-chips {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .candadmin-chip {
+      font-size: 12px;
+      color: var(--color-light-grey);
+      background: #FFFFFF;
+      border: 1px solid #E0E0E0;
+      border-radius: 999px;
+      padding: 6px 14px;
+    }
+    .candadmin-chip b {
+      color: var(--color-deep-blue);
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
     /* Botão sólido para uso em fundo claro (painéis admin) */
     .btn-solid {
       font-family: var(--font-body);
@@ -1386,199 +1463,207 @@
 
   <!-- Candidatos (Admin) View -->
   <section class="view-candidatos-admin" id="view-candidatos-admin">
-    <div class="container container--wide">
-      <div class="stats-bar">
-        <div class="stat-item">
-          <span class="stat-item__label">Total de Candidatos</span>
-          <span class="stat-item__value" id="cand-stat-total">0</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-item__label">Candidatos Avaliados</span>
-          <span class="stat-item__value" id="cand-stat-avaliados">0</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-item__label">Candidatos Aprovados</span>
-          <span class="stat-item__value" id="cand-stat-aprovados">0</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-item__label">Candidatos Ausentes</span>
-          <span class="stat-item__value" id="cand-stat-ausentes">0</span>
-        </div>
-      </div>
+    <div class="candadmin-shell">
+      <nav class="candadmin-sidebar">
+        <button type="button" class="candadmin-nav" data-tab="cadastrar" onclick="switchCandAdminTab('cadastrar')">
+          <span class="material-icons-outlined">person_add</span> Cadastrar
+        </button>
+        <button type="button" class="candadmin-nav" data-tab="gerenciar" onclick="switchCandAdminTab('gerenciar')">
+          <span class="material-icons-outlined">upload_file</span> Gerenciar
+        </button>
+        <button type="button" class="candadmin-nav" data-tab="ranking" onclick="switchCandAdminTab('ranking')">
+          <span class="material-icons-outlined">leaderboard</span> Ranking
+        </button>
+      </nav>
 
-      <div class="table-wrapper" style="padding:24px; margin-bottom:32px;">
-        <h3 id="cand-form-title" style="font-family:var(--font-primary); color:var(--color-deep-blue); font-size:16px; margin-bottom:16px;">Novo candidato</h3>
-        <form id="cand-form" onsubmit="return salvarCandidatoAdmin(event)">
-          <input type="hidden" id="cand-id">
-          <div class="form-group">
-            <label for="cand-nome">Nome</label>
-            <input type="text" id="cand-nome" required>
+      <div class="candadmin-content">
+        <div class="candadmin-pane" data-tab="cadastrar">
+          <div class="table-wrapper" style="padding:16px;">
+            <h3 id="cand-form-title" style="font-family:var(--font-primary); color:var(--color-deep-blue); font-size:14px; margin-bottom:12px;">Novo candidato</h3>
+            <form id="cand-form" onsubmit="return salvarCandidatoAdmin(event)">
+              <input type="hidden" id="cand-id">
+              <div class="form-group">
+                <label for="cand-nome">Nome</label>
+                <input type="text" id="cand-nome" required>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+                <div class="form-group"><label for="cand-curso">Curso</label><input type="text" id="cand-curso"></div>
+                <div class="form-group"><label for="cand-faculdade">Faculdade</label><input type="text" id="cand-faculdade"></div>
+                <div class="form-group"><label for="cand-formacao">Previsão de formação</label><input type="text" id="cand-formacao" placeholder="Ex.: Dez/2027"></div>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+                <div class="form-group"><label for="cand-telefone">Telefone</label><input type="text" id="cand-telefone"></div>
+                <div class="form-group"><label for="cand-email">E-mail</label><input type="email" id="cand-email"></div>
+                <div class="form-group"><label for="cand-linkedin">LinkedIn</label><input type="url" id="cand-linkedin" placeholder="https://linkedin.com/in/..."></div>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">
+                <div class="form-group">
+                  <label for="cand-genero">Gênero</label>
+                  <select id="cand-genero">
+                    <option value="">Não informado</option>
+                    <option value="Feminino">Feminino</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Outro">Outro</option>
+                    <option value="Prefere não informar">Prefere não informar</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="cand-status">Status</label>
+                  <select id="cand-status">
+                    <option value="Pendente">Pendente</option>
+                    <option value="Aprovado">Aprovado</option>
+                    <option value="Reprovado">Reprovado</option>
+                    <option value="Ausente">Ausente</option>
+                  </select>
+                </div>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">
+                <div class="form-group"><label for="cand-turno">Turno da dinâmica</label><input type="text" id="cand-turno" value="09h-11h"></div>
+                <div class="form-group"><label for="cand-data">Data da dinâmica</label><input type="date" id="cand-data"></div>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">
+                <div class="form-group"><label for="cand-cv">Currículo (PDF)</label><input type="file" id="cand-cv" accept="application/pdf"></div>
+                <div class="form-group"><label for="cand-foto">Foto (opcional)</label><input type="file" id="cand-foto" accept="image/*"></div>
+              </div>
+              <div class="form-group" style="display:flex; align-items:center; gap:10px;">
+                <label class="toggle-switch">
+                  <input type="checkbox" id="cand-liberado">
+                  <span class="toggle-switch__slider"></span>
+                </label>
+                <label for="cand-liberado" style="font-size:13px; color:var(--color-spacial-grey);">Liberado para avaliação</label>
+              </div>
+              <button type="submit" class="btn-solid">Salvar candidato</button>
+              <button type="button" class="btn-secondary" onclick="limparFormCandidatoAdmin()">Cancelar edição</button>
+            </form>
           </div>
-          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
-            <div class="form-group"><label for="cand-curso">Curso</label><input type="text" id="cand-curso"></div>
-            <div class="form-group"><label for="cand-faculdade">Faculdade</label><input type="text" id="cand-faculdade"></div>
-            <div class="form-group"><label for="cand-formacao">Previsão de formação</label><input type="text" id="cand-formacao" placeholder="Ex.: Dez/2027"></div>
+        </div>
+
+        <div class="candadmin-pane" data-tab="gerenciar">
+          <div class="candadmin-chips">
+            <span class="candadmin-chip">Total <b id="cand-stat-total">0</b></span>
+            <span class="candadmin-chip">Avaliados <b id="cand-stat-avaliados">0</b></span>
+            <span class="candadmin-chip">Aprovados <b id="cand-stat-aprovados">0</b></span>
+            <span class="candadmin-chip">Ausentes <b id="cand-stat-ausentes">0</b></span>
           </div>
-          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
-            <div class="form-group"><label for="cand-telefone">Telefone</label><input type="text" id="cand-telefone"></div>
-            <div class="form-group"><label for="cand-email">E-mail</label><input type="email" id="cand-email"></div>
-            <div class="form-group"><label for="cand-linkedin">LinkedIn</label><input type="url" id="cand-linkedin" placeholder="https://linkedin.com/in/..."></div>
+
+          <div class="table-wrapper" style="padding:16px; margin-bottom:16px;">
+            <h3 style="font-family:var(--font-primary); color:var(--color-deep-blue); font-size:14px; margin-bottom:6px;">Importar currículos em lote</h3>
+            <p style="font-size:12px; color:var(--color-light-grey); margin-bottom:12px;">Selecione vários PDFs de uma vez — um candidato é criado para cada arquivo, já com o currículo anexado.</p>
+            <form id="cand-bulk-form" onsubmit="return importarLoteAdmin(event)">
+              <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; align-items:end;">
+                <div class="form-group" style="margin-bottom:0;"><label for="bulk-turno">Turno (aplica a todos)</label><input type="text" id="bulk-turno" value="09h-11h"></div>
+                <div class="form-group" style="margin-bottom:0;"><label for="bulk-data">Data da dinâmica</label><input type="date" id="bulk-data"></div>
+                <div class="form-group" style="margin-bottom:0;"><label for="bulk-files">Currículos (PDF, vários)</label><input type="file" id="bulk-files" accept="application/pdf" multiple required></div>
+              </div>
+              <button type="submit" class="btn-solid" style="margin-top:12px;">Cadastrar todos</button>
+              <span id="bulk-status" style="margin-left:12px; font-size:12px; color:var(--color-light-grey);"></span>
+            </form>
+            <div id="bulk-avisos" style="display:none; margin-top:12px; padding:10px 14px; background:#FFF8E1; border:1px solid #F0D47A; border-radius:var(--radius-sm); font-size:12px; color:#7A5C00;"></div>
           </div>
-          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px;">
-            <div class="form-group">
-              <label for="cand-genero">Gênero</label>
-              <select id="cand-genero">
-                <option value="">Não informado</option>
-                <option value="Feminino">Feminino</option>
-                <option value="Masculino">Masculino</option>
-                <option value="Outro">Outro</option>
-                <option value="Prefere não informar">Prefere não informar</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="cand-status">Status</label>
-              <select id="cand-status">
+
+          <div class="table-wrapper" style="padding:16px; margin-bottom:16px;">
+            <h3 style="font-family:var(--font-primary); color:var(--color-deep-blue); font-size:14px; margin-bottom:6px;">Importar planilha de candidatos</h3>
+            <p style="font-size:12px; color:var(--color-light-grey); margin-bottom:12px;">
+              Planilha (.xlsx) com nome, e-mail, gênero, curso, faculdade e dinâmica (turno/data) — ex.: a lista de aprovados vinda do RH.
+              Quem já está cadastrado (casando por e-mail ou nome) é atualizado; quem não está, é criado. Nenhuma coluna além das listadas é lida ou enviada (ex.: CPF é ignorado).
+            </p>
+            <form id="cand-planilha-form" onsubmit="return importarPlanilhaAdmin(event)">
+              <div class="form-group" style="margin-bottom:0;"><label for="planilha-file">Planilha (.xlsx)</label><input type="file" id="planilha-file" accept=".xlsx,.xls" required></div>
+              <button type="submit" class="btn-solid" style="margin-top:12px;">Importar planilha</button>
+              <span id="planilha-status" style="margin-left:12px; font-size:12px; color:var(--color-light-grey);"></span>
+            </form>
+            <div id="planilha-avisos" style="display:none; margin-top:12px; padding:10px 14px; background:#FFF8E1; border:1px solid #F0D47A; border-radius:var(--radius-sm); font-size:12px; color:#7A5C00;"></div>
+          </div>
+
+          <div class="table-wrapper" style="padding:14px;">
+            <div class="cand-lista-toolbar">
+              <input type="text" id="cand-busca" placeholder="Buscar por nome, curso, faculdade ou turno..." oninput="renderCandidatosAdmin()">
+              <span id="cand-selecao-info" style="font-size:12px; color:var(--color-light-grey);"></span>
+              <button type="button" class="btn-secondary" onclick="liberarSelecionadosAdmin(true)">Liberar selecionados</button>
+              <button type="button" class="btn-secondary" onclick="liberarSelecionadosAdmin(false)">Remover liberação</button>
+              <select id="cand-status-lote-valor" style="padding:7px 10px; border-radius:var(--radius-sm); border:1.5px solid #D0D5DD; font-size:12px; font-family:var(--font-body);">
                 <option value="Pendente">Pendente</option>
                 <option value="Aprovado">Aprovado</option>
                 <option value="Reprovado">Reprovado</option>
                 <option value="Ausente">Ausente</option>
               </select>
+              <button type="button" class="btn-secondary" onclick="statusSelecionadosAdmin()">Aplicar status aos selecionados</button>
+            </div>
+            <table>
+              <caption class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">Lista de candidatos cadastrados</caption>
+              <thead>
+                <tr>
+                  <th><input type="checkbox" id="cand-select-all" onchange="toggleSelecionarTodosAdmin(this.checked)"></th>
+                  <th>Foto</th><th>Nome</th><th>Curso</th><th>Turno</th><th>Status</th><th>LinkedIn</th><th>CV</th><th>Liberado</th>
+                  <th style="text-align:right; width:44px;">
+                    <button type="button" class="cand-lista-toggle-btn" id="cand-lista-toggle-btn" onclick="toggleListaCandidatosAdmin()" aria-expanded="true" aria-controls="cand-table-body" title="Mostrar/ocultar lista de candidatos">
+                      <span class="material-icons-outlined" id="cand-lista-toggle-icon">expand_less</span>
+                    </button>
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="cand-table-body"></tbody>
+            </table>
+            <div class="empty-state" id="cand-empty-state" style="display:none;">
+              <span class="material-icons-outlined">inbox</span>
+              <p>Nenhum candidato cadastrado ainda.</p>
             </div>
           </div>
-          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px;">
-            <div class="form-group"><label for="cand-turno">Turno da dinâmica</label><input type="text" id="cand-turno" value="09h-11h"></div>
-            <div class="form-group"><label for="cand-data">Data da dinâmica</label><input type="date" id="cand-data"></div>
-          </div>
-          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px;">
-            <div class="form-group"><label for="cand-cv">Currículo (PDF)</label><input type="file" id="cand-cv" accept="application/pdf"></div>
-            <div class="form-group"><label for="cand-foto">Foto (opcional)</label><input type="file" id="cand-foto" accept="image/*"></div>
-          </div>
-          <div class="form-group" style="display:flex; align-items:center; gap:10px;">
-            <label class="toggle-switch">
-              <input type="checkbox" id="cand-liberado">
-              <span class="toggle-switch__slider"></span>
-            </label>
-            <label for="cand-liberado" style="font-size:14px; color:var(--color-spacial-grey);">Liberado para avaliação</label>
-          </div>
-          <button type="submit" class="btn-solid">Salvar candidato</button>
-          <button type="button" class="btn-secondary" onclick="limparFormCandidatoAdmin()">Cancelar edição</button>
-        </form>
-      </div>
-
-      <div class="table-wrapper" style="padding:24px; margin-bottom:32px;">
-        <h3 style="font-family:var(--font-primary); color:var(--color-deep-blue); font-size:16px; margin-bottom:8px;">Importar currículos em lote</h3>
-        <p style="font-size:13px; color:var(--color-light-grey); margin-bottom:16px;">Selecione vários PDFs de uma vez — um candidato é criado para cada arquivo, já com o currículo anexado.</p>
-        <form id="cand-bulk-form" onsubmit="return importarLoteAdmin(event)">
-          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; align-items:end;">
-            <div class="form-group" style="margin-bottom:0;"><label for="bulk-turno">Turno (aplica a todos)</label><input type="text" id="bulk-turno" value="09h-11h"></div>
-            <div class="form-group" style="margin-bottom:0;"><label for="bulk-data">Data da dinâmica</label><input type="date" id="bulk-data"></div>
-            <div class="form-group" style="margin-bottom:0;"><label for="bulk-files">Currículos (PDF, vários)</label><input type="file" id="bulk-files" accept="application/pdf" multiple required></div>
-          </div>
-          <button type="submit" class="btn-solid" style="margin-top:16px;">Cadastrar todos</button>
-          <span id="bulk-status" style="margin-left:12px; font-size:13px; color:var(--color-light-grey);"></span>
-        </form>
-        <div id="bulk-avisos" style="display:none; margin-top:16px; padding:12px 16px; background:#FFF8E1; border:1px solid #F0D47A; border-radius:var(--radius-sm); font-size:13px; color:#7A5C00;"></div>
-      </div>
-
-      <div class="table-wrapper" style="padding:24px; margin-bottom:32px;">
-        <h3 style="font-family:var(--font-primary); color:var(--color-deep-blue); font-size:16px; margin-bottom:8px;">Importar planilha de candidatos</h3>
-        <p style="font-size:13px; color:var(--color-light-grey); margin-bottom:16px;">
-          Planilha (.xlsx) com nome, e-mail, gênero, curso, faculdade e dinâmica (turno/data) — ex.: a lista de aprovados vinda do RH.
-          Quem já está cadastrado (casando por e-mail ou nome) é atualizado; quem não está, é criado. A planilha nunca sai do seu navegador sem antes passar por aqui — nenhuma coluna além das listadas é lida ou enviada (ex.: CPF é ignorado).
-        </p>
-        <form id="cand-planilha-form" onsubmit="return importarPlanilhaAdmin(event)">
-          <div class="form-group" style="margin-bottom:0;"><label for="planilha-file">Planilha (.xlsx)</label><input type="file" id="planilha-file" accept=".xlsx,.xls" required></div>
-          <button type="submit" class="btn-solid" style="margin-top:16px;">Importar planilha</button>
-          <span id="planilha-status" style="margin-left:12px; font-size:13px; color:var(--color-light-grey);"></span>
-        </form>
-        <div id="planilha-avisos" style="display:none; margin-top:16px; padding:12px 16px; background:#FFF8E1; border:1px solid #F0D47A; border-radius:var(--radius-sm); font-size:13px; color:#7A5C00;"></div>
-      </div>
-
-      <div class="table-wrapper" style="padding:16px;">
-        <div class="cand-lista-toolbar">
-          <input type="text" id="cand-busca" placeholder="Buscar por nome, curso, faculdade ou turno..." oninput="renderCandidatosAdmin()">
-          <span id="cand-selecao-info" style="font-size:13px; color:var(--color-light-grey);"></span>
-          <button type="button" class="btn-secondary" onclick="liberarSelecionadosAdmin(true)">Liberar selecionados</button>
-          <button type="button" class="btn-secondary" onclick="liberarSelecionadosAdmin(false)">Remover liberação</button>
-          <select id="cand-status-lote-valor" style="padding:7px 10px; border-radius:var(--radius-sm); border:1.5px solid #D0D5DD; font-size:13px; font-family:var(--font-body);">
-            <option value="Pendente">Pendente</option>
-            <option value="Aprovado">Aprovado</option>
-            <option value="Reprovado">Reprovado</option>
-            <option value="Ausente">Ausente</option>
-          </select>
-          <button type="button" class="btn-secondary" onclick="statusSelecionadosAdmin()">Aplicar status aos selecionados</button>
         </div>
-        <table>
-          <caption class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">Lista de candidatos cadastrados</caption>
-          <thead>
-            <tr>
-              <th><input type="checkbox" id="cand-select-all" onchange="toggleSelecionarTodosAdmin(this.checked)"></th>
-              <th>Foto</th><th>Nome</th><th>Curso</th><th>Turno</th><th>Status</th><th>LinkedIn</th><th>CV</th><th>Liberado</th>
-              <th style="text-align:right; width:44px;">
-                <button type="button" class="cand-lista-toggle-btn" id="cand-lista-toggle-btn" onclick="toggleListaCandidatosAdmin()" aria-expanded="true" aria-controls="cand-table-body" title="Mostrar/ocultar lista de candidatos">
-                  <span class="material-icons-outlined" id="cand-lista-toggle-icon">expand_less</span>
+
+        <div class="candadmin-pane" data-tab="ranking">
+          <div class="table-wrapper" style="padding:16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:12px;">
+              <h3 style="font-family:var(--font-primary); color:var(--color-deep-blue); font-size:14px; margin:0;">Ranking de aprovados</h3>
+              <div>
+                <button class="btn-secondary" onclick="carregarResultadosAdmin()">
+                  <span class="material-icons-outlined" style="font-size:15px;vertical-align:middle;margin-right:4px;">refresh</span>
+                  Atualizar
                 </button>
-              </th>
-            </tr>
-          </thead>
-          <tbody id="cand-table-body"></tbody>
-        </table>
-        <div class="empty-state" id="cand-empty-state" style="display:none;">
-          <span class="material-icons-outlined">inbox</span>
-          <p>Nenhum candidato cadastrado ainda.</p>
-        </div>
-      </div>
-
-      <div class="table-wrapper" style="margin-top:32px; padding:24px;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
-          <h3 style="font-family:var(--font-primary); color:var(--color-deep-blue); font-size:16px; margin:0;">Resultados</h3>
-          <div>
-            <button class="btn-secondary" onclick="carregarResultadosAdmin()">
-              <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">refresh</span>
-              Atualizar
-            </button>
-            <button class="btn-secondary" onclick="exportarResultadosAdmin()">
-              <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">download</span>
-              Exportar
-            </button>
+                <button class="btn-secondary" onclick="exportarResultadosAdmin()">
+                  <span class="material-icons-outlined" style="font-size:15px;vertical-align:middle;margin-right:4px;">download</span>
+                  Exportar
+                </button>
+              </div>
+            </div>
+            <div class="resultados-filtros">
+              <div class="resultados-filtros__item">
+                <label for="resultados-filtro-turno">Banca</label>
+                <select id="resultados-filtro-turno" onchange="filtrarResultados('turno', this.value)">
+                  <option value="">Todas as bancas (comitê final)</option>
+                </select>
+              </div>
+              <div class="resultados-filtros__item">
+                <label for="resultados-filtro-genero">Gênero</label>
+                <select id="resultados-filtro-genero" onchange="filtrarResultados('genero', this.value)">
+                  <option value="">Todos</option>
+                </select>
+              </div>
+              <div class="resultados-filtros__item">
+                <label for="resultados-filtro-curso">Curso</label>
+                <select id="resultados-filtro-curso" onchange="filtrarResultados('curso', this.value)">
+                  <option value="">Todos</option>
+                </select>
+              </div>
+              <div class="resultados-filtros__item">
+                <label for="resultados-filtro-faculdade">Faculdade</label>
+                <select id="resultados-filtro-faculdade" onchange="filtrarResultados('faculdade', this.value)">
+                  <option value="">Todas</option>
+                </select>
+              </div>
+            </div>
+            <table>
+              <caption class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">Resultados das avaliações por candidato</caption>
+              <thead>
+                <tr><th>#</th><th>Candidato</th><th>Gênero</th><th>Curso</th><th>Faculdade</th><th>Turno</th><th>Média</th><th>Avaliações</th></tr>
+              </thead>
+              <tbody id="resultados-table-body"></tbody>
+            </table>
+            <div class="empty-state" id="resultados-empty-state" style="display:none;">
+              <span class="material-icons-outlined">inbox</span>
+              <p>Nenhum candidato avaliado ainda.</p>
+            </div>
           </div>
-        </div>
-        <div class="resultados-filtros">
-          <div class="resultados-filtros__item">
-            <label for="resultados-filtro-turno">Banca</label>
-            <select id="resultados-filtro-turno" onchange="filtrarResultados('turno', this.value)">
-              <option value="">Todas as bancas (comitê final)</option>
-            </select>
-          </div>
-          <div class="resultados-filtros__item">
-            <label for="resultados-filtro-genero">Gênero</label>
-            <select id="resultados-filtro-genero" onchange="filtrarResultados('genero', this.value)">
-              <option value="">Todos</option>
-            </select>
-          </div>
-          <div class="resultados-filtros__item">
-            <label for="resultados-filtro-curso">Curso</label>
-            <select id="resultados-filtro-curso" onchange="filtrarResultados('curso', this.value)">
-              <option value="">Todos</option>
-            </select>
-          </div>
-          <div class="resultados-filtros__item">
-            <label for="resultados-filtro-faculdade">Faculdade</label>
-            <select id="resultados-filtro-faculdade" onchange="filtrarResultados('faculdade', this.value)">
-              <option value="">Todas</option>
-            </select>
-          </div>
-        </div>
-        <table>
-          <caption class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">Resultados das avaliações por candidato</caption>
-          <thead>
-            <tr><th>#</th><th>Candidato</th><th>Gênero</th><th>Curso</th><th>Faculdade</th><th>Turno</th><th>Média</th><th>Avaliações</th></tr>
-          </thead>
-          <tbody id="resultados-table-body"></tbody>
-        </table>
-        <div class="empty-state" id="resultados-empty-state" style="display:none;">
-          <span class="material-icons-outlined">inbox</span>
-          <p>Nenhum candidato avaliado ainda.</p>
         </div>
       </div>
     </div>
@@ -1706,8 +1791,21 @@
 
     // Data store — centralizado no servidor
 
+    // Só entra na visão de administrador quem está na lista de admins E
+    // logou com o código secreto (mesma checagem já usada pra mostrar o
+    // botão "Candidatos" no header) — evita que alguém abra essa tela só
+    // chamando switchView('candidatos-admin') direto pelo console do
+    // navegador. Isso é só uma trava de UI: a API em si não tem SSO real
+    // (decisão já tomada de não implementar, por depender de TI), então
+    // continua sendo o front-end, não o servidor, quem garante isso hoje.
+    function isAdminAtual() {
+      return ADMIN_EMAILS.includes(currentUser) && localStorage.getItem('estagio_admin') === 'true';
+    }
+
     // Switch views
     function switchView(view) {
+      if (view === 'candidatos-admin' && !isAdminAtual()) view = 'avaliacao';
+
       document.getElementById('view-gestor').classList.toggle('active', view === 'gestor');
       document.getElementById('view-admin').classList.toggle('active', view === 'admin');
       document.getElementById('view-avaliacao').classList.toggle('active', view === 'avaliacao');
@@ -1720,7 +1818,18 @@
       } else if (view === 'candidatos-admin') {
         carregarCandidatosAdmin();
         carregarResultadosAdmin();
+        switchCandAdminTab('gerenciar');
       }
+    }
+
+    // Abas do admin de candidatos (menu lateral) — só uma visível por vez.
+    function switchCandAdminTab(tab) {
+      document.querySelectorAll('.candadmin-nav').forEach((btn) => {
+        btn.classList.toggle('candadmin-nav--active', btn.dataset.tab === tab);
+      });
+      document.querySelectorAll('.candadmin-pane').forEach((pane) => {
+        pane.classList.toggle('candadmin-pane--active', pane.dataset.tab === tab);
+      });
     }
 
     // Submit form — envia para a API
