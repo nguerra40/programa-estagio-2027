@@ -125,6 +125,76 @@ router.post('/candidatos/bulk', isAuthenticated, isAdmin, async (req, res) => {
   }
 });
 
+function normalizarNomeArquivo(s) {
+  return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+// Anexa currículos em lote a candidatos JÁ CADASTRADOS — casando pelo nome
+// do arquivo com o nome do candidato (ex.: "Maria Silva.pdf" vai pro
+// candidato "Maria Silva"). Diferente de /candidatos/bulk, que sempre cria
+// um candidato novo por arquivo: isso aqui serve pra quando o candidato já
+// existe (ex.: importado via planilha, sem CV) e só falta o currículo.
+router.post('/candidatos/anexar-cvs-lote', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    const { arquivos, admin_email } = req.body;
+    if (!Array.isArray(arquivos) || !arquivos.length) {
+      return res.status(400).json({ error: 'Nenhum currículo enviado.' });
+    }
+
+    const candidatos = await db.findCandidatos();
+    const porNome = new Map();
+    for (const c of candidatos) {
+      const chave = normalizarNomeArquivo(c.nome);
+      if (!porNome.has(chave)) porNome.set(chave, []);
+      porNome.get(chave).push(c);
+    }
+
+    const anexados = [];
+    const avisos = [];
+    for (const arq of arquivos) {
+      const nomeArquivo = (arq.nome || '').replace(/\.pdf$/i, '');
+      const encontrados = porNome.get(normalizarNomeArquivo(nomeArquivo)) || [];
+      if (encontrados.length !== 1) {
+        avisos.push({
+          arquivo: arq.nome,
+          motivo: encontrados.length === 0
+            ? 'Nenhum candidato cadastrado com esse nome.'
+            : 'Mais de um candidato com esse nome — anexe manualmente pelo formulário de edição.',
+        });
+        continue;
+      }
+      const candidato = encontrados[0];
+
+      let dados = arq.dados;
+      const comma = typeof dados === 'string' ? dados.indexOf(',') : -1;
+      if (typeof dados === 'string' && dados.startsWith('data:') && comma >= 0) {
+        dados = dados.slice(comma + 1);
+      }
+      // Mesma defesa do /candidatos/bulk: força application/pdf em vez de
+      // confiar no mime que o cliente mandou.
+      const arquivoSalvo = await db.insertArquivo({ tipo: 'cv', nome: arq.nome, mime: 'application/pdf', dados });
+
+      // Preenche curso/faculdade/formação via IA só se o candidato ainda não
+      // tiver esses campos (ex.: veio da planilha sem isso) — nunca sobrescreve
+      // dado que já existe.
+      const campos = { cv_arquivo_id: arquivoSalvo.id };
+      if (!candidato.curso || !candidato.faculdade || !candidato.formacao) {
+        const analise = await analisarCurriculo(dados);
+        if (!candidato.curso && analise.curso) campos.curso = analise.curso;
+        if (!candidato.faculdade && analise.faculdade) campos.faculdade = analise.faculdade;
+        if (!candidato.formacao && analise.formacao) campos.formacao = analise.formacao;
+      }
+      await db.updateCandidato(candidato.id, campos, admin_email);
+      anexados.push({ id: candidato.id, nome: candidato.nome });
+    }
+
+    res.json({ anexados: anexados.length, avisos });
+  } catch (error) {
+    console.error('[API] Erro ao anexar currículos em lote:', error.message);
+    res.status(500).json({ error: 'Erro interno ao anexar currículos.' });
+  }
+});
+
 // Import de planilha (ex.: lista de aprovados do RH, já com gênero/curso/
 // faculdade/dinâmica). O parse do arquivo acontece no navegador (SheetJS via
 // CDN, ver public/index.html) — aqui só chega um array já mapeado pros
