@@ -1090,6 +1090,25 @@
       opacity: 0.9;
     }
 
+    .cand-enviar-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 11px 0;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: #FFFFFF;
+      color: var(--color-deep-blue);
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: var(--transition);
+    }
+
+    .cand-enviar-btn:hover {
+      background: rgba(255,255,255,0.85);
+    }
+
     /* Lista de candidatos (view Candidatos admin) */
     .admin-cand-foto {
       width: 32px;
@@ -2500,6 +2519,7 @@
             <label style="display:block; font-size:12px; opacity:0.8; margin-bottom:4px;">Área(s) de interesse (opcional)</label>
             ${candAreaSelectHtml(c)}
             <textarea class="cand-comentario" placeholder="Comentário (opcional)" onchange="comentarCand('${c.id}', this.value)">${escHtml(c.meu_comentario || '')}</textarea>
+            <button type="button" class="cand-enviar-btn" onclick="enviarAvaliacaoCand('${c.id}')">Enviar avaliação</button>
             <div class="cand-save-status" id="cand-status-${c.id}"></div>
           </div>
         </div>`;
@@ -2510,31 +2530,23 @@
       if (card) card.classList.toggle('open');
     }
 
-    async function votarCand(id, nota) {
+    // Nota, área e comentário só ficam guardados localmente até a pessoa
+    // clicar em "Enviar avaliação" — nada disso salva sozinho (ver pedido
+    // da Natasha pra ter um botão de envio explícito, igual ao da nota do
+    // comitê no admin).
+    function votarCand(id, nota) {
       const c = avaliacaoCandidatos.find(x => String(x.id) === String(id));
       if (!c) return;
       c.minha_nota = nota;
-      atualizarProgressoAvaliacao();
       document.querySelectorAll('#cand-card-' + id + ' .cand-nota-btn').forEach((b, i) => b.classList.toggle('active', i + 1 === nota));
-      const badge = document.querySelector('#cand-card-' + id + ' .cand-card__badge');
-      if (!badge) {
-        const header = document.querySelector('#cand-card-' + id + ' .cand-card__header');
-        const span = document.createElement('span');
-        span.className = 'cand-card__badge';
-        span.textContent = 'Nota ' + nota;
-        header.insertBefore(span, header.querySelector('.cand-card__chevron'));
-      } else {
-        badge.textContent = 'Nota ' + nota;
-      }
-      await salvarNotaCand(id);
+      const statusEl = document.getElementById('cand-status-' + id);
+      if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
     }
 
     function comentarCand(id, texto) {
       const c = avaliacaoCandidatos.find(x => String(x.id) === String(id));
       if (!c) return;
       c.meu_comentario = texto;
-      if (c.minha_nota == null) return;
-      salvarNotaCand(id);
     }
 
     function toggleAreaDropdown(triggerEl) {
@@ -2561,19 +2573,21 @@
       }
       const trigger = document.querySelector('#cand-area-' + id + ' .cand-area-trigger__text');
       if (trigger) trigger.textContent = areaTriggerLabel(c.minhas_areas_interesse);
-
-      if (c.minha_nota == null) {
-        showToast('Dê uma nota primeiro para salvar a área de interesse.');
-        return;
-      }
-      salvarNotaCand(id);
     }
 
-    async function salvarNotaCand(id) {
+    async function enviarAvaliacaoCand(id) {
       const c = avaliacaoCandidatos.find(x => String(x.id) === String(id));
       const statusEl = document.getElementById('cand-status-' + id);
       if (!c || !statusEl) return;
-      statusEl.textContent = 'Salvando...';
+
+      if (c.minha_nota == null) {
+        statusEl.style.color = '#ffd3d3';
+        statusEl.textContent = 'Escolha uma nota antes de enviar.';
+        return;
+      }
+
+      statusEl.style.color = '';
+      statusEl.textContent = 'Enviando...';
       try {
         await apiDinamica('/notas', {
           method: 'POST',
@@ -2586,9 +2600,22 @@
             areas_interesse: c.minhas_areas_interesse || [],
           }),
         });
-        statusEl.textContent = 'Salvo';
+        statusEl.textContent = 'Avaliação enviada!';
+
+        const badge = document.querySelector('#cand-card-' + id + ' .cand-card__badge');
+        if (!badge) {
+          const header = document.querySelector('#cand-card-' + id + ' .cand-card__header');
+          const span = document.createElement('span');
+          span.className = 'cand-card__badge';
+          span.textContent = 'Nota ' + c.minha_nota;
+          header.insertBefore(span, header.querySelector('.cand-card__chevron'));
+        } else {
+          badge.textContent = 'Nota ' + c.minha_nota;
+        }
+        atualizarProgressoAvaliacao();
       } catch (e) {
-        statusEl.textContent = 'Erro ao salvar: ' + e.message;
+        statusEl.style.color = '#ffd3d3';
+        statusEl.textContent = 'Erro ao enviar: ' + e.message;
       }
     }
 
