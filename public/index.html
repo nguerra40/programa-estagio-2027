@@ -1230,26 +1230,13 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: var(--color-deep-blue);
+      background: url('login-bg.png') center center / cover no-repeat, var(--color-deep-blue);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 1000;
       padding: 24px;
       overflow: hidden;
-    }
-
-    .bg-icon {
-      position: absolute;
-      top: 50%;
-      left: -140px;
-      transform: translateY(-50%);
-      width: 720px;
-      max-width: 82vw;
-      height: auto;
-      opacity: 0.14;
-      pointer-events: none;
-      user-select: none;
     }
 
     .login-card {
@@ -1350,9 +1337,6 @@
       .login-card__title {
         font-size: 26px;
       }
-      .bg-icon {
-        display: none;
-      }
     }
   </style>
 </head>
@@ -1360,7 +1344,6 @@
 
   <!-- Login Modal -->
   <div class="login-overlay" id="login-overlay">
-    <img class="bg-icon" src="logo_galapagos.png" alt="" aria-hidden="true" />
     <main class="login-card">
       <img class="login-card__logo" src="logo_galapagos_login.png" alt="Galapagos Capital" />
       <h1 class="login-card__title">Programa de Estágio 2027</h1>
