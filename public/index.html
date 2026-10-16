@@ -645,10 +645,29 @@
       display: block;
     }
 
-    .view-gestor.active,
+    .view-gestor.active {
+      background: linear-gradient(180deg, #1a5da6 0%, #0d4a8a 100%);
+      min-height: calc(100vh - 82px);
+    }
+
     .view-avaliacao.active {
       background: linear-gradient(180deg, #1a5da6 0%, #0d4a8a 100%);
       min-height: calc(100vh - 82px);
+    }
+
+    .avaliacao-banner {
+      height: 200px;
+      margin: -48px -32px 24px;
+      background-image: url('login-bg.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    @media (max-width: 520px) {
+      .avaliacao-banner {
+        height: 130px;
+      }
     }
 
     .view-gestor .section-title,
@@ -1565,9 +1584,7 @@
   <!-- Avaliação View (qualquer colaborador logado) -->
   <section class="view-avaliacao" id="view-avaliacao">
     <div class="container">
-      <div class="form-banner">
-        <img src="logo_programadeestagio.png" alt="Programa de Estágio 2027" class="form-banner__img">
-      </div>
+      <div class="avaliacao-banner"></div>
       <h2 class="section-title" style="margin-bottom:8px;">Avaliação de Candidatos</h2>
       <p id="avaliacao-progresso" style="font-size:14px; color:rgba(255,255,255,0.75); margin-bottom:16px;"></p>
       <div id="avaliacao-lista" style="display:flex; flex-direction:column; gap:12px;"></div>
