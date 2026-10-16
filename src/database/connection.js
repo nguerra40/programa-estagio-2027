@@ -9,6 +9,11 @@ const pool = new Pool({
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
+  // Sem isso, uma consulta travada (ex.: lock no banco) prende a conexão
+  // pra sempre — com só 10 conexões no pool, bastam poucas consultas assim
+  // pra deixar TODO MUNDO (celular incluso) sem resposta nenhuma.
+  statement_timeout: 10000,
+  query_timeout: 10000,
   ssl: false
 });
 

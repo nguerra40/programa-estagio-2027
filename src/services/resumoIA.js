@@ -32,27 +32,39 @@ async function analisarCurriculo(dadosBase64) {
     const texto = (text || '').trim().slice(0, MAX_CHARS_CURRICULO);
     if (!texto) return {};
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 200,
-        messages: [{
-          role: 'user',
-          content: 'Leia o currículo abaixo e responda APENAS com um JSON válido (sem markdown, sem texto antes ou depois), exatamente neste formato:\n'
-            + '{"curso": "", "faculdade": "", "formacao": ""}\n\n'
-            + '- curso: nome do curso de graduação do candidato (ex.: "Administração"). Vazio se não encontrar.\n'
-            + '- faculdade: nome da instituição de ensino superior. Vazio se não encontrar.\n'
-            + '- formacao: previsão ou data de formatura, no formato "Mês/Ano" (ex.: "Dez/2027"). Vazio se não encontrar.\n\n'
-            + 'Currículo:\n\n' + texto,
-        }],
-      }),
-    });
+    // Sem timeout aqui, uma instabilidade na API da Anthropic prende essa
+    // requisição (e quem a disparou) indefinidamente — isso é só um extra
+    // best-effort (ver comentário no topo do arquivo), nunca deveria travar
+    // o upload esperando por ela.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+    let response;
+    try {
+      response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: 200,
+          messages: [{
+            role: 'user',
+            content: 'Leia o currículo abaixo e responda APENAS com um JSON válido (sem markdown, sem texto antes ou depois), exatamente neste formato:\n'
+              + '{"curso": "", "faculdade": "", "formacao": ""}\n\n'
+              + '- curso: nome do curso de graduação do candidato (ex.: "Administração"). Vazio se não encontrar.\n'
+              + '- faculdade: nome da instituição de ensino superior. Vazio se não encontrar.\n'
+              + '- formacao: previsão ou data de formatura, no formato "Mês/Ano" (ex.: "Dez/2027"). Vazio se não encontrar.\n\n'
+              + 'Currículo:\n\n' + texto,
+          }],
+        }),
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       console.error('[IA] Erro ao analisar currículo:', response.status, await response.text());
