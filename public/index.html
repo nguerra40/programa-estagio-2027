@@ -3333,7 +3333,9 @@
               <span style="color:${cor}; font-weight:600;">${c.media != null ? c.media : '—'}</span>
             </div>
           </td>
-          <td>${(c.avaliacoes || []).length ? escHtml((c.avaliacoes || []).map(a => a.avaliador || a.email || '?').join(', ')) : '—'}</td>
+          <td>${(c.avaliacoes || []).length
+            ? (c.avaliacoes || []).map(a => `<div>${escHtml(a.avaliador || a.email || '?')}: <b style="color:${corMedia(a.nota)};">${a.nota}</b></div>`).join('')
+            : '—'}</td>
           <td>
             <div class="ranking-nota-comite-wrap">
               <input type="number" class="ranking-nota-comite" id="nota-comite-input-${c.id}" min="1" max="5" step="1" value="${c.nota_comite != null ? c.nota_comite : ''}"
