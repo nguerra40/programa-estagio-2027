@@ -108,13 +108,9 @@ A autenticação usa SSO via Microsoft Entra ID (antigo Azure AD). O time de TI 
 
 ## Administradores
 
-Os seguintes e-mails têm acesso ao painel administrativo:
-
-- eduarda.dreux@galapagoscapital.com
-- felipe.regis@galapagoscapital.com
-- natasha.guerra@galapagoscapital.com
-
-Para alterar, edite a variável `ADMIN_EMAILS` no `.env`.
+Quem tem acesso ao painel administrativo é controlado pela variável de ambiente
+`ADMIN_EMAILS` (lista de e-mails separados por vírgula) — ver `.env` ou as
+variáveis de ambiente configuradas na hospedagem (Kubernetes/Netlify).
 
 ## Deploy (Kubernetes na AWS)
 

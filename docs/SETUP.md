@@ -34,7 +34,7 @@ SESSION_SECRET=string_longa_e_aleatoria
 AUTH_DISABLED=false
 
 # Admins
-ADMIN_EMAILS=eduarda.dreux@galapagoscapital.com,felipe.regis@galapagoscapital.com,natasha.guerra@galapagoscapital.com
+ADMIN_EMAILS=admin1@suaempresa.com,admin2@suaempresa.com
 
 # Senha de admin — único jeito de virar admin quando o SSO não está
 # configurado (POST /auth/admin-login, exige e-mail em ADMIN_EMAILS acima).
@@ -196,7 +196,7 @@ Variáveis de ambiente na Netlify (Site settings → Environment variables):
 
 ```env
 SUPABASE_DATABASE_URL=postgresql://...supabase.com:6543/postgres   # connection pooling do Supabase
-ADMIN_EMAILS=eduarda.dreux@galapagoscapital.com,felipe.regis@galapagoscapital.com,natasha.guerra@galapagoscapital.com
+ADMIN_EMAILS=admin1@suaempresa.com,admin2@suaempresa.com
 ADMIN_PASSWORD=mesma-senha-ja-usada-no-kubernetes
 ```
 
