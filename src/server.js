@@ -55,16 +55,22 @@ const sessionOpts = {
     maxAge: 8 * 60 * 60 * 1000, // 8 horas
   },
 };
-try {
-  const PgSession = require('connect-pg-simple')(session);
-  const store = new PgSession({ pool, createTableIfMissing: true });
-  // connect-pg-simple emite 'error' num problema de conexão em segundo
-  // plano (ex.: checagem da tabela) — sem um listener, um EventEmitter
-  // relança isso como exceção não tratada e derruba o processo inteiro.
-  store.on('error', (e) => console.error('[Session] Erro no store de sessão (Postgres):', e.message));
-  sessionOpts.store = store;
-} catch (e) {
-  console.warn('[Session] Não foi possível usar o store no Postgres, caindo pra memória:', e.message);
+// DESLIGADO POR ORA: o connect-pg-simple derrubou a produção inteira (erro
+// de SSL contra o Postgres real — toda requisição falhava, não só o login
+// de admin). Até confirmar a causa com segurança, usa o MemoryStore padrão
+// do express-session — funciona perfeitamente bem para um único pod; só
+// não sobrevive a um restart/reinício (todo mundo precisaria logar nas
+// próximas vezes que o pod reiniciar). Ver SESSION_STORE_PG=true abaixo
+// pra religar depois de confirmar a causa raiz.
+if (process.env.SESSION_STORE_PG === 'true') {
+  try {
+    const PgSession = require('connect-pg-simple')(session);
+    const store = new PgSession({ pool, createTableIfMissing: true });
+    store.on('error', (e) => console.error('[Session] Erro no store de sessão (Postgres):', e.message));
+    sessionOpts.store = store;
+  } catch (e) {
+    console.warn('[Session] Não foi possível usar o store no Postgres, caindo pra memória:', e.message);
+  }
 }
 app.use(session(sessionOpts));
 
