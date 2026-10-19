@@ -476,10 +476,44 @@ async function findArquivo(id) {
   return result.rows[0] || null;
 }
 
+// ---------- Exportação temporária (migração pro Supabase) ----------
+// Ver conversa com a Natasha — remover depois que a migração terminar.
+
+async function adminExportResumo() {
+  const [candidatos, notas, avaliadoresBanca, arquivos] = await Promise.all([
+    query('SELECT count(*)::int AS n FROM dinamica_candidatos'),
+    query('SELECT count(*)::int AS n FROM dinamica_notas'),
+    query('SELECT count(*)::int AS n FROM dinamica_avaliadores_banca'),
+    query('SELECT count(*)::int AS n, COALESCE(SUM(length(dados)),0)::bigint AS bytes FROM arquivos'),
+  ]);
+  return {
+    candidatos: candidatos.rows[0].n,
+    notas: notas.rows[0].n,
+    avaliadoresBanca: avaliadoresBanca.rows[0].n,
+    arquivos: arquivos.rows[0].n,
+    arquivosBytes: Number(arquivos.rows[0].bytes),
+  };
+}
+
+async function adminExportDados() {
+  const [candidatos, notas, avaliadoresBanca] = await Promise.all([
+    query('SELECT * FROM dinamica_candidatos ORDER BY id'),
+    query('SELECT * FROM dinamica_notas ORDER BY id'),
+    query('SELECT * FROM dinamica_avaliadores_banca ORDER BY id'),
+  ]);
+  return { candidatos: candidatos.rows, notas: notas.rows, avaliadoresBanca: avaliadoresBanca.rows };
+}
+
+async function adminExportArquivos(offset, limit) {
+  const result = await query('SELECT * FROM arquivos ORDER BY id LIMIT $1 OFFSET $2', [limit, offset]);
+  return result.rows;
+}
+
 module.exports = {
   findCandidatos, insertCandidato, updateCandidato, deleteCandidato,
   liberarEmLote, statusEmLote, encontrarPossiveisDuplicatas, importarPlanilha,
   findLiberados, candidatoEstaLiberado, upsertNota, atualizarNotaAdmin, deleteNota, resultados,
   listarAvaliadoresBanca, atribuirAvaliadorBanca, removerAvaliadorBanca,
   insertArquivo, findArquivo,
+  adminExportResumo, adminExportDados, adminExportArquivos,
 };

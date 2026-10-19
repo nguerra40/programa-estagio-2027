@@ -23,6 +23,39 @@ const { isAuthenticated, isAdmin } = require('../auth/middleware');
 const { analisarCurriculo } = require('../services/resumoIA');
 
 // ============================================================
+// EXPORTAÇÃO TEMPORÁRIA — só pra migração pro Supabase/Netlify (ver
+// conversa com a Natasha). Remover depois que a migração terminar.
+// ============================================================
+router.get('/admin-export/resumo', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    res.json(await db.adminExportResumo());
+  } catch (error) {
+    console.error('[API] Erro no resumo de exportação:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/admin-export/dados', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    res.json(await db.adminExportDados());
+  } catch (error) {
+    console.error('[API] Erro ao exportar dados:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/admin-export/arquivos', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    const offset = Number(req.query.offset || 0);
+    const limit = Math.min(Number(req.query.limit || 5), 20);
+    res.json({ rows: await db.adminExportArquivos(offset, limit) });
+  } catch (error) {
+    console.error('[API] Erro ao exportar arquivos:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================
 // ADMIN — candidatos
 // ============================================================
 router.get('/candidatos', isAuthenticated, isAdmin, async (req, res) => {
