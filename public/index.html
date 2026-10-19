@@ -843,6 +843,19 @@
       margin: 0 0 24px;
     }
 
+    /* Um gestor pode estar associado a mais de uma banca (dia/horário) —
+       cada uma vira uma seção própria na Avaliação, com o dia/horário como
+       título, em vez de misturar os candidatos de todas numa lista só. */
+    .avaliacao-banca-titulo {
+      font-family: var(--font-primary);
+      font-size: 16px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin: 0 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.25);
+    }
+
     .view-gestor .section-title,
     .view-avaliacao .section-title {
       color: #FFFFFF;
@@ -1834,7 +1847,7 @@
       <img src="avaliacao-banner.png" alt="Programa de Estágio 2027" class="avaliacao-banner">
       <h2 class="section-title" style="margin-bottom:8px;">Avaliação de Candidatos</h2>
       <p id="avaliacao-progresso" style="font-size:14px; color:rgba(255,255,255,0.75); margin-bottom:16px;"></p>
-      <div id="avaliacao-lista" style="display:flex; flex-direction:column; gap:12px;"></div>
+      <div id="avaliacao-lista" style="display:flex; flex-direction:column; gap:28px;"></div>
       <p id="avaliacao-vazio" style="font-size:14px; color:rgba(255,255,255,0.6); display:none;">Nenhum candidato liberado para avaliação no momento.</p>
     </div>
   </section>
@@ -2753,7 +2766,26 @@
         return;
       }
       vazio.style.display = 'none';
-      box.innerHTML = avaliacaoCandidatos.map(c => candCardHtml(c)).join('');
+
+      // Agrupa por banca (turno) — um gestor pode estar associado a mais
+      // de uma (ver "Gestores por banca" no admin), e cada uma vira uma
+      // seção própria, com o dia/horário como título.
+      const porBanca = {};
+      avaliacaoCandidatos.forEach((c) => {
+        const chave = c.turno || 'Banca não definida';
+        if (!porBanca[chave]) porBanca[chave] = [];
+        porBanca[chave].push(c);
+      });
+      const bancas = Object.keys(porBanca).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+      box.innerHTML = bancas.map((banca) => `
+        <div class="avaliacao-banca-secao">
+          <h3 class="avaliacao-banca-titulo">${escHtml(banca)}</h3>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            ${porBanca[banca].map((c) => candCardHtml(c)).join('')}
+          </div>
+        </div>
+      `).join('');
       atualizarProgressoAvaliacao();
     }
 
