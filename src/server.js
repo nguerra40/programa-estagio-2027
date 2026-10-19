@@ -55,14 +55,20 @@ const sessionOpts = {
     maxAge: 8 * 60 * 60 * 1000, // 8 horas
   },
 };
-// DESLIGADO POR ORA: o connect-pg-simple derrubou a produção inteira (erro
-// de SSL contra o Postgres real — toda requisição falhava, não só o login
-// de admin). Até confirmar a causa com segurança, usa o MemoryStore padrão
-// do express-session — funciona perfeitamente bem para um único pod; só
-// não sobrevive a um restart/reinício (todo mundo precisaria logar nas
-// próximas vezes que o pod reiniciar). Ver SESSION_STORE_PG=true abaixo
-// pra religar depois de confirmar a causa raiz.
-if (process.env.SESSION_STORE_PG === 'true') {
+// No Kubernetes (banco interno, DATABASE_HOST): o connect-pg-simple já
+// derrubou a produção uma vez (erro de SSL contra aquele Postgres — toda
+// requisição falhava, não só o login de admin), causa raiz ainda não
+// confirmada — por isso fica DESLIGADO por padrão aí, usando o MemoryStore
+// do express-session (funciona bem pra um único pod; só não sobrevive a um
+// reinício). Ativa com SESSION_STORE_PG=true depois de confirmar a causa.
+//
+// Já na Netlify (SUPABASE_DATABASE_URL): MemoryStore não funciona de jeito
+// nenhum — cada chamada pode cair numa função/container diferente, sem
+// memória nenhuma da sessão de login anterior (foi exatamente isso que
+// quebrou o "Gerenciar" depois do login de admin: sessão "sumia" na
+// próxima chamada). Por isso liga sozinho nesse caso, sem precisar de
+// nenhuma variável extra.
+if (process.env.SESSION_STORE_PG === 'true' || !!process.env.SUPABASE_DATABASE_URL) {
   try {
     const PgSession = require('connect-pg-simple')(session);
     const store = new PgSession({ pool, createTableIfMissing: true });
