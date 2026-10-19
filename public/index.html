@@ -1901,8 +1901,8 @@
           <button type="button" class="admin-modal__close" onclick="fecharModalAdmin('cand-planilha-modal')" aria-label="Fechar"><span class="material-icons-outlined">close</span></button>
           <h3 style="font-family:var(--font-primary); color:var(--color-deep-blue); font-size:14px; margin-bottom:6px;">Importar planilha de candidatos</h3>
           <p style="font-size:12px; color:var(--color-light-grey); margin-bottom:12px;">
-            Planilha (.xlsx) com nome, e-mail, gênero, curso, faculdade e dinâmica (turno/data) — ex.: a lista de aprovados vinda do RH.
-            Quem já está cadastrado (casando por e-mail ou nome) é atualizado; quem não está, é criado. Nenhuma coluna além das listadas é lida ou enviada (ex.: CPF é ignorado).
+            Planilha (.xlsx) com nome, e-mail, gênero, curso, faculdade e dinâmica (turno/data) — ex.: a lista de aprovados vinda do RH, ou um export por etapa (com coluna "Etapa atual").
+            Quem já está cadastrado (casando por e-mail ou nome) é atualizado; quem não está, é criado. Candidato com status "Aprovado" na planilha, ou cuja etapa atual seja a banca com sócios, entra marcado como "Aprovado" (conta no "Convidados para a banca" do Ranking). Nenhuma coluna além das listadas é lida ou enviada (ex.: CPF é ignorado).
           </p>
           <form id="cand-planilha-form" onsubmit="return importarPlanilhaAdmin(event)">
             <div class="form-group" style="margin-bottom:0;"><label for="planilha-file">Planilha (.xlsx)</label><input type="file" id="planilha-file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" required></div>
@@ -3172,12 +3172,16 @@
       email: ['email', 'e-mail'],
       telefone: ['celular', 'telefone'],
       genero: ['genero'],
-      faculdade: ['instituicao de ensino', 'instituicao', 'faculdade'],
-      curso: ['curso da formacao', 'curso'],
-      formacao: ['formacao'],
+      faculdade: ['instituicao de ensino 1', 'instituicao de ensino', 'instituicao', 'faculdade'],
+      curso: ['curso da formacao 1', 'curso da formacao', 'curso'],
+      formacao: ['data da formacao 1', 'formacao'],
       turno: ['dinamica em grupo', 'dinamica', 'turno'],
       linkedin_url: ['linkedin'],
       status: ['status na vaga', 'status'],
+      // Planilhas exportadas por etapa (ex.: "candidatos__painel com sócios.xlsx")
+      // não têm coluna de status — tem uma de "Etapa atual" com o nome da
+      // fase em que o candidato está agora. Ver uso logo abaixo.
+      etapa: ['etapa atual', 'etapa'],
     };
 
     function normalizarCabecalhoPlanilha(s) {
@@ -3240,17 +3244,27 @@
           if (status && !/aprov/i.test(status)) { ignoradosReprovado++; continue; }
           const nome = pegaValor(linha, 'nome');
           if (!nome) continue;
-          linhas.push({
-            nome,
-            email: pegaValor(linha, 'email'),
-            telefone: pegaValor(linha, 'telefone'),
-            genero: pegaValor(linha, 'genero'),
-            faculdade: pegaValor(linha, 'faculdade'),
-            curso: pegaValor(linha, 'curso'),
-            formacao: formatarFormacaoPlanilha(pegaValor(linha, 'formacao')),
-            turno: pegaValor(linha, 'turno'),
-            linkedin_url: normalizarLinkedinPlanilha(pegaValor(linha, 'linkedin_url')),
-          });
+
+          // Status do candidato pra refletir no ranking: planilha com coluna
+          // de status explícita (ex.: "Status na vaga") já foi filtrada acima
+          // (só sobra quem é aprovado); planilha por etapa (ex.: export do
+          // "Painel com sócios") não tem essa coluna — quem está listada já
+          // está aprovada pra aquela fase, então marca como tal.
+          const etapa = pegaValor(linha, 'etapa');
+          let statusParaSalvar = '';
+          if (status && /aprov/i.test(status)) statusParaSalvar = 'Aprovado';
+          else if (etapa && /s[oó]cio|banca|painel/i.test(etapa)) statusParaSalvar = 'Aprovado';
+
+          // Só manda um campo se a planilha tem aquela coluna — senão, uma
+          // planilha sem "Dinâmica em Grupo" (ex.: export por etapa) apagaria
+          // o turno de quem já está cadastrado, só por omissão da coluna.
+          const linhaFinal = { nome, status: statusParaSalvar };
+          for (const campo of ['email', 'telefone', 'genero', 'faculdade', 'curso', 'turno']) {
+            if (indice[campo] != null) linhaFinal[campo] = pegaValor(linha, campo);
+          }
+          if (indice.formacao != null) linhaFinal.formacao = formatarFormacaoPlanilha(pegaValor(linha, 'formacao'));
+          if (indice.linkedin_url != null) linhaFinal.linkedin_url = normalizarLinkedinPlanilha(pegaValor(linha, 'linkedin_url'));
+          linhas.push(linhaFinal);
         }
 
         if (!linhas.length) {
@@ -3478,20 +3492,22 @@
     function renderRankingStats() {
       const container = document.getElementById('ranking-stats');
       if (!container) return;
-      // "Convidados" é quem o admin de fato liberou pra essa fase — ter o
-      // cadastro na base não quer dizer que a pessoa foi chamada pra banca
-      // (ver o toggle "Liberado para avaliação" no cadastro do candidato).
-      const filtrados = resultadosAdminCache
-        .filter(c => c.liberado)
-        .filter(c => candidatoPassaFiltrosRanking(c));
-      const convidados = filtrados.length;
-      const avaliados = filtrados.filter(c => c.qtd_avaliacoes > 0).length;
-      const reprovados = filtrados.filter(c => c.status === 'Reprovado').length;
+      // "Convidados" é quem está com status "Aprovado" pra essa fase — ter o
+      // cadastro na base não quer dizer que a pessoa foi aprovada pra banca
+      // (esse status vem da planilha de aprovados ou é marcado manualmente
+      // em "Aplicar status aos selecionados"); independe do toggle
+      // "Liberado para avaliação", que é outra coisa (quem os gestores
+      // conseguem ver pra avaliar agora).
+      const todosFiltrados = resultadosAdminCache.filter(c => candidatoPassaFiltrosRanking(c));
+      const convidadosLista = todosFiltrados.filter(c => c.status === 'Aprovado');
+      const convidados = convidadosLista.length;
+      const avaliados = convidadosLista.filter(c => c.qtd_avaliacoes > 0).length;
+      const reprovados = todosFiltrados.filter(c => c.status === 'Reprovado').length;
       container.innerHTML = `
         <div class="ranking-stat-card">
           <div class="ranking-stat-card__label">Convidados para a banca</div>
           <div class="ranking-stat-card__numero">${convidados}</div>
-          <div class="ranking-stat-card__subtitulo">Liberados no filtro atual</div>
+          <div class="ranking-stat-card__subtitulo">Status "Aprovado" no filtro atual</div>
         </div>
         <div class="ranking-stat-card ranking-stat-card--avaliados">
           <div class="ranking-stat-card__label">Avaliados</div>
