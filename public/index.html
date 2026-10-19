@@ -2810,6 +2810,9 @@
     function editarCandidatoAdmin(id) {
       const c = candidatosAdminLista.find(x => String(x.id) === String(id));
       if (!c) return;
+      // O formulário mora na aba "Cadastrar" — sem trocar de aba, ele fica
+      // preenchido escondido atrás da aba "Gerenciar" e parece que nada abriu.
+      switchCandAdminTab('cadastrar');
       document.getElementById('cand-id').value = c.id;
       document.getElementById('cand-nome').value = c.nome || '';
       document.getElementById('cand-curso').value = c.curso || '';
