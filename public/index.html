@@ -3478,7 +3478,12 @@
     function renderRankingStats() {
       const container = document.getElementById('ranking-stats');
       if (!container) return;
-      const filtrados = resultadosAdminCache.filter(c => candidatoPassaFiltrosRanking(c));
+      // "Convidados" é quem o admin de fato liberou pra essa fase — ter o
+      // cadastro na base não quer dizer que a pessoa foi chamada pra banca
+      // (ver o toggle "Liberado para avaliação" no cadastro do candidato).
+      const filtrados = resultadosAdminCache
+        .filter(c => c.liberado)
+        .filter(c => candidatoPassaFiltrosRanking(c));
       const convidados = filtrados.length;
       const avaliados = filtrados.filter(c => c.qtd_avaliacoes > 0).length;
       const reprovados = filtrados.filter(c => c.status === 'Reprovado').length;
@@ -3486,7 +3491,7 @@
         <div class="ranking-stat-card">
           <div class="ranking-stat-card__label">Convidados para a banca</div>
           <div class="ranking-stat-card__numero">${convidados}</div>
-          <div class="ranking-stat-card__subtitulo">Candidatos no filtro atual</div>
+          <div class="ranking-stat-card__subtitulo">Liberados no filtro atual</div>
         </div>
         <div class="ranking-stat-card ranking-stat-card--avaliados">
           <div class="ranking-stat-card__label">Avaliados</div>
