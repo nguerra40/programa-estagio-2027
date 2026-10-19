@@ -8,7 +8,7 @@ const express = require('express');
 const crypto = require('crypto');
 const router = express.Router();
 const entra = require('../auth/entra');
-const { isAdminEmail, authDisabled } = require('../auth/middleware');
+const { isAdminEmail, devBypassActive } = require('../auth/middleware');
 
 // GET /auth/login — inicia o fluxo de login com a Microsoft.
 router.get('/login', async (req, res) => {
@@ -65,11 +65,15 @@ router.get('/callback', async (req, res) => {
 
 // GET /auth/me — usuário autenticado na sessão atual (ou null).
 router.get('/me', (req, res) => {
-  // AUTH_DISABLED=true (só pra dev local) — o front-end loga sozinho com um
-  // usuário fictício, igual o antigo "modo dev", em vez de ficar preso na
-  // tela de login sem conseguir completar um redirecionamento real pra
-  // Microsoft (ex.: localhost não bate com o Redirect URI cadastrado no Azure).
-  if (authDisabled()) {
+  // AUTH_DISABLED=true (só pra teste local, nunca numa URL publicada) — o
+  // front-end loga sozinho com um usuário fictício, igual o antigo "modo
+  // dev", em vez de ficar preso na tela de login sem conseguir completar um
+  // redirecionamento real pra Microsoft (ex.: localhost não bate com o
+  // Redirect URI cadastrado no Azure). Importante: isso é diferente de "SSO
+  // não configurado" — nesse caso (o normal numa URL sem SSO) a resposta
+  // abaixo já cai certinho em user:null, ssoConfigurado:false, e o
+  // front-end mostra o login por e-mail/código de verdade.
+  if (devBypassActive()) {
     return res.json({
       user: { email: 'dev@galapagoscapital.com', nome: 'Usuário Desenvolvimento', isAdmin: true },
       ssoConfigurado: true,
@@ -86,6 +90,7 @@ router.get('/me', (req, res) => {
 // GET /auth/logout — encerra a sessão (e, se o SSO estiver ativo, também
 // a sessão na Microsoft).
 router.get('/logout', (req, res) => {
+  if (!req.session) return res.redirect('/');
   const useEntraLogout = entra.isConfigured;
   const postLogout = process.env.AZURE_POST_LOGOUT_REDIRECT_URI || '';
   req.session.destroy(() => {

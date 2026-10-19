@@ -159,6 +159,38 @@ docker run -p 3000:3000 --env-file .env programa-estagio-2027
 
 ---
 
+## 6.5. Hospedagem na Netlify (sem Kubernetes, sem SSO)
+
+Alternativa à hospedagem no Kubernetes — usada quando o celular não
+conseguia abrir o site pela infra da Galapagos. O mesmo código roda dos
+dois jeitos; a diferença é só a infraestrutura:
+
+- **Banco de dados**: Supabase (Postgres), usando a connection string de
+  **"Connection pooling" (Transaction mode, porta 6543)** — essencial pra
+  funcionar bem com funções serverless, que abrem e fecham conexão a cada
+  chamada. Vai na variável `DATABASE_URL` (tem prioridade sobre
+  `DATABASE_HOST`/`DATABASE_PORT`/etc., usadas pelo Kubernetes).
+- **Backend**: `netlify/functions/server.js` embrulha o mesmo `src/server.js`
+  com `serverless-http` — nenhuma rota precisou ser reescrita.
+- **Deploy**: Netlify não conecta direto no Azure DevOps (só
+  GitHub/GitLab/Bitbucket) — o repositório é espelhado num GitHub pra isso.
+- **Sem SSO**: sem as variáveis `AZURE_*`, o login volta a ser o de
+  e-mail/código de sempre — não precisa configurar nada a mais pra isso
+  acontecer.
+- **Limite conhecido**: funções da Netlify aceitam até ~6MB por
+  requisição/resposta (bem menor que os 50MB do Kubernetes). O "Importar
+  currículos em lote" tende a ficar bem abaixo disso (88 CVs reais somaram
+  ~2.8MB), mas um lote muito grande de uma vez pode esbarrar nesse teto.
+
+Variáveis de ambiente na Netlify (Site settings → Environment variables):
+
+```env
+DATABASE_URL=postgresql://...supabase.com:6543/postgres   # connection pooling do Supabase
+ADMIN_EMAILS=eduarda.dreux@galapagoscapital.com,felipe.regis@galapagoscapital.com,natasha.guerra@galapagoscapital.com
+```
+
+---
+
 ## 7. Checklist para Produção
 
 - [ ] Variáveis de ambiente configuradas (especialmente `NODE_ENV=production`)

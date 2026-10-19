@@ -15,7 +15,8 @@
     "express-session": "^1.19.0",
     "helmet": "^7.1.0",
     "pdf-parse": "^1.1.1",
-    "pg": "^8.11.3"
+    "pg": "^8.11.3",
+    "serverless-http": "^4.0.0"
   },
   "engines": {
     "node": ">=18.0.0"

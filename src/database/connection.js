@@ -1,20 +1,33 @@
 const { Pool } = require('pg');
 
+// DATABASE_URL (ex.: a connection string "pooling" do Supabase, pensada pra
+// muitas conexões curtas e simultâneas — típico de função serverless) tem
+// prioridade sobre as variáveis separadas de sempre (DATABASE_HOST etc.,
+// usadas pelo servidor de sempre no Kubernetes, falando direto com o banco
+// interno). Um pool bem menor faz sentido aqui: cada instância de função
+// processa uma requisição por vez, e o PgBouncer do outro lado do Supabase
+// já cuida de multiplexar várias instâncias ao mesmo tempo.
+const usandoConnectionString = !!process.env.DATABASE_URL;
+
 const pool = new Pool({
-  host: process.env.DATABASE_HOST || '10.135.7.227',
-  port: parseInt(process.env.DATABASE_PORT || '5432'),
-  database: process.env.DATABASE_NAME || 'formsestagiodb',
-  user: process.env.DATABASE_USER || 'appuser',
-  password: process.env.DATABASE_PASSWORD || '',
-  max: 10,
+  ...(usandoConnectionString
+    ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
+    : {
+        host: process.env.DATABASE_HOST || '10.135.7.227',
+        port: parseInt(process.env.DATABASE_PORT || '5432'),
+        database: process.env.DATABASE_NAME || 'formsestagiodb',
+        user: process.env.DATABASE_USER || 'appuser',
+        password: process.env.DATABASE_PASSWORD || '',
+        ssl: false,
+      }),
+  max: usandoConnectionString ? 3 : 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
   // Sem isso, uma consulta travada (ex.: lock no banco) prende a conexão
-  // pra sempre — com só 10 conexões no pool, bastam poucas consultas assim
-  // pra deixar TODO MUNDO (celular incluso) sem resposta nenhuma.
+  // pra sempre — com um pool pequeno, bastam poucas consultas assim pra
+  // deixar TODO MUNDO (celular incluso) sem resposta nenhuma.
   statement_timeout: 10000,
   query_timeout: 10000,
-  ssl: false
 });
 
 // Auto-criar tabela ao conectar

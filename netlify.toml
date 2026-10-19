@@ -1,0 +1,15 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+# Arquivos estáticos (public/) são servidos direto pela CDN da Netlify —
+# só as chamadas de API e de login passam pela função serverless.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/server"
+  status = 200
+
+[[redirects]]
+  from = "/auth/*"
+  to = "/.netlify/functions/server"
+  status = 200

@@ -10,6 +10,7 @@ const apiRoutes = require('./routes/api');
 const dinamicaRoutes = require('./routes/dinamica');
 const arquivosRoutes = require('./routes/arquivos');
 const authRoutes = require('./routes/auth');
+const entra = require('./auth/entra');
 const { isAuthenticated } = require('./auth/middleware');
 const { pool } = require('./database/connection');
 
@@ -27,38 +28,48 @@ app.use(helmet({
 app.use(cors());
 // Limite alto pra caber o import em lote de currículos (vários PDFs em
 // base64 num único corpo JSON — ex.: 88 CVs reais já passaram de ~2.8MB).
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Configurável porque hospedagem serverless (ex.: Netlify Functions) tem um
+// teto bem menor de tamanho de corpo do que um servidor normal.
+const BODY_LIMIT = process.env.JSON_BODY_LIMIT || '50mb';
+app.use(express.json({ limit: BODY_LIMIT }));
+app.use(express.urlencoded({ extended: true, limit: BODY_LIMIT }));
 
-// ----- Sessão (usada pelo login via Microsoft Entra ID, ver routes/auth.js) -----
-// Guardada no PostgreSQL pra funcionar em qualquer réplica, em produção com
-// mais de um pod. Sem isso, cada pod teria sua própria sessão em memória e
-// o usuário seria deslogado aleatoriamente ao trocar de réplica.
-if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
-  console.warn('[Session] SESSION_SECRET não configurado em produção — usando um valor fraco e público (o deste código-fonte). Configure essa variável antes de ativar o SSO de verdade.');
+// ----- Sessão (usada só pelo login via Microsoft Entra ID, ver
+// routes/auth.js) — só liga quando o SSO está de fato configurado, pra não
+// gastar uma consulta ao Postgres (criação da tabela de sessão) em cada boot
+// de quem não usa SSO (ex.: a hospedagem na Netlify, sem Entra ID).
+if (entra.isConfigured) {
+  if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
+    console.warn('[Session] SESSION_SECRET não configurado em produção — usando um valor fraco e público (o deste código-fonte). Configure essa variável antes de ativar o SSO de verdade.');
+  }
+  const sessionOpts = {
+    name: 'estagio2027.sid',
+    secret: process.env.SESSION_SECRET || 'troque-isto-em-producao',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+      // 'auto': grava o cookie sempre, com Secure quando a conexão é HTTPS
+      // (detectado via X-Forwarded-Proto atrás do ingress) e sem Secure
+      // caso contrário — evita o cookie ser recusado silenciosamente.
+      secure: process.env.COOKIE_SECURE === 'true' ? true : process.env.COOKIE_SECURE === 'false' ? false : 'auto',
+      maxAge: 8 * 60 * 60 * 1000, // 8 horas
+    },
+  };
+  try {
+    const PgSession = require('connect-pg-simple')(session);
+    const store = new PgSession({ pool, createTableIfMissing: true });
+    // connect-pg-simple emite 'error' num problema de conexão em segundo
+    // plano (ex.: checagem da tabela) — sem um listener, um EventEmitter
+    // relança isso como exceção não tratada e derruba o processo inteiro.
+    store.on('error', (e) => console.error('[Session] Erro no store de sessão (Postgres):', e.message));
+    sessionOpts.store = store;
+  } catch (e) {
+    console.warn('[Session] Não foi possível usar o store no Postgres, caindo pra memória:', e.message);
+  }
+  app.use(session(sessionOpts));
 }
-const sessionOpts = {
-  name: 'estagio2027.sid',
-  secret: process.env.SESSION_SECRET || 'troque-isto-em-producao',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    sameSite: 'lax',
-    // 'auto': grava o cookie sempre, com Secure quando a conexão é HTTPS
-    // (detectado via X-Forwarded-Proto atrás do ingress) e sem Secure
-    // caso contrário — evita o cookie ser recusado silenciosamente.
-    secure: process.env.COOKIE_SECURE === 'true' ? true : process.env.COOKIE_SECURE === 'false' ? false : 'auto',
-    maxAge: 8 * 60 * 60 * 1000, // 8 horas
-  },
-};
-try {
-  const PgSession = require('connect-pg-simple')(session);
-  sessionOpts.store = new PgSession({ pool, createTableIfMissing: true });
-} catch (e) {
-  console.warn('[Session] Não foi possível usar o store no Postgres, caindo pra memória:', e.message);
-}
-app.use(session(sessionOpts));
 
 // Arquivos estáticos (frontend)
 app.use(express.static(path.join(__dirname, '..', 'public')));
@@ -81,7 +92,15 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
-// Iniciar servidor
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`[Programa de Estágio 2027] Servidor rodando em 0.0.0.0:${PORT}`);
-});
+// Só sobe um servidor "de verdade" fora de uma função serverless (AWS
+// Lambda/Netlify Functions sempre define AWS_LAMBDA_FUNCTION_NAME em tempo
+// de execução — um jeito confiável de saber onde está rodando, que não
+// depende de COMO este arquivo foi chamado). Dentro da função, quem invoca
+// é o serverless-http (ver netlify/functions/server.js), sem abrir porta.
+if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`[Programa de Estágio 2027] Servidor rodando em 0.0.0.0:${PORT}`);
+  });
+}
+
+module.exports = app;
