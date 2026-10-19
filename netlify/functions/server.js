@@ -5,4 +5,7 @@
 const serverless = require('serverless-http');
 const app = require('../../src/server');
 
-exports.handler = serverless(app);
+// binary: true — sem isso, respostas binárias (foto/CV) passam pelo
+// pipeline de string da função e corrompem (ex.: foto do candidato não
+// abre, mesmo a chamada retornando 200 com o content-type certo).
+exports.handler = serverless(app, { binary: true });
