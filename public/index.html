@@ -2795,8 +2795,13 @@
       progresso.textContent = `Você avaliou ${avaliados} de ${avaliacaoCandidatos.length} candidatos liberados.`;
     }
 
+    // Versão fixa só pra invalidar o cache do navegador de quem já tinha
+    // carregado uma foto corrompida antes da correção do bug de resposta
+    // binária na função serverless (19/10/2026). Trocar esse valor de novo
+    // só seria necessário se um bug parecido voltasse a acontecer.
+    const FOTO_CACHE_BUST = 'v20261019b';
     function candCardFoto(c) {
-      if (c.foto_arquivo_id) return `<img class="cand-card__foto" src="/api/arquivos/${c.foto_arquivo_id}" alt="">`;
+      if (c.foto_arquivo_id) return `<img class="cand-card__foto" src="/api/arquivos/${c.foto_arquivo_id}?${FOTO_CACHE_BUST}" alt="">`;
       return `<span class="cand-card__foto cand-card__foto--placeholder material-icons-outlined">person</span>`;
     }
 
@@ -3030,7 +3035,7 @@
         <tr>
           <td><input type="checkbox" ${candidatosSelecionados.has(String(c.id)) ? 'checked' : ''} onchange="toggleSelecionarCandidatoAdmin('${c.id}', this.checked)"></td>
           <td>${c.foto_arquivo_id
-            ? `<img class="admin-cand-foto" src="/api/arquivos/${c.foto_arquivo_id}" alt="">`
+            ? `<img class="admin-cand-foto" src="/api/arquivos/${c.foto_arquivo_id}?${FOTO_CACHE_BUST}" alt="">`
             : '<div class="admin-cand-foto--placeholder"></div>'}</td>
           <td>${escHtml(c.nome)}</td>
           <td>${escHtml(c.curso || '')}${c.faculdade ? ' · ' + escHtml(c.faculdade) : ''}</td>
