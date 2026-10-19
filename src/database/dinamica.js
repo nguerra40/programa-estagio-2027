@@ -94,6 +94,16 @@ query(`
   ALTER TABLE dinamica_notas DROP COLUMN IF EXISTS gestor_id;
 `)).then(() => query(`
   CREATE UNIQUE INDEX IF NOT EXISTS dinamica_notas_candidato_avaliador_key ON dinamica_notas(candidato_id, avaliador_email);
+`)).then(() => query(`
+  -- Qual gestor avalia qual banca (turno) — sem isso, todo gestor via os
+  -- candidatos liberados de QUALQUER banca, mesmo as que não eram dele.
+  CREATE TABLE IF NOT EXISTS dinamica_avaliadores_banca (
+    id BIGSERIAL PRIMARY KEY,
+    avaliador_email TEXT NOT NULL,
+    turno TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE (avaliador_email, turno)
+  );
 `)).then(() => {
   console.log('[DB] Tabelas da dinâmica de estágio OK.');
 }).catch(err => {
@@ -304,9 +314,25 @@ async function importarPlanilha(linhas, adminEmail) {
 // ---------- Liberados (visão do avaliador logado) ----------
 
 async function findLiberados(avaliadorEmail) {
+  // Só mostra os liberados da(s) banca(s) que esse gestor está associado
+  // (ver Gestores por banca no admin) — sem nenhuma associação, não vê
+  // candidato nenhum, em vez de ver os de todas as bancas liberadas ao
+  // mesmo tempo (era exatamente esse o problema relatado pela Natasha).
+  let turnosDoAvaliador = [];
+  if (avaliadorEmail) {
+    const { rows } = await query(
+      'SELECT turno FROM dinamica_avaliadores_banca WHERE avaliador_email = $1',
+      [String(avaliadorEmail).toLowerCase().trim()]
+    );
+    turnosDoAvaliador = rows.map((r) => r.turno);
+  }
+
+  if (!turnosDoAvaliador.length) return [];
+
   const { rows: candidatos } = await query(
-    `SELECT id, nome, curso, faculdade, formacao, telefone, email, linkedin_url, cv_arquivo_id, foto_arquivo_id
-     FROM dinamica_candidatos WHERE liberado = true ORDER BY nome`
+    `SELECT id, nome, curso, faculdade, formacao, telefone, email, linkedin_url, cv_arquivo_id, foto_arquivo_id, turno
+     FROM dinamica_candidatos WHERE liberado = true AND turno = ANY($1::text[]) ORDER BY nome`,
+    [turnosDoAvaliador]
   );
 
   let notaPorCandidato = {};
@@ -324,6 +350,28 @@ async function findLiberados(avaliadorEmail) {
     meu_comentario: notaPorCandidato[c.id] ? notaPorCandidato[c.id].comentario : '',
     minhas_areas_interesse: notaPorCandidato[c.id] ? notaPorCandidato[c.id].area_interesse || [] : [],
   }));
+}
+
+// ---------- Gestores por banca (admin) ----------
+
+async function listarAvaliadoresBanca() {
+  const { rows } = await query(
+    'SELECT id, avaliador_email, turno FROM dinamica_avaliadores_banca ORDER BY turno, avaliador_email'
+  );
+  return rows;
+}
+
+async function atribuirAvaliadorBanca(avaliadorEmail, turno) {
+  const { rows } = await query(
+    `INSERT INTO dinamica_avaliadores_banca (avaliador_email, turno) VALUES ($1, $2)
+     ON CONFLICT (avaliador_email, turno) DO NOTHING RETURNING *`,
+    [avaliadorEmail, turno]
+  );
+  return rows[0] || null;
+}
+
+async function removerAvaliadorBanca(id) {
+  await query('DELETE FROM dinamica_avaliadores_banca WHERE id = $1', [id]);
 }
 
 async function candidatoEstaLiberado(candidatoId) {
@@ -430,5 +478,6 @@ module.exports = {
   findCandidatos, insertCandidato, updateCandidato, deleteCandidato,
   liberarEmLote, statusEmLote, encontrarPossiveisDuplicatas, importarPlanilha,
   findLiberados, candidatoEstaLiberado, upsertNota, atualizarNotaAdmin, deleteNota, resultados,
+  listarAvaliadoresBanca, atribuirAvaliadorBanca, removerAvaliadorBanca,
   insertArquivo, findArquivo,
 };

@@ -318,6 +318,42 @@ router.delete('/candidatos/:id/notas/:avaliadorEmail', isAuthenticated, isAdmin,
   }
 });
 
+// Gestores por banca — qual gestor pode ver os liberados de qual turno
+// (dia/horário). Sem isso, qualquer gestor logado via os liberados de
+// TODAS as bancas ao mesmo tempo, não só a dele.
+router.get('/avaliadores-banca', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    res.json(await db.listarAvaliadoresBanca());
+  } catch (error) {
+    console.error('[API] Erro ao listar gestores por banca:', error.message);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
+router.post('/avaliadores-banca', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    const avaliadorEmail = String(req.body.avaliador_email || '').toLowerCase().trim();
+    const turno = String(req.body.turno || '').trim();
+    if (!avaliadorEmail) return res.status(400).json({ error: 'E-mail do gestor é obrigatório.' });
+    if (!turno) return res.status(400).json({ error: 'Banca (turno) é obrigatória.' });
+    const registro = await db.atribuirAvaliadorBanca(avaliadorEmail, turno);
+    res.json(registro || { avaliador_email: avaliadorEmail, turno, jaExistia: true });
+  } catch (error) {
+    console.error('[API] Erro ao associar gestor à banca:', error.message);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
+router.delete('/avaliadores-banca/:id', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    await db.removerAvaliadorBanca(Number(req.params.id));
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('[API] Erro ao remover gestor da banca:', error.message);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
 // ============================================================
 // QUALQUER COLABORADOR LOGADO — avaliação dos candidatos liberados
 // ============================================================

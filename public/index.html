@@ -1948,6 +1948,30 @@
         </div>
       </div>
 
+      <div class="admin-modal-overlay" id="cand-avaliadores-banca-modal" style="display:none;" onclick="if (event.target === this) fecharModalAdmin('cand-avaliadores-banca-modal')">
+        <div class="admin-modal">
+          <button type="button" class="admin-modal__close" onclick="fecharModalAdmin('cand-avaliadores-banca-modal')" aria-label="Fechar"><span class="material-icons-outlined">close</span></button>
+          <h3 style="font-family:var(--font-primary); color:var(--color-deep-blue); font-size:14px; margin-bottom:6px;">Gestores por banca</h3>
+          <p style="font-size:12px; color:var(--color-light-grey); margin-bottom:12px;">
+            Associe cada gestor à banca (dia/horário) que ele vai avaliar — assim ele só enxerga os candidatos liberados daquela banca específica, nunca os de outra. Gestor sem nenhuma banca associada não vê candidato nenhum.
+          </p>
+          <form id="avaliador-banca-form" onsubmit="return adicionarAvaliadorBanca(event)">
+            <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:end;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label for="avaliador-banca-turno">Banca (turno)</label>
+                <select id="avaliador-banca-turno" required></select>
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label for="avaliador-banca-email">E-mail do gestor</label>
+                <input type="email" id="avaliador-banca-email" placeholder="gestor@galapagoscapital.com" required>
+              </div>
+              <button type="submit" class="btn-solid">Adicionar</button>
+            </div>
+          </form>
+          <div id="avaliadores-banca-lista" style="margin-top:16px;"></div>
+        </div>
+      </div>
+
       <div class="candadmin-content">
         <div class="candadmin-pane" data-tab="gerenciar">
           <div class="candadmin-chips">
@@ -1973,6 +1997,7 @@
               <button type="button" class="btn-secondary" onclick="statusSelecionadosAdmin()">Aplicar status aos selecionados</button>
               <button type="button" class="btn-secondary" onclick="abrirModalAdmin('cand-bulk-modal')">Importar currículos</button>
               <button type="button" class="btn-secondary" onclick="abrirModalAdmin('cand-planilha-modal')">Importar planilha de candidatos</button>
+              <button type="button" class="btn-secondary" onclick="abrirModalGestoresBanca()">Gestores por banca</button>
             </div>
             <table>
               <caption class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">Lista de candidatos cadastrados</caption>
@@ -3383,6 +3408,95 @@
         statusEl.textContent = 'Erro: ' + err.message;
       }
       return false;
+    }
+
+    // ============================================================
+    // Gestores por banca — qual gestor pode ver os liberados de qual turno
+    // (ver findLiberados em src/database/dinamica.js). Sem isso, qualquer
+    // gestor logado via os liberados de TODAS as bancas ao mesmo tempo.
+    // ============================================================
+    let avaliadoresBancaCache = [];
+
+    function abrirModalGestoresBanca() {
+      abrirModalAdmin('cand-avaliadores-banca-modal');
+      renderAvaliadorBancaSelect();
+      carregarAvaliadoresBanca();
+    }
+
+    // Opções do seletor de banca = turnos distintos entre os candidatos já
+    // cadastrados (não só os liberados — o admin pode querer associar o
+    // gestor antes mesmo de liberar).
+    function renderAvaliadorBancaSelect() {
+      const select = document.getElementById('avaliador-banca-turno');
+      const turnos = [...new Set((candidatosAdminLista || []).map((c) => c.turno).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      select.innerHTML = turnos.length
+        ? turnos.map((t) => `<option value="${escHtml(t)}">${escHtml(t)}</option>`).join('')
+        : '<option value="">Nenhuma banca cadastrada ainda</option>';
+    }
+
+    async function carregarAvaliadoresBanca() {
+      try {
+        avaliadoresBancaCache = await apiDinamica('/avaliadores-banca');
+        renderAvaliadoresBancaLista();
+      } catch (e) {
+        showToast('Erro ao carregar gestores por banca: ' + e.message);
+      }
+    }
+
+    function renderAvaliadoresBancaLista() {
+      const box = document.getElementById('avaliadores-banca-lista');
+      if (!avaliadoresBancaCache.length) {
+        box.innerHTML = '<p style="font-size:13px; color:var(--color-light-grey);">Nenhum gestor associado a uma banca ainda.</p>';
+        return;
+      }
+      const porTurno = {};
+      avaliadoresBancaCache.forEach((a) => {
+        if (!porTurno[a.turno]) porTurno[a.turno] = [];
+        porTurno[a.turno].push(a);
+      });
+      const turnosOrdenados = Object.keys(porTurno).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      box.innerHTML = turnosOrdenados.map((turno) => `
+        <div style="margin-bottom:14px;">
+          <div style="font-weight:600; font-size:13px; color:var(--color-deep-blue); margin-bottom:6px;">${escHtml(turno)}</div>
+          ${porTurno[turno].map((a) => `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; background:var(--color-snow-white); border-radius:var(--radius-sm); margin-bottom:4px;">
+              <span style="font-size:13px;">${escHtml(a.avaliador_email)}</span>
+              <button type="button" class="btn-secondary" style="padding:3px 10px; font-size:11px;" onclick="removerAvaliadorBanca('${a.id}')">Remover</button>
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+    }
+
+    async function adicionarAvaliadorBanca(e) {
+      if (e) e.preventDefault();
+      const turno = document.getElementById('avaliador-banca-turno').value;
+      const email = document.getElementById('avaliador-banca-email').value.trim().toLowerCase();
+      if (!turno || !email) return false;
+      try {
+        await apiDinamica('/avaliadores-banca', {
+          method: 'POST',
+          body: JSON.stringify({ avaliador_email: email, turno }),
+        });
+        document.getElementById('avaliador-banca-email').value = '';
+        await carregarAvaliadoresBanca();
+        showToast('Gestor associado à banca.');
+      } catch (err) {
+        showToast('Erro: ' + err.message);
+      }
+      return false;
+    }
+
+    async function removerAvaliadorBanca(id) {
+      if (!confirm('Remover essa associação? O gestor deixará de ver os candidatos dessa banca.')) return;
+      try {
+        await apiDinamica('/avaliadores-banca/' + id, { method: 'DELETE' });
+        await carregarAvaliadoresBanca();
+        showToast('Associação removida.');
+      } catch (err) {
+        showToast('Erro: ' + err.message);
+      }
     }
 
     function faixaMediaCand(media) {
