@@ -76,7 +76,7 @@ router.patch('/candidatos/status-lote', isAuthenticated, isAdmin, async (req, re
 // Import em lote: um candidato por CV enviado (nome inicial = nome do arquivo).
 router.post('/candidatos/bulk', isAuthenticated, isAdmin, async (req, res) => {
   try {
-    const { turno, data_dinamica, arquivos, admin_email } = req.body;
+    const { turno, arquivos, admin_email } = req.body;
     if (!Array.isArray(arquivos) || !arquivos.length) {
       return res.status(400).json({ error: 'Nenhum currículo enviado.' });
     }
@@ -109,7 +109,6 @@ router.post('/candidatos/bulk', isAuthenticated, isAdmin, async (req, res) => {
       const candidato = await db.insertCandidato({
         nome: nomeCandidato,
         turno: turno || '09h-11h',
-        data_dinamica: data_dinamica || null,
         cv_arquivo_id: arquivo.id,
         curso: analise.curso || '',
         faculdade: analise.faculdade || '',
@@ -261,15 +260,14 @@ router.get('/resultados/export', isAuthenticated, isAdmin, async (req, res) => {
 
     const BOM = '﻿';
     const separator = ';';
-    const headers = ['Nome', 'Status', 'Gênero', 'Curso', 'Faculdade', 'Turno', 'Área', 'Data', 'Média', 'Nota Comitê', 'Qtd. Avaliações', 'Avaliações'];
+    const headers = ['Nome', 'Status', 'Gênero', 'Curso', 'Faculdade', 'Banca', 'Área', 'Média', 'Nota Comitê', 'Qtd. Avaliações', 'Avaliações'];
 
     const rows = dados.map((c) => {
-      const dataFormatada = c.data_dinamica ? new Date(c.data_dinamica).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '';
       const areas = [...new Set((c.avaliacoes || []).flatMap((a) => a.areas_interesse || []))].join(' / ');
       const avaliacoes = (c.avaliacoes || [])
         .map((a) => `${a.avaliador || a.email || '?'} (${a.nota}${(a.areas_interesse && a.areas_interesse.length) ? ', interesse: ' + a.areas_interesse.join(' / ') : ''}): ${a.comentario || ''}`)
         .join(' | ');
-      return [c.nome, c.status || '', c.genero || '', c.curso || '', c.faculdade || '', c.turno, areas, dataFormatada, c.media != null ? c.media : '', c.nota_comite != null ? c.nota_comite : '', c.qtd_avaliacoes, avaliacoes]
+      return [c.nome, c.status || '', c.genero || '', c.curso || '', c.faculdade || '', c.turno, areas, c.media != null ? c.media : '', c.nota_comite != null ? c.nota_comite : '', c.qtd_avaliacoes, avaliacoes]
         .map((val) => `"${String(val).replace(/"/g, '""')}"`)
         .join(separator);
     });

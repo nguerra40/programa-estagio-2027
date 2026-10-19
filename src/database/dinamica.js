@@ -112,19 +112,21 @@ query(`
 
 // ---------- Candidatos ----------
 
-// historico saiu do produto (não faz mais parte do cadastro) — a coluna
-// continua existindo no banco com os dados antigos (inofensivo, mesmo
-// padrão já usado aqui pra outras colunas descontinuadas), só não é mais
-// lida nem gravada daqui pra frente. turno/data_dinamica continuam — são
-// como o admin organiza quem participa de qual turno/dia da dinâmica.
+// historico e data_dinamica saíram do produto (não fazem mais parte do
+// cadastro) — as colunas continuam existindo no banco com os dados
+// antigos (inofensivo, mesmo padrão já usado aqui pra outras colunas
+// descontinuadas), só não são mais lidas nem gravadas daqui pra frente.
+// "turno" sozinho virou o identificador único da banca (dia + horário,
+// ex.: "02/10 às 09h00") — ter uma data separada também era redundante e
+// confuso, já que o texto do turno já carrega essa informação.
 const CAND_COLS = [
   'nome', 'curso', 'faculdade', 'formacao', 'telefone', 'email', 'linkedin_url',
-  'turno', 'data_dinamica', 'cv_arquivo_id', 'foto_arquivo_id', 'liberado', 'genero', 'status',
+  'turno', 'cv_arquivo_id', 'foto_arquivo_id', 'liberado', 'genero', 'status',
   'nota_comite',
 ];
 
 const STATUS_VALIDOS = ['Pendente', 'Aprovado', 'Reprovado', 'Ausente'];
-const CAND_NULLABLE_EMPTY = ['data_dinamica', 'cv_arquivo_id', 'foto_arquivo_id', 'nota_comite'];
+const CAND_NULLABLE_EMPTY = ['cv_arquivo_id', 'foto_arquivo_id', 'nota_comite'];
 
 // Só aceita LinkedIn com esquema http(s) — o campo é renderizado como link
 // clicável pra qualquer avaliador, então um "javascript:" ou "data:" aqui

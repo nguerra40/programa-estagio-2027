@@ -1892,10 +1892,7 @@
                 </select>
               </div>
             </div>
-            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">
-              <div class="form-group"><label for="cand-turno">Turno da dinâmica</label><input type="text" id="cand-turno" value="09h-11h"></div>
-              <div class="form-group"><label for="cand-data">Data da dinâmica</label><input type="date" id="cand-data"></div>
-            </div>
+            <div class="form-group"><label for="cand-turno">Banca (dia e horário)</label><input type="text" id="cand-turno" value="09h-11h" placeholder="Ex.: 02/10 às 09h00"></div>
             <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">
               <div class="form-group"><label for="cand-cv">Currículo (PDF)</label><input type="file" id="cand-cv" accept="application/pdf"></div>
               <div class="form-group"><label for="cand-foto">Foto (opcional)</label><input type="file" id="cand-foto" accept="image/*"></div>
@@ -1919,9 +1916,8 @@
           <h3 style="font-family:var(--font-primary); color:var(--color-deep-blue); font-size:14px; margin-bottom:6px;">Importar currículos</h3>
           <p style="font-size:12px; color:var(--color-light-grey); margin-bottom:12px;">Selecione um ou vários PDFs — um candidato é criado para cada arquivo, já com o currículo anexado. Funciona tanto pra um currículo só quanto pra um lote inteiro.</p>
           <form id="cand-bulk-form" onsubmit="return importarLoteAdmin(event)">
-            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; align-items:end;">
-              <div class="form-group" style="margin-bottom:0;"><label for="bulk-turno">Turno (aplica a todos)</label><input type="text" id="bulk-turno" value="09h-11h"></div>
-              <div class="form-group" style="margin-bottom:0;"><label for="bulk-data">Data da dinâmica</label><input type="date" id="bulk-data"></div>
+            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px; align-items:end;">
+              <div class="form-group" style="margin-bottom:0;"><label for="bulk-turno">Banca (aplica a todos)</label><input type="text" id="bulk-turno" value="09h-11h" placeholder="Ex.: 02/10 às 09h00"></div>
               <div class="form-group" style="margin-bottom:0;"><label for="bulk-files">Currículos (PDF)</label><input type="file" id="bulk-files" accept="application/pdf" multiple required></div>
             </div>
             <button type="submit" class="btn-solid" style="margin-top:12px;">Importar</button>
@@ -3133,7 +3129,6 @@
       document.getElementById('cand-genero').value = c.genero || '';
       document.getElementById('cand-status').value = c.status || 'Pendente';
       document.getElementById('cand-turno').value = c.turno || '09h-11h';
-      document.getElementById('cand-data').value = c.data_dinamica ? String(c.data_dinamica).slice(0, 10) : '';
       document.getElementById('cand-liberado').checked = !!c.liberado;
       document.getElementById('cand-form-title').textContent = 'Editar candidato';
     }
@@ -3166,7 +3161,6 @@
         genero: document.getElementById('cand-genero').value,
         status: document.getElementById('cand-status').value,
         turno: document.getElementById('cand-turno').value.trim() || '09h-11h',
-        data_dinamica: document.getElementById('cand-data').value,
         liberado: document.getElementById('cand-liberado').checked,
         admin_email: currentUser,
       };
@@ -3245,7 +3239,6 @@
     async function importarLoteAdmin(e) {
       e.preventDefault();
       const turno = document.getElementById('bulk-turno').value.trim() || '09h-11h';
-      const data_dinamica = document.getElementById('bulk-data').value;
       const files = Array.from(document.getElementById('bulk-files').files);
       const statusEl = document.getElementById('bulk-status');
       if (!files.length) return;
@@ -3259,7 +3252,7 @@
         })));
         const resultado = await apiDinamica('/candidatos/bulk', {
           method: 'POST',
-          body: JSON.stringify({ turno, data_dinamica, arquivos, admin_email: currentUser }),
+          body: JSON.stringify({ turno, arquivos, admin_email: currentUser }),
         });
         statusEl.textContent = resultado.criados + ' candidato(s) cadastrado(s).';
         document.getElementById('cand-bulk-form').reset();
