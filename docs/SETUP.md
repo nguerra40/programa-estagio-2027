@@ -24,10 +24,14 @@ DB_PASSWORD=sua_senha          # Senha
 AZURE_CLIENT_ID=xxx            # Fornecido pelo TI
 AZURE_CLIENT_SECRET=xxx        # Fornecido pelo TI
 AZURE_TENANT_ID=xxx            # Fornecido pelo TI
-AZURE_REDIRECT_URI=https://estagio.galapagoscapital.com/auth/callback
+AZURE_REDIRECT_URI=https://formulario-programaestagio2027.glpg.io/auth/callback
 
 # Sessão
 SESSION_SECRET=string_longa_e_aleatoria
+
+# Força o modo sem SSO mesmo com as variáveis AZURE_* preenchidas (opcional,
+# só pra testes locais — em produção não precisa existir)
+AUTH_DISABLED=false
 
 # Admins
 ADMIN_EMAILS=eduarda.dreux@galapagoscapital.com,felipe.regis@galapagoscapital.com,natasha.guerra@galapagoscapital.com
@@ -68,28 +72,49 @@ npm run db:migrate
 
 ### Status atual: AGUARDANDO configuração do TI
 
-O código já está preparado para receber as credenciais. Quando o TI fornecer os dados:
+O back-end já está pronto (usa `@azure/msal-node`, a biblioteca oficial da
+Microsoft — ver `src/auth/entra.js`, `src/routes/auth.js` e
+`src/auth/middleware.js`). O que falta é só o TI (ou a própria Natasha, se
+tiver permissão de registrar apps no Entra ID — ver instruções que ela já
+tem) fornecer os 3 valores abaixo:
 
-1. Preencha `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` e `AZURE_TENANT_ID` no `.env`
-2. Atualize `AZURE_REDIRECT_URI` com o domínio final da aplicação
-3. Reinicie a aplicação
+1. Peça o registro do app no Azure Portal (Entra ID → App registrations),
+   tipo **Web**, single-tenant, com Redirect URI
+   `https://formulario-programaestagio2027.glpg.io/auth/callback`
+2. Preencha `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` e `AZURE_TENANT_ID` nas
+   variáveis de ambiente de produção (Kubernetes)
+3. Atualize `AZURE_REDIRECT_URI` se o domínio final for diferente
+4. Reinicie a aplicação
 
-### Fluxo de autenticação
+Assim que essas 3 variáveis existirem, a trava liga **sozinha** — não
+precisa mexer em mais nada no código nem setar `AUTH_DISABLED`.
+
+### O front-end ainda usa o login atual (e-mail + código)
+
+Essa troca foi feita só no back-end por enquanto. O front-end
+(`public/index.html`) continua com o login simples (e-mail + código
+`%adm2027`) que já estava em produção, porque não dá pra testar o
+redirecionamento real com a Microsoft sem as credenciais de verdade. A
+troca da tela de login pelo botão "Entrar com Microsoft" é o último passo,
+feito junto com o teste de ponta a ponta assim que o TI responder.
+
+### Fluxo de autenticação (quando ativo)
 
 ```
-Usuário acessa a aplicação
+Usuário acessa /auth/login
     → Redirecionado para login da Microsoft
     → Microsoft valida credenciais
     → Redireciona de volta para /auth/callback
-    → Sessão criada no servidor
-    → Usuário vê o formulário (gestor) ou painel (admin)
+    → Sessão criada no servidor (guardada no Postgres)
+    → Usuário vê a Avaliação (ou o painel, se for admin)
 ```
 
-### Modo de desenvolvimento
+### Modo atual (sem SSO configurado, ou com AUTH_DISABLED=true)
 
-Enquanto as credenciais não estão configuradas, a aplicação roda em **modo dev**:
-- Login é automático
-- Todas as funcionalidades ficam disponíveis
+Enquanto as credenciais não estão configuradas:
+- As rotas `/auth/login` e `/auth/callback` respondem 503 (SSO não configurado)
+- A API trata toda requisição como autenticada (o mesmo comportamento de
+  sempre, usado pelo login atual por e-mail/código do front-end)
 - Nenhuma chamada é feita ao Azure
 
 ---
@@ -108,8 +133,8 @@ Enquanto as credenciais não estão configuradas, a aplicação roda em **modo d
 | Método | Rota | Acesso | Descrição |
 |--------|------|--------|-----------|
 | GET | /auth/login | Público | Inicia fluxo de login SSO |
-| POST | /auth/callback | Microsoft | Callback do Entra ID |
-| GET | /auth/me | Público | Retorna usuário logado |
+| GET | /auth/callback | Microsoft | Callback do Entra ID |
+| GET | /auth/me | Público | Retorna usuário logado na sessão atual |
 | GET | /auth/logout | Autenticado | Encerra sessão |
 | POST | /api/solicitacoes | Autenticado | Cria nova solicitação |
 | GET | /api/solicitacoes | Admin | Lista todas as solicitações |

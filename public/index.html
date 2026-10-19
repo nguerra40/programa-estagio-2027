@@ -1574,6 +1574,15 @@
       <img class="login-card__logo" src="logo_galapagos_login.png" alt="Galapagos Capital" />
       <h1 class="login-card__title">Programa de Estágio 2027</h1>
       <div class="login-card__subtitle">Avaliação de Candidatos</div>
+      <a href="/auth/login" class="login-card__btn" id="login-sso-btn" style="display:none; margin-top:20px; text-decoration:none;">
+        <svg width="20" height="20" viewBox="0 0 23 23" aria-hidden="true" style="flex-shrink:0">
+          <rect x="1" y="1" width="10" height="10" fill="#f25022"/>
+          <rect x="12" y="1" width="10" height="10" fill="#7fba00"/>
+          <rect x="1" y="12" width="10" height="10" fill="#00a4ef"/>
+          <rect x="12" y="12" width="10" height="10" fill="#ffb900"/>
+        </svg>
+        Entrar com Microsoft
+      </a>
       <form id="login-form" onsubmit="return doLogin(event)" style="margin-top:20px; text-align:left;">
         <label for="login-email" style="display:block; font-size:13px; font-weight:600; color:var(--color-spacial-grey); margin-bottom:6px;">E-mail corporativo</label>
         <input type="email" id="login-email" placeholder="seu.nome@galapagoscapital.com" autocomplete="email" required
@@ -2054,6 +2063,11 @@
 
     let currentUser = null;
     let currentUserNome = null;
+    let currentUserIsAdmin = false;
+    // Setado em checkSession(), a partir de /auth/me — enquanto o SSO (Entra
+    // ID) não está configurado no servidor, o login por e-mail/código abaixo
+    // continua sendo o único caminho (ver docs/SETUP.md).
+    let ssoAtivo = false;
     let currentSortField = null;
     let currentSortOrder = 'asc';
 
@@ -2078,12 +2092,13 @@
       applyFilters();
     }
 
-    // Login — simula SSO (em produção, redirecionará para Microsoft Entra ID).
-    // Usa um campo normal na própria página, não prompt()/alert(): esses
-    // dialogs nativos do navegador são bloqueados ou simplesmente não abrem
-    // em vários navegadores de celular (principalmente dentro do app do
-    // Teams/Outlook/WhatsApp), o que travava o login completamente no
-    // celular — ver o pedido da Natasha pra investigar isso.
+    // Login por e-mail/código — único caminho enquanto o SSO (Microsoft
+    // Entra ID) não está configurado no servidor (ver checkSession() logo
+    // abaixo e docs/SETUP.md). Usa um campo normal na própria página, não
+    // prompt()/alert(): esses dialogs nativos do navegador são bloqueados ou
+    // simplesmente não abrem em vários navegadores de celular (principalmente
+    // dentro do app do Teams/Outlook/WhatsApp), o que travava o login
+    // completamente no celular — ver o pedido da Natasha pra investigar isso.
     function doLogin(e) {
       if (e) e.preventDefault();
       const errorEl = document.getElementById('login-error');
@@ -2112,26 +2127,15 @@
         return false;
       }
 
-      currentUser = email;
-      currentUserNome = nomeFromEmail(email);
+      const isAdmin = ADMIN_EMAILS.includes(email) && hasAdminCode;
       localStorage.setItem('estagio_user', email);
-
-      document.getElementById('login-overlay').style.display = 'none';
-      document.getElementById('main-header').style.display = 'flex';
-      // Qualquer login válido já vê a aba de Avaliação — não é mais exclusiva de admin.
-      document.getElementById('header-nav').style.display = 'flex';
-      switchView('avaliacao');
-
-      // Só libera a aba de gerenciar candidatos se e-mail está na lista E usou o código secreto
-      if (ADMIN_EMAILS.includes(email) && hasAdminCode) {
-        localStorage.setItem('estagio_admin', 'true');
-        document.getElementById('btn-candidatos-admin').style.display = 'inline-flex';
-      }
+      if (isAdmin) localStorage.setItem('estagio_admin', 'true');
+      entrarComUsuario(email, nomeFromEmail(email), isAdmin);
       return false;
     }
 
-    // Deriva um nome de exibição a partir do e-mail (não há SSO real ainda,
-    // então não temos o nome completo do colaborador — ver auth/passport-config.js).
+    // Deriva um nome de exibição a partir do e-mail — só usado no login de
+    // fallback (sem SSO), já que ele não tem o nome completo do colaborador.
     function nomeFromEmail(email) {
       return (email.split('@')[0] || email)
         .split('.')
@@ -2139,12 +2143,33 @@
         .join(' ');
     }
 
+    // Aplica o usuário logado (vindo do SSO ou do login de fallback) na UI.
+    function entrarComUsuario(email, nome, isAdmin) {
+      currentUser = email;
+      currentUserNome = nome;
+      currentUserIsAdmin = !!isAdmin;
+      document.getElementById('login-overlay').style.display = 'none';
+      document.getElementById('main-header').style.display = 'flex';
+      // Qualquer login válido já vê a aba de Avaliação — não é exclusiva de admin.
+      document.getElementById('header-nav').style.display = 'flex';
+      switchView('avaliacao');
+      document.getElementById('btn-candidatos-admin').style.display = currentUserIsAdmin ? 'inline-flex' : 'none';
+    }
+
     // Switch user — logout e volta para tela de login
     function switchUser() {
+      // Com SSO ativo, o logout precisa derrubar a sessão real no servidor
+      // (e, se for o caso, também na Microsoft) — por isso é uma navegação,
+      // não só limpar estado local.
+      if (ssoAtivo) {
+        window.location.href = '/auth/logout';
+        return;
+      }
       localStorage.removeItem('estagio_user');
       localStorage.removeItem('estagio_admin');
       currentUser = null;
       currentUserNome = null;
+      currentUserIsAdmin = false;
       document.getElementById('login-overlay').style.display = 'flex';
       document.getElementById('main-header').style.display = 'none';
       document.getElementById('header-nav').style.display = 'none';
@@ -2155,35 +2180,41 @@
       document.getElementById('view-candidatos-admin').classList.remove('active');
     }
 
-    // Check session
-    function checkSession() {
+    // Check session — primeiro pergunta pro servidor se o SSO está
+    // configurado e se já tem uma sessão real (Microsoft) ativa; só cai no
+    // login por e-mail/código (localStorage) se o SSO não estiver pronto.
+    async function checkSession() {
+      try {
+        const r = await fetch('/auth/me');
+        const data = await r.json();
+        if (data && data.ssoConfigurado) {
+          ssoAtivo = true;
+          document.getElementById('login-form').style.display = 'none';
+          document.getElementById('login-sso-btn').style.display = 'flex';
+          if (data.user) entrarComUsuario(data.user.email, data.user.nome, data.user.isAdmin);
+          return;
+        }
+      } catch (e) {
+        console.warn('[Auth] Não consegui checar o SSO, usando o login por e-mail/código.', e.message);
+      }
+
+      ssoAtivo = false;
       const savedUser = localStorage.getItem('estagio_user');
       if (savedUser) {
-        currentUser = savedUser;
-        currentUserNome = nomeFromEmail(savedUser);
-        document.getElementById('login-overlay').style.display = 'none';
-        document.getElementById('main-header').style.display = 'flex';
-        document.getElementById('header-nav').style.display = 'flex';
-        switchView('avaliacao');
-
-        const isAdmin = localStorage.getItem('estagio_admin') === 'true';
-        if (ADMIN_EMAILS.includes(savedUser) && isAdmin) {
-          document.getElementById('btn-candidatos-admin').style.display = 'inline-flex';
-        }
+        const isAdmin = ADMIN_EMAILS.includes(savedUser) && localStorage.getItem('estagio_admin') === 'true';
+        entrarComUsuario(savedUser, nomeFromEmail(savedUser), isAdmin);
       }
     }
 
     // Data store — centralizado no servidor
 
-    // Só entra na visão de administrador quem está na lista de admins E
-    // logou com o código secreto (mesma checagem já usada pra mostrar o
-    // botão "Candidatos" no header) — evita que alguém abra essa tela só
-    // chamando switchView('candidatos-admin') direto pelo console do
-    // navegador. Isso é só uma trava de UI: a API em si não tem SSO real
-    // (decisão já tomada de não implementar, por depender de TI), então
-    // continua sendo o front-end, não o servidor, quem garante isso hoje.
+    // Com o SSO ativo, quem decide "é admin" de verdade é o servidor (ver
+    // isAdminEmail em src/auth/middleware.js) — currentUserIsAdmin só espelha
+    // o que /auth/me respondeu. Sem SSO (login de fallback), continua sendo
+    // só uma convenção de UI (a API trata toda chamada como autenticada,
+    // ver AUTH_DISABLED em src/auth/middleware.js).
     function isAdminAtual() {
-      return ADMIN_EMAILS.includes(currentUser) && localStorage.getItem('estagio_admin') === 'true';
+      return currentUserIsAdmin;
     }
 
     // Switch views

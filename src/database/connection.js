@@ -99,4 +99,4 @@ function query(text, params) {
   return pool.query(text, params);
 }
 
-module.exports = { insert, findAll, findByEmail, update, updateField, stats, remove, query };
+module.exports = { insert, findAll, findByEmail, update, updateField, stats, remove, query, pool };
