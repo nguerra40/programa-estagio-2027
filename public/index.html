@@ -2210,9 +2210,11 @@
       sessaoServidorAtiva = !!viaServidor;
       document.getElementById('login-overlay').style.display = 'none';
       document.getElementById('main-header').style.display = 'flex';
-      // Qualquer login válido já vê a aba de Avaliação — não é exclusiva de admin.
-      document.getElementById('header-nav').style.display = 'flex';
       switchView('avaliacao');
+      // Avaliador só tem uma tela pra ver (Avaliação) — o botão de navegação
+      // não serve pra nada nesse caso, só ocupa espaço (principalmente no
+      // celular). Só o admin precisa alternar entre Avaliação e Candidatos.
+      document.getElementById('header-nav').style.display = currentUserIsAdmin ? 'flex' : 'none';
       document.getElementById('btn-candidatos-admin').style.display = currentUserIsAdmin ? 'inline-flex' : 'none';
     }
 
