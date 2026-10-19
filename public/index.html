@@ -1028,8 +1028,8 @@
       width: 100%;
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 14px 16px;
+      gap: 14px;
+      padding: 16px;
       background: none;
       border: none;
       color: #FFFFFF;
@@ -1039,8 +1039,8 @@
     }
 
     .cand-card__foto {
-      width: 40px;
-      height: 40px;
+      width: 64px;
+      height: 64px;
       border-radius: 50%;
       object-fit: cover;
       flex-shrink: 0;
@@ -1051,6 +1051,21 @@
       align-items: center;
       justify-content: center;
       background: rgba(255,255,255,0.15);
+      font-size: 32px;
+    }
+
+    .cand-card-meta {
+      font-size: 13px;
+      opacity: 0.9;
+      margin-bottom: 14px;
+    }
+
+    .cand-card-meta div {
+      margin-bottom: 2px;
+    }
+
+    .cand-card-meta b {
+      font-weight: 600;
     }
 
     .cand-card__nome {
@@ -2663,12 +2678,12 @@
     }
 
     function candCardMeta(c) {
-      const partes = [];
-      if (c.curso) partes.push(escHtml(c.curso));
-      if (c.faculdade) partes.push(escHtml(c.faculdade));
-      if (c.formacao) partes.push('Formação: ' + escHtml(c.formacao));
-      if (!partes.length) return '';
-      return `<div style="font-size:13px; opacity:0.85; margin-bottom:4px;">${partes.join(' · ')}</div>`;
+      const linhas = [];
+      if (c.faculdade) linhas.push(`<div><b>Faculdade:</b> ${escHtml(c.faculdade)}</div>`);
+      if (c.curso) linhas.push(`<div><b>Curso:</b> ${escHtml(c.curso)}</div>`);
+      if (c.formacao) linhas.push(`<div><b>Data de formação:</b> ${escHtml(c.formacao)}</div>`);
+      if (!linhas.length) return '';
+      return `<div class="cand-card-meta">${linhas.join('')}</div>`;
     }
 
     function candCardHtml(c) {
