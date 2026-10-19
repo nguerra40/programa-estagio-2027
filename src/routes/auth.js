@@ -10,6 +10,51 @@ const router = express.Router();
 const entra = require('../auth/entra');
 const { isAdminEmail, devBypassActive } = require('../auth/middleware');
 
+function nomeFromEmail(email) {
+  return String(email || '').split('@')[0]
+    .split('.')
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+    .join(' ');
+}
+
+// Comparação em tempo constante — evita vazar, pelo tempo de resposta,
+// quantos caracteres da senha estão certos (timing attack).
+function senhaConfere(digitada, correta) {
+  const a = Buffer.from(String(digitada));
+  const b = Buffer.from(String(correta));
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
+// POST /auth/admin-login — login por senha pro admin, sem depender do SSO
+// (que a Natasha decidiu não usar na hospedagem atual). Separado do login
+// simples dos avaliadores: só quem sabe a senha de admin (ADMIN_PASSWORD)
+// vira admin de verdade — antes disso era só um "código secreto" visível
+// no próprio código-fonte da página, que não protegia nada de verdade.
+router.post('/admin-login', (req, res) => {
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const senha = String(req.body.senha || '');
+
+  if (!isAdminEmail(email)) {
+    return res.status(403).json({ error: 'E-mail não autorizado como admin.' });
+  }
+  if (!process.env.ADMIN_PASSWORD) {
+    return res.status(503).json({ error: 'Senha de admin não configurada no servidor.' });
+  }
+  if (!senhaConfere(senha, process.env.ADMIN_PASSWORD)) {
+    return res.status(401).json({ error: 'Senha incorreta.' });
+  }
+
+  req.session.adminEmail = email;
+  req.session.save((err) => {
+    if (err) {
+      console.error('[Auth] Falha ao gravar a sessão do admin:', err.message);
+      return res.status(500).json({ error: 'Erro ao entrar. Tente novamente.' });
+    }
+    res.json({ email, nome: nomeFromEmail(email) });
+  });
+});
+
 // GET /auth/login — inicia o fluxo de login com a Microsoft.
 router.get('/login', async (req, res) => {
   if (!entra.isConfigured) {
@@ -80,11 +125,25 @@ router.get('/me', (req, res) => {
     });
   }
 
-  const user = (req.session && req.session.user) || null;
-  res.json({
-    user: user ? { ...user, isAdmin: isAdminEmail(user.email) } : null,
-    ssoConfigurado: entra.isConfigured,
-  });
+  const ssoUser = (req.session && req.session.user) || null;
+  if (ssoUser) {
+    return res.json({
+      user: { ...ssoUser, isAdmin: isAdminEmail(ssoUser.email) },
+      ssoConfigurado: entra.isConfigured,
+    });
+  }
+
+  // Sem SSO: a sessão de admin vem do /auth/admin-login (senha), não da
+  // Microsoft — mas pro front-end é a mesma coisa, um "user" autenticado.
+  const adminEmail = req.session && req.session.adminEmail;
+  if (adminEmail) {
+    return res.json({
+      user: { email: adminEmail, nome: nomeFromEmail(adminEmail), isAdmin: true },
+      ssoConfigurado: entra.isConfigured,
+    });
+  }
+
+  res.json({ user: null, ssoConfigurado: entra.isConfigured });
 });
 
 // GET /auth/logout — encerra a sessão (e, se o SSO estiver ativo, também

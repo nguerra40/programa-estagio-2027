@@ -35,6 +35,11 @@ AUTH_DISABLED=false
 
 # Admins
 ADMIN_EMAILS=eduarda.dreux@galapagoscapital.com,felipe.regis@galapagoscapital.com,natasha.guerra@galapagoscapital.com
+
+# Senha de admin — único jeito de virar admin quando o SSO não está
+# configurado (POST /auth/admin-login, exige e-mail em ADMIN_EMAILS acima).
+# Sem essa variável, o login de admin fica indisponível (nunca aberto).
+ADMIN_PASSWORD=escolha-uma-senha-forte-aqui
 ```
 
 ---

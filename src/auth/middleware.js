@@ -35,7 +35,9 @@ function isAdminEmail(email) {
   return adminEmails.includes((email || '').toLowerCase());
 }
 
-// Verifica se o usuário está autenticado.
+// Verifica se o usuário está autenticado. Fica aberto sem SSO (qualquer
+// colaborador pode avaliar candidatos, só se identificando pelo e-mail —
+// nunca foi pensado como barreira real, só pra registrar quem avaliou).
 function isAuthenticated(req, res, next) {
   if (authDisabled()) return next();
 
@@ -43,11 +45,18 @@ function isAuthenticated(req, res, next) {
   res.status(401).json({ error: 'Não autenticado. Faça login via Microsoft.' });
 }
 
-// Verifica se o usuário é admin.
+// Verifica se o usuário é admin — essa, ao contrário de isAuthenticated,
+// SEMPRE exige uma sessão real (login via Microsoft OU a senha de admin em
+// POST /auth/admin-login), mesmo sem SSO configurado. Antes disso só
+// existia como convenção no front-end (esconder o botão "Candidatos"), o
+// que não impedia ninguém de chamar a API direto — ver o incidente em que
+// todo mundo enxergava a aba de admin.
 function isAdmin(req, res, next) {
-  if (authDisabled()) return next();
+  if (devBypassActive()) return next();
 
-  const email = req.session && req.session.user && req.session.user.email;
+  const emailSso = req.session && req.session.user && req.session.user.email;
+  const emailSenha = req.session && req.session.adminEmail;
+  const email = emailSso || emailSenha;
   if (!email) return res.status(401).json({ error: 'Não autenticado.' });
   if (isAdminEmail(email)) return next();
   res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });

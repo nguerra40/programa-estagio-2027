@@ -34,42 +34,39 @@ const BODY_LIMIT = process.env.JSON_BODY_LIMIT || '50mb';
 app.use(express.json({ limit: BODY_LIMIT }));
 app.use(express.urlencoded({ extended: true, limit: BODY_LIMIT }));
 
-// ----- Sessão (usada só pelo login via Microsoft Entra ID, ver
-// routes/auth.js) — só liga quando o SSO está de fato configurado, pra não
-// gastar uma consulta ao Postgres (criação da tabela de sessão) em cada boot
-// de quem não usa SSO (ex.: a hospedagem na Netlify, sem Entra ID).
-if (entra.isConfigured) {
-  if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
-    console.warn('[Session] SESSION_SECRET não configurado em produção — usando um valor fraco e público (o deste código-fonte). Configure essa variável antes de ativar o SSO de verdade.');
-  }
-  const sessionOpts = {
-    name: 'estagio2027.sid',
-    secret: process.env.SESSION_SECRET || 'troque-isto-em-producao',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      sameSite: 'lax',
-      // 'auto': grava o cookie sempre, com Secure quando a conexão é HTTPS
-      // (detectado via X-Forwarded-Proto atrás do ingress) e sem Secure
-      // caso contrário — evita o cookie ser recusado silenciosamente.
-      secure: process.env.COOKIE_SECURE === 'true' ? true : process.env.COOKIE_SECURE === 'false' ? false : 'auto',
-      maxAge: 8 * 60 * 60 * 1000, // 8 horas
-    },
-  };
-  try {
-    const PgSession = require('connect-pg-simple')(session);
-    const store = new PgSession({ pool, createTableIfMissing: true });
-    // connect-pg-simple emite 'error' num problema de conexão em segundo
-    // plano (ex.: checagem da tabela) — sem um listener, um EventEmitter
-    // relança isso como exceção não tratada e derruba o processo inteiro.
-    store.on('error', (e) => console.error('[Session] Erro no store de sessão (Postgres):', e.message));
-    sessionOpts.store = store;
-  } catch (e) {
-    console.warn('[Session] Não foi possível usar o store no Postgres, caindo pra memória:', e.message);
-  }
-  app.use(session(sessionOpts));
+// ----- Sessão — usada pelo login via Microsoft Entra ID (quando
+// configurado) E pelo login de senha do admin (ver routes/auth.js), então
+// fica sempre ligada, independente do SSO.
+if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
+  console.warn('[Session] SESSION_SECRET não configurado em produção — usando um valor fraco e público (o deste código-fonte). Configure essa variável o quanto antes.');
 }
+const sessionOpts = {
+  name: 'estagio2027.sid',
+  secret: process.env.SESSION_SECRET || 'troque-isto-em-producao',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    // 'auto': grava o cookie sempre, com Secure quando a conexão é HTTPS
+    // (detectado via X-Forwarded-Proto atrás do ingress) e sem Secure
+    // caso contrário — evita o cookie ser recusado silenciosamente.
+    secure: process.env.COOKIE_SECURE === 'true' ? true : process.env.COOKIE_SECURE === 'false' ? false : 'auto',
+    maxAge: 8 * 60 * 60 * 1000, // 8 horas
+  },
+};
+try {
+  const PgSession = require('connect-pg-simple')(session);
+  const store = new PgSession({ pool, createTableIfMissing: true });
+  // connect-pg-simple emite 'error' num problema de conexão em segundo
+  // plano (ex.: checagem da tabela) — sem um listener, um EventEmitter
+  // relança isso como exceção não tratada e derruba o processo inteiro.
+  store.on('error', (e) => console.error('[Session] Erro no store de sessão (Postgres):', e.message));
+  sessionOpts.store = store;
+} catch (e) {
+  console.warn('[Session] Não foi possível usar o store no Postgres, caindo pra memória:', e.message);
+}
+app.use(session(sessionOpts));
 
 // Arquivos estáticos (frontend)
 app.use(express.static(path.join(__dirname, '..', 'public')));

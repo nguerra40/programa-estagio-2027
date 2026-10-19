@@ -1595,7 +1595,19 @@
           Entrar
         </button>
       </form>
+      <form id="login-admin-form" onsubmit="return doAdminLogin(event)" style="display:none; margin-top:20px; text-align:left;">
+        <label for="login-admin-email" style="display:block; font-size:13px; font-weight:600; color:var(--color-spacial-grey); margin-bottom:6px;">E-mail de administrador</label>
+        <input type="email" id="login-admin-email" placeholder="seu.nome@galapagoscapital.com" autocomplete="username" required
+          style="width:100%; padding:12px 14px; border:1.5px solid #D0D5DD; border-radius:var(--radius-md); font-size:15px; font-family:var(--font-body); box-sizing:border-box; margin-bottom:12px;">
+        <label for="login-admin-senha" style="display:block; font-size:13px; font-weight:600; color:var(--color-spacial-grey); margin-bottom:6px;">Senha</label>
+        <input type="password" id="login-admin-senha" autocomplete="current-password" required
+          style="width:100%; padding:12px 14px; border:1.5px solid #D0D5DD; border-radius:var(--radius-md); font-size:15px; font-family:var(--font-body); box-sizing:border-box;">
+        <button type="submit" class="login-card__btn" style="margin-top:16px;">Entrar como administrador</button>
+      </form>
       <div class="login-error" id="login-error"></div>
+      <div class="login-card__admin-toggle" id="login-admin-toggle" style="margin-top:16px;">
+        <a href="#" id="login-admin-toggle-link" onclick="toggleAdminLoginForm(event)" style="font-size:12px; color:var(--color-light-grey); text-decoration:underline;">Sou administrador</a>
+      </div>
       <div class="login-card__help">Problemas para acessar? Fale com o time de People.</div>
       <div class="login-card__footer">Galapagos Capital &copy; 2027</div>
     </main>
@@ -2054,20 +2066,17 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    // Admin emails
-    const ADMIN_EMAILS = [
-      'eduarda.dreux@galapagoscapital.com',
-      'felipe.regis@galapagoscapital.com',
-      'natasha.guerra@galapagoscapital.com'
-    ];
-
     let currentUser = null;
     let currentUserNome = null;
     let currentUserIsAdmin = false;
     // Setado em checkSession(), a partir de /auth/me — enquanto o SSO (Entra
-    // ID) não está configurado no servidor, o login por e-mail/código abaixo
-    // continua sendo o único caminho (ver docs/SETUP.md).
+    // ID) não está configurado no servidor, o login por e-mail (avaliador) e
+    // por senha (admin) abaixo continua sendo o caminho normal (ver docs/SETUP.md).
     let ssoAtivo = false;
+    // true quando o /auth/me confirmou uma sessão real no servidor (SSO OU
+    // senha de admin) — nesse caso o logout precisa derrubar essa sessão
+    // (ver switchUser()), não só limpar o localStorage do login de avaliador.
+    let sessaoServidorAtiva = false;
     let currentSortField = null;
     let currentSortOrder = 'asc';
 
@@ -2092,13 +2101,13 @@
       applyFilters();
     }
 
-    // Login por e-mail/código — único caminho enquanto o SSO (Microsoft
-    // Entra ID) não está configurado no servidor (ver checkSession() logo
-    // abaixo e docs/SETUP.md). Usa um campo normal na própria página, não
-    // prompt()/alert(): esses dialogs nativos do navegador são bloqueados ou
-    // simplesmente não abrem em vários navegadores de celular (principalmente
-    // dentro do app do Teams/Outlook/WhatsApp), o que travava o login
-    // completamente no celular — ver o pedido da Natasha pra investigar isso.
+    // Login de avaliador — só identifica quem está dando a nota (pro
+    // "Avaliado por" do admin), nunca concede acesso de admin. Usa um campo
+    // normal na própria página, não prompt()/alert(): esses dialogs nativos
+    // do navegador são bloqueados ou simplesmente não abrem em vários
+    // navegadores de celular (principalmente dentro do app do
+    // Teams/Outlook/WhatsApp), o que travava o login completamente no
+    // celular — ver o pedido da Natasha pra investigar isso.
     function doLogin(e) {
       if (e) e.preventDefault();
       const errorEl = document.getElementById('login-error');
@@ -2111,31 +2120,65 @@
         return false;
       }
 
-      const raw = input.trim().toLowerCase();
-      let email = raw;
-      let hasAdminCode = false;
-
-      // Verifica se tem o código secreto após o e-mail
-      if (raw.includes('%adm2027')) {
-        email = raw.replace('%adm2027', '');
-        hasAdminCode = true;
-      }
-
+      const email = input.trim().toLowerCase();
       if (!email.endsWith('@galapagoscapital.com')) {
         errorEl.textContent = 'E-mail não reconhecido. Use seu e-mail @galapagoscapital.com';
         errorEl.classList.add('visible');
         return false;
       }
 
-      const isAdmin = ADMIN_EMAILS.includes(email) && hasAdminCode;
       localStorage.setItem('estagio_user', email);
-      if (isAdmin) localStorage.setItem('estagio_admin', 'true');
-      entrarComUsuario(email, nomeFromEmail(email), isAdmin);
+      entrarComUsuario(email, nomeFromEmail(email), false, false);
       return false;
     }
 
+    // Login de admin por senha (ver POST /auth/admin-login) — o único jeito
+    // de virar admin quando o SSO não está configurado. Sem isso, "ser
+    // admin" era só um código visível no código-fonte da própria página,
+    // que qualquer pessoa podia usar digitando um e-mail da lista.
+    async function doAdminLogin(e) {
+      if (e) e.preventDefault();
+      const errorEl = document.getElementById('login-error');
+      errorEl.classList.remove('visible');
+
+      const email = document.getElementById('login-admin-email').value.trim().toLowerCase();
+      const senha = document.getElementById('login-admin-senha').value;
+      try {
+        const r = await fetch('/auth/admin-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, senha }),
+        });
+        const data = await r.json();
+        if (!r.ok) {
+          errorEl.textContent = data.error || 'Não foi possível entrar.';
+          errorEl.classList.add('visible');
+          return false;
+        }
+        entrarComUsuario(data.email, data.nome, true, true);
+      } catch (err) {
+        errorEl.textContent = 'Erro ao entrar: ' + err.message;
+        errorEl.classList.add('visible');
+      }
+      return false;
+    }
+
+    // Alterna entre o formulário de avaliador (e-mail) e o de admin (e-mail
+    // + senha) na tela de login.
+    function toggleAdminLoginForm(e) {
+      if (e) e.preventDefault();
+      const formAdmin = document.getElementById('login-admin-form');
+      const formGestor = document.getElementById('login-form');
+      const link = document.getElementById('login-admin-toggle-link');
+      const abrirAdmin = formAdmin.style.display === 'none';
+      formAdmin.style.display = abrirAdmin ? 'block' : 'none';
+      formGestor.style.display = abrirAdmin ? 'none' : 'block';
+      link.textContent = abrirAdmin ? 'Sou avaliador' : 'Sou administrador';
+      document.getElementById('login-error').classList.remove('visible');
+    }
+
     // Deriva um nome de exibição a partir do e-mail — só usado no login de
-    // fallback (sem SSO), já que ele não tem o nome completo do colaborador.
+    // avaliador, já que ele não tem o nome completo do colaborador.
     function nomeFromEmail(email) {
       return (email.split('@')[0] || email)
         .split('.')
@@ -2143,11 +2186,13 @@
         .join(' ');
     }
 
-    // Aplica o usuário logado (vindo do SSO ou do login de fallback) na UI.
-    function entrarComUsuario(email, nome, isAdmin) {
+    // Aplica o usuário logado na UI — vindo do SSO, da senha de admin ou do
+    // login simples de avaliador.
+    function entrarComUsuario(email, nome, isAdmin, viaServidor) {
       currentUser = email;
       currentUserNome = nome;
       currentUserIsAdmin = !!isAdmin;
+      sessaoServidorAtiva = !!viaServidor;
       document.getElementById('login-overlay').style.display = 'none';
       document.getElementById('main-header').style.display = 'flex';
       // Qualquer login válido já vê a aba de Avaliação — não é exclusiva de admin.
@@ -2158,15 +2203,14 @@
 
     // Switch user — logout e volta para tela de login
     function switchUser() {
-      // Com SSO ativo, o logout precisa derrubar a sessão real no servidor
-      // (e, se for o caso, também na Microsoft) — por isso é uma navegação,
-      // não só limpar estado local.
-      if (ssoAtivo) {
+      // Sessão real no servidor (SSO ou senha de admin) precisa ser
+      // derrubada lá (e, se for SSO, também na Microsoft) — por isso é uma
+      // navegação, não só limpar estado local.
+      if (sessaoServidorAtiva) {
         window.location.href = '/auth/logout';
         return;
       }
       localStorage.removeItem('estagio_user');
-      localStorage.removeItem('estagio_admin');
       currentUser = null;
       currentUserNome = null;
       currentUserIsAdmin = false;
@@ -2180,39 +2224,38 @@
       document.getElementById('view-candidatos-admin').classList.remove('active');
     }
 
-    // Check session — primeiro pergunta pro servidor se o SSO está
-    // configurado e se já tem uma sessão real (Microsoft) ativa; só cai no
-    // login por e-mail/código (localStorage) se o SSO não estiver pronto.
+    // Check session — pergunta pro servidor (/auth/me) se já tem uma sessão
+    // real ativa (SSO ou senha de admin); só cai no login simples de
+    // avaliador (localStorage, nunca admin) se não tiver nenhuma.
     async function checkSession() {
       try {
         const r = await fetch('/auth/me');
         const data = await r.json();
-        if (data && data.ssoConfigurado) {
-          ssoAtivo = true;
+        ssoAtivo = !!(data && data.ssoConfigurado);
+        if (ssoAtivo) {
           document.getElementById('login-form').style.display = 'none';
+          document.getElementById('login-admin-toggle').style.display = 'none';
           document.getElementById('login-sso-btn').style.display = 'flex';
-          if (data.user) entrarComUsuario(data.user.email, data.user.nome, data.user.isAdmin);
+        }
+        if (data && data.user) {
+          entrarComUsuario(data.user.email, data.user.nome, data.user.isAdmin, true);
           return;
         }
+        if (ssoAtivo) return; // aguarda clique em "Entrar com Microsoft"
       } catch (e) {
-        console.warn('[Auth] Não consegui checar o SSO, usando o login por e-mail/código.', e.message);
+        console.warn('[Auth] Não consegui checar a sessão, usando o login de avaliador.', e.message);
       }
 
-      ssoAtivo = false;
       const savedUser = localStorage.getItem('estagio_user');
-      if (savedUser) {
-        const isAdmin = ADMIN_EMAILS.includes(savedUser) && localStorage.getItem('estagio_admin') === 'true';
-        entrarComUsuario(savedUser, nomeFromEmail(savedUser), isAdmin);
-      }
+      if (savedUser) entrarComUsuario(savedUser, nomeFromEmail(savedUser), false, false);
     }
 
     // Data store — centralizado no servidor
 
-    // Com o SSO ativo, quem decide "é admin" de verdade é o servidor (ver
-    // isAdminEmail em src/auth/middleware.js) — currentUserIsAdmin só espelha
-    // o que /auth/me respondeu. Sem SSO (login de fallback), continua sendo
-    // só uma convenção de UI (a API trata toda chamada como autenticada,
-    // ver AUTH_DISABLED em src/auth/middleware.js).
+    // Quem decide "é admin" de verdade é sempre o servidor (SSO ou a senha
+    // de POST /auth/admin-login, ver src/auth/middleware.js) —
+    // currentUserIsAdmin só espelha o que /auth/me respondeu; o login
+    // simples de avaliador nunca chega a true aqui.
     function isAdminAtual() {
       return currentUserIsAdmin;
     }
