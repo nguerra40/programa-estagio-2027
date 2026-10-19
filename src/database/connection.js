@@ -1,17 +1,18 @@
 const { Pool } = require('pg');
 
-// DATABASE_URL (ex.: a connection string "pooling" do Supabase, pensada pra
-// muitas conexões curtas e simultâneas — típico de função serverless) tem
-// prioridade sobre as variáveis separadas de sempre (DATABASE_HOST etc.,
-// usadas pelo servidor de sempre no Kubernetes, falando direto com o banco
-// interno). Um pool bem menor faz sentido aqui: cada instância de função
-// processa uma requisição por vez, e o PgBouncer do outro lado do Supabase
-// já cuida de multiplexar várias instâncias ao mesmo tempo.
-const usandoConnectionString = !!process.env.DATABASE_URL;
+// Usa um nome de variável próprio (SUPABASE_DATABASE_URL), não o genérico
+// DATABASE_URL — algumas plataformas de hospedagem injetam uma DATABASE_URL
+// própria no ambiente, sem relação nenhuma com este app (foi exatamente
+// isso que derrubou a produção: a variável já existia, sem nunca ter sido
+// usada por nenhum código antigo, e o app passou a ler um banco errado e
+// vazio assim que essa prioridade entrou). Com um nome só nosso, isso nunca
+// mais acontece por acidente — só entra em uso quando alguém realmente
+// configurar essa variável de propósito (ex.: na hospedagem na Netlify).
+const usandoConnectionString = !!process.env.SUPABASE_DATABASE_URL;
 
 const pool = new Pool({
   ...(usandoConnectionString
-    ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
+    ? { connectionString: process.env.SUPABASE_DATABASE_URL, ssl: { rejectUnauthorized: false } }
     : {
         host: process.env.DATABASE_HOST || '10.135.7.227',
         port: parseInt(process.env.DATABASE_PORT || '5432'),
