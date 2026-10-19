@@ -286,6 +286,38 @@ router.get('/resultados/export', isAuthenticated, isAdmin, async (req, res) => {
   }
 });
 
+// Corrigir ou remover a nota de um avaliador específico — pra quando uma
+// nota foi lançada errada (ex.: clique errado durante um teste) e fica
+// poluindo o ranking da banca.
+router.put('/candidatos/:id/notas/:avaliadorEmail', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    const candidatoId = Number(req.params.id);
+    const avaliadorEmail = String(req.params.avaliadorEmail || '').toLowerCase().trim();
+    const nota = Number(req.body.nota);
+    if (!Number.isInteger(nota) || nota < 1 || nota > 5) {
+      return res.status(400).json({ error: 'Nota deve ser um número inteiro de 1 a 5.' });
+    }
+    const registro = await db.atualizarNotaAdmin(candidatoId, avaliadorEmail, nota);
+    if (!registro) return res.status(404).json({ error: 'Nota não encontrada.' });
+    res.json(registro);
+  } catch (error) {
+    console.error('[API] Erro ao atualizar nota:', error.message);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
+router.delete('/candidatos/:id/notas/:avaliadorEmail', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    const candidatoId = Number(req.params.id);
+    const avaliadorEmail = String(req.params.avaliadorEmail || '').toLowerCase().trim();
+    await db.deleteNota(candidatoId, avaliadorEmail);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('[API] Erro ao remover nota:', error.message);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
 // ============================================================
 // QUALQUER COLABORADOR LOGADO — avaliação dos candidatos liberados
 // ============================================================

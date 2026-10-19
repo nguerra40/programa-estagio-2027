@@ -343,6 +343,20 @@ async function upsertNota({ candidato_id, avaliador_email, avaliador_nome, nota,
   return result.rows[0];
 }
 
+// Admin corrigindo uma nota lançada errada (ex.: clique errado durante um
+// teste) sem mexer no comentário/área de interesse que o avaliador escreveu.
+async function atualizarNotaAdmin(candidato_id, avaliador_email, nota) {
+  const result = await query(
+    `UPDATE dinamica_notas SET nota=$1, updated_at=NOW() WHERE candidato_id=$2 AND avaliador_email=$3 RETURNING *`,
+    [nota, candidato_id, avaliador_email]
+  );
+  return result.rows[0];
+}
+
+async function deleteNota(candidato_id, avaliador_email) {
+  await query('DELETE FROM dinamica_notas WHERE candidato_id=$1 AND avaliador_email=$2', [candidato_id, avaliador_email]);
+}
+
 // Sem filtros: todos os candidatos, ranqueados pela média geral — visão da
 // reunião final de comitê, com todas as bancas juntas. Com `turno`: só os
 // candidatos daquela banca — visão do encontro logo após cada dinâmica.
@@ -415,6 +429,6 @@ async function findArquivo(id) {
 module.exports = {
   findCandidatos, insertCandidato, updateCandidato, deleteCandidato,
   liberarEmLote, statusEmLote, encontrarPossiveisDuplicatas, importarPlanilha,
-  findLiberados, candidatoEstaLiberado, upsertNota, resultados,
+  findLiberados, candidatoEstaLiberado, upsertNota, atualizarNotaAdmin, deleteNota, resultados,
   insertArquivo, findArquivo,
 };

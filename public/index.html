@@ -584,6 +584,141 @@
       color: var(--color-spacial-grey);
     }
 
+    /* Big numbers no topo do Ranking — visão rápida pra abrir a reunião com
+       a banca de sócios antes de descer pro ranking em si. */
+    .ranking-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .ranking-stat-card {
+      background: #FFFFFF;
+      border: 1px solid #E0E0E0;
+      border-left: 4px solid var(--color-bright-blue);
+      border-radius: var(--radius-sm);
+      padding: 16px 18px;
+    }
+    .ranking-stat-card--avaliados { border-left-color: #1E7A3D; }
+    .ranking-stat-card--reprovados { border-left-color: #C0392B; }
+    .ranking-stat-card__label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--color-light-grey);
+      margin-bottom: 8px;
+    }
+    .ranking-stat-card__numero {
+      font-family: var(--font-primary);
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--color-bright-blue);
+      line-height: 1;
+    }
+    .ranking-stat-card--avaliados .ranking-stat-card__numero { color: #1E7A3D; }
+    .ranking-stat-card--reprovados .ranking-stat-card__numero { color: #C0392B; }
+    .ranking-stat-card__subtitulo {
+      font-size: 12px;
+      color: var(--color-light-grey);
+      margin-top: 6px;
+    }
+
+    /* Posição em medalha pro top 3 — fica mais fácil de achar o destaque
+       da banca num relance, numa reunião ao vivo com a banca de sócios. */
+    .ranking-posicao {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--color-spacial-grey);
+      background: var(--color-snow-white);
+    }
+    .ranking-posicao--1 { background: #F5D37A; color: #6B4E00; }
+    .ranking-posicao--2 { background: #D9D9D9; color: #4A4A4A; }
+    .ranking-posicao--3 { background: #E3B08C; color: #6B3A10; }
+    .ranking-table .ranking-nome-sub {
+      display: block;
+      font-size: 11px;
+      color: var(--color-light-grey);
+      font-weight: 400;
+      margin-top: 2px;
+    }
+    .ranking-avaliacoes-count {
+      font-size: 11px;
+      color: var(--color-light-grey);
+    }
+
+    /* Lista de notas por avaliador dentro do detalhe expandido — com ações
+       de editar/remover pra corrigir nota lançada errada sem poluir o
+       ranking da banca. */
+    .ranking-avaliacoes-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .ranking-avaliacao-item {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid #ECECEC;
+    }
+    .ranking-avaliacao-item:last-child {
+      border-bottom: none;
+    }
+    .ranking-avaliacao-nome {
+      font-weight: 600;
+      color: var(--color-spacial-grey);
+      min-width: 140px;
+    }
+    .ranking-avaliacao-nota-view {
+      font-weight: 700;
+    }
+    .ranking-avaliacao-nota-input {
+      width: 42px;
+      padding: 3px 5px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid #D0D5DD;
+      font-size: 12px;
+      font-family: var(--font-body);
+      text-align: center;
+    }
+    .ranking-avaliacao-comentario,
+    .ranking-avaliacao-areas {
+      font-size: 12px;
+      color: var(--color-light-grey);
+      width: 100%;
+    }
+    .ranking-avaliacao-acoes {
+      display: flex;
+      gap: 2px;
+      margin-left: auto;
+    }
+    .ranking-avaliacao-acoes button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--color-light-grey);
+      display: flex;
+      align-items: center;
+      padding: 2px;
+    }
+    .ranking-avaliacao-acoes button:hover {
+      color: var(--color-bright-blue);
+    }
+    .ranking-avaliacao-acoes .ranking-avaliacao-remover:hover {
+      color: #C0392B;
+    }
+    .ranking-avaliacao-acoes .material-icons-outlined {
+      font-size: 16px;
+    }
+
     .cand-lista-toggle-btn {
       background: rgba(255,255,255,0.12);
       border: none;
@@ -1866,19 +2001,16 @@
                 </button>
               </div>
             </div>
+            <div class="ranking-stats" id="ranking-stats"></div>
             <table class="ranking-table">
               <caption class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">Ranking de candidatos, ordenado pela média das notas dos gestores</caption>
               <thead>
                 <tr>
                   <th>#</th>
                   <th class="sortable" onclick="sortRanking('nome')">Candidato <span class="sort-icon" id="ranking-sort-icon-nome">↕</span></th>
-                  <th class="sortable" onclick="sortRanking('genero')">Gênero <span class="sort-icon" id="ranking-sort-icon-genero">↕</span></th>
-                  <th class="sortable" onclick="sortRanking('curso')">Curso <span class="sort-icon" id="ranking-sort-icon-curso">↕</span></th>
-                  <th class="sortable" onclick="sortRanking('faculdade')">Faculdade <span class="sort-icon" id="ranking-sort-icon-faculdade">↕</span></th>
                   <th class="sortable" onclick="sortRanking('turno')">Banca <span class="sort-icon" id="ranking-sort-icon-turno">↕</span></th>
                   <th class="sortable" onclick="sortRanking('area')">Área <span class="sort-icon" id="ranking-sort-icon-area">↕</span></th>
                   <th class="sortable active" onclick="sortRanking('media')">Nota gestores <span class="sort-icon" id="ranking-sort-icon-media">↓</span></th>
-                  <th>Avaliado por</th>
                   <th class="sortable" onclick="sortRanking('nota_comite')">Nota comitê <span class="sort-icon" id="ranking-sort-icon-nota_comite">↕</span></th>
                   <th style="width:32px;"></th>
                 </tr>
@@ -3325,7 +3457,132 @@
       }
     });
 
+    // Big numbers acima do ranking — sempre sobre o mesmo recorte dos
+    // filtros ativos (ex.: filtrando por uma banca, mostra os números só
+    // daquela banca), incluindo quem ainda não tem nota nenhuma.
+    function renderRankingStats() {
+      const container = document.getElementById('ranking-stats');
+      if (!container) return;
+      const filtrados = resultadosAdminCache.filter(c => candidatoPassaFiltrosRanking(c));
+      const convidados = filtrados.length;
+      const avaliados = filtrados.filter(c => c.qtd_avaliacoes > 0).length;
+      const reprovados = filtrados.filter(c => c.status === 'Reprovado').length;
+      container.innerHTML = `
+        <div class="ranking-stat-card">
+          <div class="ranking-stat-card__label">Convidados para a banca</div>
+          <div class="ranking-stat-card__numero">${convidados}</div>
+          <div class="ranking-stat-card__subtitulo">Candidatos no filtro atual</div>
+        </div>
+        <div class="ranking-stat-card ranking-stat-card--avaliados">
+          <div class="ranking-stat-card__label">Avaliados</div>
+          <div class="ranking-stat-card__numero">${avaliados}</div>
+          <div class="ranking-stat-card__subtitulo">Já têm nota dos gestores</div>
+        </div>
+        <div class="ranking-stat-card ranking-stat-card--reprovados">
+          <div class="ranking-stat-card__label">Reprovados</div>
+          <div class="ranking-stat-card__numero">${reprovados}</div>
+          <div class="ranking-stat-card__subtitulo">Status marcado como reprovado</div>
+        </div>
+      `;
+    }
+
+    // Lista de notas por avaliador dentro do detalhe expandido de um
+    // candidato, com editar/remover por nota — pra corrigir um lançamento
+    // errado (ex.: clique errado num teste) sem poluir o ranking da banca.
+    function renderAvaliacoesDetalheRanking(c) {
+      const avaliacoes = c.avaliacoes || [];
+      if (!avaliacoes.length) return '<div class="ranking-avaliacoes-vazio">Nenhuma nota ainda.</div>';
+      return '<div class="ranking-avaliacoes-lista">' + avaliacoes.map((a) => {
+        const email = a.email || '';
+        const nome = a.avaliador || a.email || '?';
+        return `
+        <div class="ranking-avaliacao-item" data-cand-id="${c.id}" data-email="${escHtml(email)}" data-nome="${escHtml(nome)}" data-nota="${a.nota}">
+          <span class="ranking-avaliacao-nome">${escHtml(nome)}</span>
+          <span class="ranking-avaliacao-nota-view" style="color:${corMedia(a.nota)};">${a.nota}</span>
+          <input type="number" class="ranking-avaliacao-nota-input" min="1" max="5" step="1" value="${a.nota}" style="display:none;">
+          ${(a.areas_interesse && a.areas_interesse.length) ? `<span class="ranking-avaliacao-areas">interesse: ${escHtml(a.areas_interesse.join(' / '))}</span>` : ''}
+          ${a.comentario ? `<span class="ranking-avaliacao-comentario">${escHtml(a.comentario)}</span>` : ''}
+          <span class="ranking-avaliacao-acoes">
+            <button type="button" class="ranking-avaliacao-editar" title="Editar nota" onclick="iniciarEdicaoNotaAvaliador(this)"><span class="material-icons-outlined">edit</span></button>
+            <button type="button" class="ranking-avaliacao-salvar" title="Salvar" style="display:none;" onclick="salvarNotaAvaliadorAdmin(this)"><span class="material-icons-outlined">check</span></button>
+            <button type="button" class="ranking-avaliacao-cancelar" title="Cancelar" style="display:none;" onclick="cancelarEdicaoNotaAvaliador(this)"><span class="material-icons-outlined">close</span></button>
+            <button type="button" class="ranking-avaliacao-remover" title="Remover nota" onclick="removerNotaAvaliadorAdmin(this)"><span class="material-icons-outlined">delete_outline</span></button>
+          </span>
+        </div>`;
+      }).join('') + '</div>';
+    }
+
+    function iniciarEdicaoNotaAvaliador(btn) {
+      const item = btn.closest('.ranking-avaliacao-item');
+      item.querySelector('.ranking-avaliacao-nota-view').style.display = 'none';
+      item.querySelector('.ranking-avaliacao-nota-input').style.display = 'inline-block';
+      item.querySelector('.ranking-avaliacao-editar').style.display = 'none';
+      item.querySelector('.ranking-avaliacao-remover').style.display = 'none';
+      item.querySelector('.ranking-avaliacao-salvar').style.display = 'inline-flex';
+      item.querySelector('.ranking-avaliacao-cancelar').style.display = 'inline-flex';
+      item.querySelector('.ranking-avaliacao-nota-input').focus();
+    }
+
+    function cancelarEdicaoNotaAvaliador(btn) {
+      const item = btn.closest('.ranking-avaliacao-item');
+      item.querySelector('.ranking-avaliacao-nota-input').value = item.dataset.nota;
+      item.querySelector('.ranking-avaliacao-nota-view').style.display = '';
+      item.querySelector('.ranking-avaliacao-nota-input').style.display = 'none';
+      item.querySelector('.ranking-avaliacao-editar').style.display = '';
+      item.querySelector('.ranking-avaliacao-remover').style.display = '';
+      item.querySelector('.ranking-avaliacao-salvar').style.display = 'none';
+      item.querySelector('.ranking-avaliacao-cancelar').style.display = 'none';
+    }
+
+    // Reabre o detalhe do candidato depois de recarregar os resultados —
+    // senão o re-render fecharia tudo de novo a cada edição/remoção.
+    function reabrirDetalheRanking(candidatoId) {
+      const detalhe = document.getElementById('ranking-detalhe-' + candidatoId);
+      if (detalhe) detalhe.style.display = 'table-row';
+      const expandBtn = document.getElementById('ranking-expand-' + candidatoId);
+      if (expandBtn) expandBtn.classList.add('aberto');
+    }
+
+    async function salvarNotaAvaliadorAdmin(btn) {
+      const item = btn.closest('.ranking-avaliacao-item');
+      const candidatoId = item.dataset.candId;
+      const email = item.dataset.email;
+      const nota = Number(item.querySelector('.ranking-avaliacao-nota-input').value);
+      if (!Number.isInteger(nota) || nota < 1 || nota > 5) {
+        showToast('Nota deve ser um número inteiro de 1 a 5.');
+        return;
+      }
+      try {
+        await apiDinamica('/candidatos/' + candidatoId + '/notas/' + encodeURIComponent(email), {
+          method: 'PUT',
+          body: JSON.stringify({ nota }),
+        });
+        showToast('Nota atualizada.');
+        await carregarResultadosAdmin();
+        reabrirDetalheRanking(candidatoId);
+      } catch (e) {
+        showToast('Erro: ' + e.message);
+      }
+    }
+
+    async function removerNotaAvaliadorAdmin(btn) {
+      const item = btn.closest('.ranking-avaliacao-item');
+      const candidatoId = item.dataset.candId;
+      const email = item.dataset.email;
+      const nome = item.dataset.nome || email;
+      if (!confirm(`Remover a nota de "${nome}" para este candidato?`)) return;
+      try {
+        await apiDinamica('/candidatos/' + candidatoId + '/notas/' + encodeURIComponent(email), { method: 'DELETE' });
+        showToast('Nota removida.');
+        await carregarResultadosAdmin();
+        reabrirDetalheRanking(candidatoId);
+      } catch (e) {
+        showToast('Erro: ' + e.message);
+      }
+    }
+
     function renderResultadosTable() {
+      renderRankingStats();
       const body = document.getElementById('resultados-table-body');
       const empty = document.getElementById('resultados-empty-state');
       // resultadosAdminCache já vem do servidor ordenado por média DESC —
@@ -3362,24 +3619,25 @@
         const largura = Math.max(4, Math.min(100, (media / 5) * 100));
         const cor = corMedia(c.media);
         const areas = [...new Set((c.avaliacoes || []).flatMap(a => a.areas_interesse || []))];
+        const posicao = posicaoPorMedia.get(c.id);
+        const classeMedalha = posicao <= 3 ? ` ranking-posicao--${posicao}` : '';
+        const subPartes = [c.curso, c.faculdade, c.genero].filter(Boolean);
         return `
         <tr>
-          <td>${posicaoPorMedia.get(c.id)}º</td>
-          <td class="ranking-nome"><b>${escHtml(c.nome)}</b></td>
-          <td>${escHtml(c.genero || '—')}</td>
-          <td>${escHtml(c.curso || '—')}</td>
-          <td>${escHtml(c.faculdade || '—')}</td>
+          <td><span class="ranking-posicao${classeMedalha}">${posicao}</span></td>
+          <td class="ranking-nome">
+            <b>${escHtml(c.nome)}</b>
+            ${subPartes.length ? `<span class="ranking-nome-sub">${escHtml(subPartes.join(' · '))}</span>` : ''}
+          </td>
           <td>${escHtml(c.turno)}</td>
           <td>${areas.length ? escHtml(areas.join(' / ')) : '—'}</td>
           <td>
             <div class="ranking-bar-cell">
               <span class="ranking-bar"><div style="width:${largura}%; background:${cor};"></div></span>
               <span style="color:${cor}; font-weight:600;">${c.media != null ? c.media : '—'}</span>
+              <span class="ranking-avaliacoes-count">(${c.qtd_avaliacoes})</span>
             </div>
           </td>
-          <td>${(c.avaliacoes || []).length
-            ? (c.avaliacoes || []).map(a => `<div>${escHtml(a.avaliador || a.email || '?')}: <b style="color:${corMedia(a.nota)};">${a.nota}</b></div>`).join('')
-            : '—'}</td>
           <td>
             <div class="ranking-nota-comite-wrap">
               <input type="number" class="ranking-nota-comite" id="nota-comite-input-${c.id}" min="1" max="5" step="1" value="${c.nota_comite != null ? c.nota_comite : ''}"
@@ -3396,9 +3654,8 @@
           </td>
         </tr>
         <tr class="ranking-detalhe-row" id="ranking-detalhe-${c.id}" style="display:none;">
-          <td colspan="11">
-            <div>${c.qtd_avaliacoes} nota(s) dos gestores:</div>
-            ${(c.avaliacoes || []).map(a => `<div><b>${escHtml(a.avaliador || a.email)} (${a.nota})</b>${(a.areas_interesse && a.areas_interesse.length) ? ' · interesse: ' + escHtml(a.areas_interesse.join(' / ')) : ''}${a.comentario ? ': ' + escHtml(a.comentario) : ''}</div>`).join('')}
+          <td colspan="7">
+            ${renderAvaliacoesDetalheRanking(c)}
           </td>
         </tr>`;
       }).join('');
