@@ -534,6 +534,22 @@
       align-items: center;
       gap: 4px;
     }
+    .ranking-area-final {
+      width: 140px;
+    }
+    .ranking-tipo-programa {
+      width: 100%;
+      min-width: 170px;
+      padding: 5px 6px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid #D0D5DD;
+      font-size: 13px;
+      font-family: var(--font-body);
+    }
+    .ranking-tipo-programa:focus {
+      outline: none;
+      border-color: var(--color-bright-blue);
+    }
     .ranking-nota-comite-status {
       font-size: 18px;
       color: #1E7A3D;
@@ -835,15 +851,14 @@
       min-height: calc(100vh - 82px);
     }
 
-    /* Banner cheio (sem recorte transparente) — usa um degradê de máscara
-       pra sumir suavemente no fundo azul da view, em vez de aparecer como
-       um retângulo com borda visível (ver conversa com a Natasha sobre
-       "o fundo tem que ornar com o resto da página"). */
+    /* PNG com fundo já transparente (texto recortado por luminância) —
+       cresce full-bleed na view até um teto, sem precisar de truque de
+       máscara pra sumir no fundo azul. */
     .avaliacao-banner {
       display: block;
       width: 100%;
-      max-width: 1100px;
-      height: 240px;
+      max-width: 1300px;
+      height: 320px;
       object-fit: cover;
       object-position: center center;
       margin: 0 auto 24px;
@@ -2076,6 +2091,22 @@
                       <div class="ranking-filtro-opcoes" id="ranking-filtro-opcoes-area"></div>
                     </div>
                     <div class="ranking-filtro-grupo">
+                      <label>Nota gestores</label>
+                      <div class="ranking-filtro-opcoes" id="ranking-filtro-opcoes-media"></div>
+                    </div>
+                    <div class="ranking-filtro-grupo">
+                      <label>Nota comitê</label>
+                      <div class="ranking-filtro-opcoes" id="ranking-filtro-opcoes-nota_comite"></div>
+                    </div>
+                    <div class="ranking-filtro-grupo">
+                      <label>Área final</label>
+                      <div class="ranking-filtro-opcoes" id="ranking-filtro-opcoes-area_final"></div>
+                    </div>
+                    <div class="ranking-filtro-grupo">
+                      <label>Tipo de programa</label>
+                      <div class="ranking-filtro-opcoes" id="ranking-filtro-opcoes-tipo_programa"></div>
+                    </div>
+                    <div class="ranking-filtro-grupo">
                       <label>Ordenar por nome</label>
                       <div style="display:flex; gap:8px;">
                         <button type="button" class="btn-secondary" style="flex:1; padding:6px;" onclick="ordenarRankingDirecao('nome','asc')">A → Z</button>
@@ -2102,6 +2133,8 @@
                   <th class="sortable" onclick="sortRanking('area')">Área <span class="sort-icon" id="ranking-sort-icon-area">↕</span></th>
                   <th class="sortable active" onclick="sortRanking('media')">Nota gestores <span class="sort-icon" id="ranking-sort-icon-media">↓</span></th>
                   <th class="sortable" onclick="sortRanking('nota_comite')">Nota comitê <span class="sort-icon" id="ranking-sort-icon-nota_comite">↕</span></th>
+                  <th class="sortable" onclick="sortRanking('area_final')">Área final <span class="sort-icon" id="ranking-sort-icon-area_final">↕</span></th>
+                  <th class="sortable" onclick="sortRanking('tipo_programa')">Tipo de programa <span class="sort-icon" id="ranking-sort-icon-tipo_programa">↕</span></th>
                   <th style="width:32px;"></th>
                 </tr>
               </thead>
@@ -2973,7 +3006,10 @@
     // Cada campo de múltipla seleção guarda um array de valores marcados —
     // array vazio = sem filtro nesse campo (mostra todo mundo). "nome" é
     // o único campo livre (busca por substring, não por seleção).
-    let filtrosResultados = { nome: '', turno: [], genero: [], curso: [], faculdade: [], area: [] };
+    let filtrosResultados = {
+      nome: '', turno: [], genero: [], curso: [], faculdade: [], area: [],
+      media: [], nota_comite: [], area_final: [], tipo_programa: [],
+    };
     // Ordenação da tabela de ranking — o padrão (media, desc) é o que
     // garante que o ranking continua atrelado à média das notas dos
     // gestores; clicar numa coluna só muda a ordem de exibição, a posição
@@ -3554,7 +3590,8 @@
         rankingSortOrder = rankingSortOrder === 'asc' ? 'desc' : 'asc';
       } else {
         rankingSortField = field;
-        rankingSortOrder = field === 'media' || field === 'nota_comite' ? 'desc' : 'asc';
+        // Primeiro clique em qualquer coluna começa do maior pro menor.
+        rankingSortOrder = 'desc';
       }
       document.querySelectorAll('.ranking-table .sort-icon').forEach((icon) => { icon.textContent = '↕'; });
       document.querySelectorAll('.ranking-table thead th.sortable').forEach((th) => th.classList.remove('active'));
@@ -3582,6 +3619,10 @@
         const areasCandidato = (c.avaliacoes || []).flatMap((a) => a.areas_interesse || []);
         if (!filtrosResultados.area.some((a) => areasCandidato.includes(a))) return false;
       }
+      if (filtrosResultados.media.length && !filtrosResultados.media.includes(c.media != null ? String(Math.round(c.media)) : null)) return false;
+      if (filtrosResultados.nota_comite.length && !filtrosResultados.nota_comite.includes(c.nota_comite != null ? String(c.nota_comite) : null)) return false;
+      if (filtrosResultados.area_final.length && !filtrosResultados.area_final.includes(c.area_final)) return false;
+      if (filtrosResultados.tipo_programa.length && !filtrosResultados.tipo_programa.includes(c.tipo_programa)) return false;
       return true;
     }
 
@@ -3620,6 +3661,41 @@
       }
     }
 
+    async function salvarAreaFinalAdmin(id, valorStr) {
+      const valor = valorStr.trim();
+      const status = document.getElementById('area-final-status-' + id);
+      try {
+        await apiDinamica('/candidatos/' + id, {
+          method: 'PUT',
+          body: JSON.stringify({ area_final: valor, admin_email: currentUser }),
+        });
+        const c = resultadosAdminCache.find(x => String(x.id) === String(id));
+        if (c) c.area_final = valor || null;
+        if (status) status.style.display = 'inline';
+        showToast('Área final salva.');
+        atualizarFiltrosResultados(resultadosAdminCache);
+      } catch (e) {
+        showToast('Erro: ' + e.message);
+        await carregarResultadosAdmin();
+      }
+    }
+
+    async function salvarTipoProgramaAdmin(id, valor) {
+      try {
+        await apiDinamica('/candidatos/' + id, {
+          method: 'PUT',
+          body: JSON.stringify({ tipo_programa: valor, admin_email: currentUser }),
+        });
+        const c = resultadosAdminCache.find(x => String(x.id) === String(id));
+        if (c) c.tipo_programa = valor || null;
+        showToast('Tipo de programa salvo.');
+        atualizarFiltrosResultados(resultadosAdminCache);
+      } catch (e) {
+        showToast('Erro: ' + e.message);
+        await carregarResultadosAdmin();
+      }
+    }
+
     function atualizarStatAvaliadosAdmin() {
       const avaliados = resultadosAdminCache.filter(c => c.qtd_avaliacoes > 0).length;
       document.getElementById('cand-stat-avaliados').textContent = avaliados;
@@ -3645,6 +3721,14 @@
       faculdade: { containerId: 'ranking-filtro-opcoes-faculdade', valores: (c) => [c.faculdade] },
       turno: { containerId: 'ranking-filtro-opcoes-turno', valores: (c) => [c.turno] },
       area: { containerId: 'ranking-filtro-opcoes-area', valores: (c) => (c.avaliacoes || []).flatMap((a) => a.areas_interesse || []) },
+      // Média/nota do comitê são números contínuos (média) ou de 1 a 5 — o
+      // filtro de múltipla seleção usa o valor arredondado como "faixa"
+      // (ex.: 3.67 cai na opção "4"), mas a ordenação da tabela continua
+      // usando o valor exato (ver valorOrdenacaoRanking).
+      media: { containerId: 'ranking-filtro-opcoes-media', valores: (c) => [c.media != null ? String(Math.round(c.media)) : null] },
+      nota_comite: { containerId: 'ranking-filtro-opcoes-nota_comite', valores: (c) => [c.nota_comite != null ? String(c.nota_comite) : null] },
+      area_final: { containerId: 'ranking-filtro-opcoes-area_final', valores: (c) => [c.area_final] },
+      tipo_programa: { containerId: 'ranking-filtro-opcoes-tipo_programa', valores: (c) => [c.tipo_programa] },
     };
 
     // Opções de cada filtro = valores distintos entre todos os candidatos
@@ -3696,7 +3780,10 @@
     }
 
     function limparFiltrosRanking() {
-      filtrosResultados = { nome: '', turno: [], genero: [], curso: [], faculdade: [], area: [] };
+      filtrosResultados = {
+        nome: '', turno: [], genero: [], curso: [], faculdade: [], area: [],
+        media: [], nota_comite: [], area_final: [], tipo_programa: [],
+      };
       document.getElementById('resultados-filtro-nome').value = '';
       document.querySelectorAll('.ranking-filtro-opcoes input[type="checkbox"]').forEach((cb) => { cb.checked = false; });
       atualizarBadgeFiltrosRanking();
@@ -3707,7 +3794,9 @@
       const ativos = (filtrosResultados.nome ? 1 : 0)
         + filtrosResultados.turno.length + filtrosResultados.genero.length
         + filtrosResultados.curso.length + filtrosResultados.faculdade.length
-        + filtrosResultados.area.length;
+        + filtrosResultados.area.length + filtrosResultados.media.length
+        + filtrosResultados.nota_comite.length + filtrosResultados.area_final.length
+        + filtrosResultados.tipo_programa.length;
       const badge = document.getElementById('ranking-filtros-badge');
       badge.textContent = ativos;
       badge.style.display = ativos ? 'inline-flex' : 'none';
@@ -3924,13 +4013,29 @@
             </div>
           </td>
           <td>
+            <div class="ranking-nota-comite-wrap">
+              <input type="text" class="ranking-nota-comite ranking-area-final" id="area-final-input-${c.id}" value="${escHtml(c.area_final || '')}" placeholder="—"
+                oninput="document.getElementById('area-final-status-${c.id}').style.display='none'"
+                onkeydown="if(event.key==='Enter'){ event.preventDefault(); salvarAreaFinalAdmin('${c.id}', this.value); }">
+              <button type="button" class="ranking-nota-comite-salvar" onclick="salvarAreaFinalAdmin('${c.id}', document.getElementById('area-final-input-${c.id}').value)">Salvar</button>
+              <span class="material-icons-outlined ranking-nota-comite-status" id="area-final-status-${c.id}" style="display:none;" title="Salvo">check_circle</span>
+            </div>
+          </td>
+          <td>
+            <select class="ranking-tipo-programa" id="tipo-programa-input-${c.id}" onchange="salvarTipoProgramaAdmin('${c.id}', this.value)">
+              <option value="" ${!c.tipo_programa ? 'selected' : ''}>—</option>
+              <option value="Programa de Estágio" ${c.tipo_programa === 'Programa de Estágio' ? 'selected' : ''}>Programa de Estágio</option>
+              <option value="Programa de Estágio de Férias" ${c.tipo_programa === 'Programa de Estágio de Férias' ? 'selected' : ''}>Programa de Estágio de Férias</option>
+            </select>
+          </td>
+          <td>
             <button type="button" class="ranking-expand-btn" id="ranking-expand-${c.id}" onclick="toggleDetalheRanking('${c.id}')" aria-label="Ver notas e comentários dos avaliadores">
               <span class="material-icons-outlined" aria-hidden="true">expand_more</span>
             </button>
           </td>
         </tr>
         <tr class="ranking-detalhe-row" id="ranking-detalhe-${c.id}" style="display:none;">
-          <td colspan="7">
+          <td colspan="9">
             ${renderAvaliacoesDetalheRanking(c)}
           </td>
         </tr>`;
@@ -3940,7 +4045,7 @@
     function exportarResultadosAdmin() {
       const params = new URLSearchParams();
       if (filtrosResultados.nome) params.set('nome', filtrosResultados.nome);
-      for (const campo of ['turno', 'genero', 'curso', 'faculdade', 'area']) {
+      for (const campo of ['turno', 'genero', 'curso', 'faculdade', 'area', 'media', 'nota_comite', 'area_final', 'tipo_programa']) {
         if (filtrosResultados[campo].length) params.set(campo, filtrosResultados[campo].join('|'));
       }
       const query = params.toString() ? `?${params.toString()}` : '';

@@ -59,6 +59,13 @@ query(`
   -- de ranking.
   ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS nota_comite INTEGER;
 `)).then(() => query(`
+  -- Área final (definida pelo comitê, pode diferir da área de interesse que
+  -- o próprio candidato indicou na avaliação) e tipo de programa (regular
+  -- vs. férias) — editáveis direto na tela de ranking.
+  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS area_final TEXT;
+`)).then(() => query(`
+  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS tipo_programa TEXT;
+`)).then(() => query(`
   CREATE TABLE IF NOT EXISTS dinamica_notas (
     id BIGSERIAL PRIMARY KEY,
     candidato_id BIGINT NOT NULL REFERENCES dinamica_candidatos(id) ON DELETE CASCADE,
@@ -122,10 +129,11 @@ query(`
 const CAND_COLS = [
   'nome', 'curso', 'faculdade', 'formacao', 'telefone', 'email', 'linkedin_url',
   'turno', 'cv_arquivo_id', 'foto_arquivo_id', 'liberado', 'genero', 'status',
-  'nota_comite',
+  'nota_comite', 'area_final', 'tipo_programa',
 ];
 
 const STATUS_VALIDOS = ['Pendente', 'Aprovado', 'Reprovado', 'Ausente'];
+const TIPO_PROGRAMA_VALIDOS = ['Programa de Estágio', 'Programa de Estágio de Férias'];
 const CAND_NULLABLE_EMPTY = ['cv_arquivo_id', 'foto_arquivo_id', 'nota_comite'];
 
 // Só aceita LinkedIn com esquema http(s) — o campo é renderizado como link
@@ -154,6 +162,9 @@ function cleanCandidato(body) {
   }
   if (out.status && !STATUS_VALIDOS.includes(out.status)) {
     throw new Error('Status inválido.');
+  }
+  if (out.tipo_programa && !TIPO_PROGRAMA_VALIDOS.includes(out.tipo_programa)) {
+    throw new Error('Tipo de programa inválido.');
   }
   if (out.nota_comite != null) {
     const n = Number(out.nota_comite);
@@ -415,10 +426,10 @@ async function deleteNota(candidato_id, avaliador_email) {
 // Campos de múltipla seleção chegam como string separada por "|" (um ou
 // mais valores); `nome` é busca livre (substring, maiúsc./minúsc.).
 async function resultados(filtros = {}) {
-  const { turno, genero, curso, faculdade, nome, area } = filtros;
+  const { turno, genero, curso, faculdade, nome, area, area_final, tipo_programa, nota_comite, media } = filtros;
   const condicoes = [];
   const params = [];
-  for (const [coluna, valor] of [['c.turno', turno], ['c.genero', genero], ['c.curso', curso], ['c.faculdade', faculdade]]) {
+  for (const [coluna, valor] of [['c.turno', turno], ['c.genero', genero], ['c.curso', curso], ['c.faculdade', faculdade], ['c.area_final', area_final], ['c.tipo_programa', tipo_programa]]) {
     if (!valor) continue;
     const valores = String(valor).split('|').filter(Boolean);
     if (!valores.length) continue;
@@ -439,7 +450,27 @@ async function resultados(filtros = {}) {
       )`);
     }
   }
+  if (nota_comite) {
+    const valores = String(nota_comite).split('|').filter(Boolean).map(Number).filter(Number.isInteger);
+    if (valores.length) {
+      params.push(valores);
+      condicoes.push(`c.nota_comite = ANY($${params.length}::int[])`);
+    }
+  }
   const where = condicoes.length ? `WHERE ${condicoes.join(' AND ')}` : '';
+
+  // "média" é calculada na agregação (AVG das notas), então o filtro por
+  // faixa arredondada (ex.: "4" cobre 3.5 a 4.49) só pode entrar como
+  // HAVING, depois do GROUP BY.
+  let having = '';
+  if (media) {
+    const valores = String(media).split('|').filter(Boolean).map(Number).filter((n) => !Number.isNaN(n));
+    if (valores.length) {
+      params.push(valores);
+      having = `HAVING ROUND(AVG(n.nota)::numeric, 0) = ANY($${params.length}::numeric[])`;
+    }
+  }
+
   const result = await query(`
     SELECT
       c.*,
@@ -456,6 +487,7 @@ async function resultados(filtros = {}) {
     LEFT JOIN dinamica_notas n ON n.candidato_id = c.id
     ${where}
     GROUP BY c.id
+    ${having}
     ORDER BY media DESC NULLS LAST, c.nome
   `, params);
   return result.rows;
