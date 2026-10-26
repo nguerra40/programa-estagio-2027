@@ -835,12 +835,17 @@
       min-height: calc(100vh - 82px);
     }
 
+    /* Banner cheio (sem recorte transparente) — usa um degradê de máscara
+       pra sumir suavemente no fundo azul da view, em vez de aparecer como
+       um retângulo com borda visível (ver conversa com a Natasha sobre
+       "o fundo tem que ornar com o resto da página"). */
     .avaliacao-banner {
       width: 100%;
-      max-width: 520px;
       height: auto;
       display: block;
-      margin: 0 0 24px;
+      -webkit-mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
+      mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
+      margin-bottom: -56px;
     }
 
     /* Um gestor pode estar associado a mais de uma banca (dia/horário) —
@@ -1584,8 +1589,8 @@
     }
 
     @media (max-width: 520px) {
-      .login-card {
-        padding: 36px 24px;
+      .login-card__body {
+        padding: 28px 24px;
       }
       .login-card__title {
         font-size: 26px;
@@ -1598,8 +1603,9 @@
   <!-- Login Modal -->
   <div class="login-overlay" id="login-overlay">
     <main class="login-card">
+      <img class="login-card__banner" src="logo_programadeestagio.png" alt="Programa Estágio de Férias 2027" />
+      <div class="login-card__body">
       <img class="login-card__logo" src="logo_galapagos_login.png" alt="Galapagos Capital" />
-      <h1 class="login-card__title">Programa de Estágio 2027</h1>
       <div class="login-card__subtitle">Avaliação de Candidatos</div>
       <a href="/auth/login" class="login-card__btn" id="login-sso-btn" style="display:none; margin-top:20px; text-decoration:none;">
         <svg width="20" height="20" viewBox="0 0 23 23" aria-hidden="true" style="flex-shrink:0">
@@ -1637,6 +1643,7 @@
       </div>
       <div class="login-card__help">Problemas para acessar? Fale com o time de People.</div>
       <div class="login-card__footer">Galapagos Capital &copy; 2027</div>
+      </div>
     </main>
   </div>
 
@@ -1843,8 +1850,8 @@
 
   <!-- Avaliação View (qualquer colaborador logado) -->
   <section class="view-avaliacao" id="view-avaliacao">
-    <div class="container">
-      <img src="avaliacao-banner.png" alt="Programa de Estágio 2027" class="avaliacao-banner">
+    <img src="logo_programadeestagio.png" alt="Programa Estágio de Férias 2027" class="avaliacao-banner">
+    <div class="container" style="position:relative;">
       <h2 class="section-title" style="margin-bottom:8px;">Avaliação de Candidatos</h2>
       <p id="avaliacao-progresso" style="font-size:14px; color:rgba(255,255,255,0.75); margin-bottom:16px;"></p>
       <div id="avaliacao-lista" style="display:flex; flex-direction:column; gap:28px;"></div>
