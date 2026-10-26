@@ -852,16 +852,13 @@
     }
 
     /* PNG com fundo já transparente (texto recortado por luminância) —
-       cresce full-bleed na view até um teto, sem precisar de truque de
-       máscara pra sumir no fundo azul. */
+       mesma largura do conteúdo abaixo (.container), pra alinhar com o
+       título/lista em vez de esticar além da coluna do formulário. */
     .avaliacao-banner {
       display: block;
       width: 100%;
-      max-width: 1300px;
-      height: 320px;
-      object-fit: cover;
-      object-position: center center;
-      margin: 0 auto 24px;
+      height: auto;
+      margin: 0 0 24px;
     }
 
     /* Um gestor pode estar associado a mais de uma banca (dia/horário) —
@@ -1864,8 +1861,8 @@
 
   <!-- Avaliação View (qualquer colaborador logado) -->
   <section class="view-avaliacao" id="view-avaliacao">
-    <img src="avaliacao-banner.png" alt="Programa Estágio de Férias 2027" class="avaliacao-banner">
     <div class="container">
+      <img src="avaliacao-banner.png" alt="Programa Estágio de Férias 2027" class="avaliacao-banner">
       <h2 class="section-title" style="margin-bottom:8px;">Avaliação de Candidatos</h2>
       <p id="avaliacao-progresso" style="font-size:14px; color:rgba(255,255,255,0.75); margin-bottom:16px;"></p>
       <div id="avaliacao-lista" style="display:flex; flex-direction:column; gap:28px;"></div>
