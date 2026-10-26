@@ -840,15 +840,11 @@
        um retângulo com borda visível (ver conversa com a Natasha sobre
        "o fundo tem que ornar com o resto da página"). */
     .avaliacao-banner {
-      display: block;
       width: 100%;
-      max-width: 900px;
-      height: 160px;
-      margin: 0 auto -40px;
-      object-fit: cover;
-      object-position: center center;
-      -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
-      mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+      max-width: 520px;
+      height: auto;
+      display: block;
+      margin: 0 0 24px;
     }
 
     /* Um gestor pode estar associado a mais de uma banca (dia/horário) —
@@ -1853,8 +1849,8 @@
 
   <!-- Avaliação View (qualquer colaborador logado) -->
   <section class="view-avaliacao" id="view-avaliacao">
-    <img src="logo_programadeestagio.png" alt="Programa Estágio de Férias 2027" class="avaliacao-banner">
-    <div class="container" style="position:relative;">
+    <div class="container">
+      <img src="avaliacao-banner.png" alt="Programa Estágio de Férias 2027" class="avaliacao-banner">
       <h2 class="section-title" style="margin-bottom:8px;">Avaliação de Candidatos</h2>
       <p id="avaliacao-progresso" style="font-size:14px; color:rgba(255,255,255,0.75); margin-bottom:16px;"></p>
       <div id="avaliacao-lista" style="display:flex; flex-direction:column; gap:28px;"></div>
