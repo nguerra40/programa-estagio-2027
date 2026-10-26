@@ -840,12 +840,15 @@
        um retângulo com borda visível (ver conversa com a Natasha sobre
        "o fundo tem que ornar com o resto da página"). */
     .avaliacao-banner {
-      width: 100%;
-      height: auto;
       display: block;
-      -webkit-mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
-      mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
-      margin-bottom: -56px;
+      width: 100%;
+      max-width: 900px;
+      height: 160px;
+      margin: 0 auto -40px;
+      object-fit: cover;
+      object-position: center center;
+      -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+      mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
     }
 
     /* Um gestor pode estar associado a mais de uma banca (dia/horário) —
