@@ -270,7 +270,7 @@ router.delete('/candidatos/:id', isAuthenticated, isAdmin, async (req, res) => {
 // ============================================================
 function filtrosResultados(query) {
   const filtros = {};
-  for (const campo of ['turno', 'genero', 'curso', 'faculdade', 'nome', 'area', 'area_final', 'tipo_programa', 'nota_comite', 'media']) {
+  for (const campo of ['turno', 'genero', 'curso', 'faculdade', 'nome', 'area', 'area_final', 'tipo_programa', 'nota_comite', 'media', 'indicado_por']) {
     const valor = (query[campo] || '').trim();
     if (valor) filtros[campo] = valor;
   }
@@ -293,14 +293,14 @@ router.get('/resultados/export', isAuthenticated, isAdmin, async (req, res) => {
 
     const BOM = '﻿';
     const separator = ';';
-    const headers = ['Nome', 'Status', 'Gênero', 'Curso', 'Faculdade', 'Banca', 'Área', 'Média', 'Nota Comitê', 'Área Final', 'Tipo de Programa', 'Qtd. Avaliações', 'Avaliações'];
+    const headers = ['Nome', 'Indicação', 'Status', 'Gênero', 'Curso', 'Faculdade', 'Banca', 'Área', 'Média', 'Nota Comitê', 'Área Final', 'Tipo de Programa', 'Qtd. Avaliações', 'Avaliações'];
 
     const rows = dados.map((c) => {
       const areas = [...new Set((c.avaliacoes || []).flatMap((a) => a.areas_interesse || []))].join(' / ');
       const avaliacoes = (c.avaliacoes || [])
         .map((a) => `${a.avaliador || a.email || '?'} (${a.nota}${(a.areas_interesse && a.areas_interesse.length) ? ', interesse: ' + a.areas_interesse.join(' / ') : ''}): ${a.comentario || ''}`)
         .join(' | ');
-      return [c.nome, c.status || '', c.genero || '', c.curso || '', c.faculdade || '', c.turno, areas, c.media != null ? c.media : '', c.nota_comite != null ? c.nota_comite : '', c.area_final || '', c.tipo_programa || '', c.qtd_avaliacoes, avaliacoes]
+      return [c.nome, c.indicado_por || '', c.status || '', c.genero || '', c.curso || '', c.faculdade || '', c.turno, areas, c.media != null ? c.media : '', c.nota_comite != null ? c.nota_comite : '', c.area_final || '', c.tipo_programa || '', c.qtd_avaliacoes, avaliacoes]
         .map((val) => `"${String(val).replace(/"/g, '""')}"`)
         .join(separator);
     });

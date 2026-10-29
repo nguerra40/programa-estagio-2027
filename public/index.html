@@ -599,6 +599,21 @@
     .ranking-detalhe-row b {
       color: var(--color-spacial-grey);
     }
+    /* Reaproveita o layout de .cand-card-meta/.cand-card__links (tela de
+       Avaliação, fundo azul), mas com cor escura — aqui o fundo é claro. */
+    .ranking-candidato-info {
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--color-border, #E5E7EB);
+    }
+    .ranking-candidato-info .cand-card-meta {
+      color: var(--color-spacial-grey);
+      font-size: 13px;
+    }
+    .ranking-candidato-info .cand-card__links a {
+      color: var(--color-bright-blue);
+      opacity: 1;
+    }
 
     /* Big numbers no topo do Ranking — visão rápida pra abrir a reunião com
        a banca de sócios antes de descer pro ranking em si. */
@@ -2104,6 +2119,10 @@
                       <div class="ranking-filtro-opcoes" id="ranking-filtro-opcoes-tipo_programa"></div>
                     </div>
                     <div class="ranking-filtro-grupo">
+                      <label>Indicação</label>
+                      <div class="ranking-filtro-opcoes" id="ranking-filtro-opcoes-indicado_por"></div>
+                    </div>
+                    <div class="ranking-filtro-grupo">
                       <label>Ordenar por nome</label>
                       <div style="display:flex; gap:8px;">
                         <button type="button" class="btn-secondary" style="flex:1; padding:6px;" onclick="ordenarRankingDirecao('nome','asc')">A → Z</button>
@@ -2126,6 +2145,7 @@
                 <tr>
                   <th>#</th>
                   <th class="sortable" onclick="sortRanking('nome')">Candidato <span class="sort-icon" id="ranking-sort-icon-nome">↕</span></th>
+                  <th class="sortable" onclick="sortRanking('indicado_por')">Indicação <span class="sort-icon" id="ranking-sort-icon-indicado_por">↕</span></th>
                   <th class="sortable" onclick="sortRanking('turno')">Banca <span class="sort-icon" id="ranking-sort-icon-turno">↕</span></th>
                   <th class="sortable" onclick="sortRanking('area')">Área <span class="sort-icon" id="ranking-sort-icon-area">↕</span></th>
                   <th class="sortable active" onclick="sortRanking('media')">Nota gestores <span class="sort-icon" id="ranking-sort-icon-media">↓</span></th>
@@ -3005,7 +3025,7 @@
     // o único campo livre (busca por substring, não por seleção).
     let filtrosResultados = {
       nome: '', turno: [], genero: [], curso: [], faculdade: [], area: [],
-      media: [], nota_comite: [], area_final: [], tipo_programa: [],
+      media: [], nota_comite: [], area_final: [], tipo_programa: [], indicado_por: [],
     };
     // Ordenação da tabela de ranking — o padrão (media, desc) é o que
     // garante que o ranking continua atrelado à média das notas dos
@@ -3620,6 +3640,7 @@
       if (filtrosResultados.nota_comite.length && !filtrosResultados.nota_comite.includes(c.nota_comite != null ? String(c.nota_comite) : null)) return false;
       if (filtrosResultados.area_final.length && !filtrosResultados.area_final.includes(c.area_final)) return false;
       if (filtrosResultados.tipo_programa.length && !filtrosResultados.tipo_programa.includes(c.tipo_programa)) return false;
+      if (filtrosResultados.indicado_por.length && !filtrosResultados.indicado_por.includes(c.indicado_por)) return false;
       return true;
     }
 
@@ -3677,6 +3698,45 @@
       }
     }
 
+    async function salvarIndicacaoAdmin(id, valorStr) {
+      const valor = valorStr.trim();
+      const status = document.getElementById('indicacao-status-' + id);
+      try {
+        await apiDinamica('/candidatos/' + id, {
+          method: 'PUT',
+          body: JSON.stringify({ indicado_por: valor, admin_email: currentUser }),
+        });
+        const c = resultadosAdminCache.find(x => String(x.id) === String(id));
+        if (c) c.indicado_por = valor || null;
+        if (status) status.style.display = 'inline';
+        showToast('Indicação salva.');
+        atualizarFiltrosResultados(resultadosAdminCache);
+      } catch (e) {
+        showToast('Erro: ' + e.message);
+        await carregarResultadosAdmin();
+      }
+    }
+
+    // Mesmas informações mostradas pro avaliador na tela de Avaliação
+    // (ver candCardMeta) — pra não precisar ir até a aba Candidatos só pra
+    // ver curso/faculdade/formação/LinkedIn/currículo de quem já está no
+    // ranking.
+    function rankingCandidatoInfoHtml(c) {
+      const linhas = [];
+      if (c.faculdade) linhas.push(`<div><b>Faculdade:</b> ${escHtml(c.faculdade)}</div>`);
+      if (c.curso) linhas.push(`<div><b>Curso:</b> ${escHtml(c.curso)}</div>`);
+      if (c.formacao) linhas.push(`<div><b>Data de formação:</b> ${escHtml(c.formacao)}</div>`);
+      const links = [];
+      if (c.cv_arquivo_id) links.push(`<a href="/api/arquivos/${c.cv_arquivo_id}" target="_blank"><span class="material-icons-outlined" style="font-size:16px;">description</span> Ver currículo</a>`);
+      if (isHttpUrl(c.linkedin_url)) links.push(`<a href="${escHtml(c.linkedin_url)}" target="_blank" rel="noopener"><span class="material-icons-outlined" style="font-size:16px;">person</span> Ver LinkedIn</a>`);
+      if (!linhas.length && !links.length) return '';
+      return `
+        <div class="ranking-candidato-info">
+          ${linhas.length ? `<div class="cand-card-meta">${linhas.join('')}</div>` : ''}
+          ${links.length ? `<div class="cand-card__links">${links.join('')}</div>` : ''}
+        </div>`;
+    }
+
     async function salvarTipoProgramaAdmin(id, valor) {
       try {
         await apiDinamica('/candidatos/' + id, {
@@ -3726,6 +3786,7 @@
       nota_comite: { containerId: 'ranking-filtro-opcoes-nota_comite', valores: (c) => [c.nota_comite != null ? String(c.nota_comite) : null] },
       area_final: { containerId: 'ranking-filtro-opcoes-area_final', valores: (c) => [c.area_final] },
       tipo_programa: { containerId: 'ranking-filtro-opcoes-tipo_programa', valores: (c) => [c.tipo_programa] },
+      indicado_por: { containerId: 'ranking-filtro-opcoes-indicado_por', valores: (c) => [c.indicado_por] },
     };
 
     // Opções de cada filtro = valores distintos entre todos os candidatos
@@ -3779,7 +3840,7 @@
     function limparFiltrosRanking() {
       filtrosResultados = {
         nome: '', turno: [], genero: [], curso: [], faculdade: [], area: [],
-        media: [], nota_comite: [], area_final: [], tipo_programa: [],
+        media: [], nota_comite: [], area_final: [], tipo_programa: [], indicado_por: [],
       };
       document.getElementById('resultados-filtro-nome').value = '';
       document.querySelectorAll('.ranking-filtro-opcoes input[type="checkbox"]').forEach((cb) => { cb.checked = false; });
@@ -3793,7 +3854,7 @@
         + filtrosResultados.curso.length + filtrosResultados.faculdade.length
         + filtrosResultados.area.length + filtrosResultados.media.length
         + filtrosResultados.nota_comite.length + filtrosResultados.area_final.length
-        + filtrosResultados.tipo_programa.length;
+        + filtrosResultados.tipo_programa.length + filtrosResultados.indicado_por.length;
       const badge = document.getElementById('ranking-filtros-badge');
       badge.textContent = ativos;
       badge.style.display = ativos ? 'inline-flex' : 'none';
@@ -3991,6 +4052,15 @@
             <b>${escHtml(c.nome)}</b>
             ${subPartes.length ? `<span class="ranking-nome-sub">${escHtml(subPartes.join(' · '))}</span>` : ''}
           </td>
+          <td>
+            <div class="ranking-nota-comite-wrap">
+              <input type="text" class="ranking-nota-comite ranking-area-final" id="indicacao-input-${c.id}" value="${escHtml(c.indicado_por || '')}" placeholder="—"
+                oninput="document.getElementById('indicacao-status-${c.id}').style.display='none'"
+                onkeydown="if(event.key==='Enter'){ event.preventDefault(); salvarIndicacaoAdmin('${c.id}', this.value); }">
+              <button type="button" class="ranking-nota-comite-salvar" onclick="salvarIndicacaoAdmin('${c.id}', document.getElementById('indicacao-input-${c.id}').value)">Salvar</button>
+              <span class="material-icons-outlined ranking-nota-comite-status" id="indicacao-status-${c.id}" style="display:none;" title="Salvo">check_circle</span>
+            </div>
+          </td>
           <td>${escHtml(c.turno)}</td>
           <td>${areas.length ? escHtml(areas.join(' / ')) : '—'}</td>
           <td>
@@ -4032,7 +4102,8 @@
           </td>
         </tr>
         <tr class="ranking-detalhe-row" id="ranking-detalhe-${c.id}" style="display:none;">
-          <td colspan="9">
+          <td colspan="10">
+            ${rankingCandidatoInfoHtml(c)}
             ${renderAvaliacoesDetalheRanking(c)}
           </td>
         </tr>`;
@@ -4042,7 +4113,7 @@
     function exportarResultadosAdmin() {
       const params = new URLSearchParams();
       if (filtrosResultados.nome) params.set('nome', filtrosResultados.nome);
-      for (const campo of ['turno', 'genero', 'curso', 'faculdade', 'area', 'media', 'nota_comite', 'area_final', 'tipo_programa']) {
+      for (const campo of ['turno', 'genero', 'curso', 'faculdade', 'area', 'media', 'nota_comite', 'area_final', 'tipo_programa', 'indicado_por']) {
         if (filtrosResultados[campo].length) params.set(campo, filtrosResultados[campo].join('|'));
       }
       const query = params.toString() ? `?${params.toString()}` : '';

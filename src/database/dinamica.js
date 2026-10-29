@@ -8,7 +8,14 @@ const { query } = require('./connection');
 // gestor avaliador agora é pelo login normal do site (avaliador_email),
 // não por link pessoal. Se a tabela dinamica_gestores já existir de uma
 // versão anterior, fica órfã e inofensiva (não é apagada).
-query(`
+// Lista de passos (em vez de uma cadeia só de .then()) — um erro transiente
+// de conexão num passo (já aconteceu contra o Supabase e contra o Postgres
+// embarcado de teste local — ver conversa com a Natasha sobre as colunas
+// area_final/tipo_programa/indicado_por sumindo) não pode travar TODOS os
+// passos seguintes pra sempre; cada ALTER TABLE ADD COLUMN IF NOT EXISTS é
+// idempotente, então rodar de novo no próximo cold start não tem custo.
+const MIGRACOES_DINAMICA = [
+  `
   CREATE TABLE IF NOT EXISTS arquivos (
     id BIGSERIAL PRIMARY KEY,
     tipo VARCHAR(20),
@@ -17,7 +24,8 @@ query(`
     dados TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
   );
-`).then(() => query(`
+  `,
+  `
   CREATE TABLE IF NOT EXISTS dinamica_candidatos (
     id BIGSERIAL PRIMARY KEY,
     nome TEXT NOT NULL,
@@ -35,37 +43,29 @@ query(`
     liberado BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
   );
-`)).then(() => query(`
-  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS foto_arquivo_id BIGINT REFERENCES arquivos(id) ON DELETE SET NULL;
-`)).then(() => query(`
-  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS liberado BOOLEAN NOT NULL DEFAULT false;
-`)).then(() => query(`
-  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS criado_por TEXT;
-`)).then(() => query(`
-  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS atualizado_por TEXT;
-`)).then(() => query(`
-  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS atualizado_em TIMESTAMP WITH TIME ZONE;
-`)).then(() => query(`
-  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS liberado_por TEXT;
-`)).then(() => query(`
-  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS liberado_em TIMESTAMP WITH TIME ZONE;
-`)).then(() => query(`
-  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS genero TEXT;
-`)).then(() => query(`
-  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'Pendente';
-`)).then(() => query(`
-  -- Nota do comitê (reunião final, após todas as bancas) — separada da
-  -- média dos gestores, não entra nesse cálculo. Editável direto na tela
-  -- de ranking.
-  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS nota_comite INTEGER;
-`)).then(() => query(`
-  -- Área final (definida pelo comitê, pode diferir da área de interesse que
-  -- o próprio candidato indicou na avaliação) e tipo de programa (regular
-  -- vs. férias) — editáveis direto na tela de ranking.
-  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS area_final TEXT;
-`)).then(() => query(`
-  ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS tipo_programa TEXT;
-`)).then(() => query(`
+  `,
+  `ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS foto_arquivo_id BIGINT REFERENCES arquivos(id) ON DELETE SET NULL;`,
+  `ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS liberado BOOLEAN NOT NULL DEFAULT false;`,
+  `ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS criado_por TEXT;`,
+  `ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS atualizado_por TEXT;`,
+  `ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS atualizado_em TIMESTAMP WITH TIME ZONE;`,
+  `ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS liberado_por TEXT;`,
+  `ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS liberado_em TIMESTAMP WITH TIME ZONE;`,
+  `ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS genero TEXT;`,
+  `ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'Pendente';`,
+  // Nota do comitê (reunião final, após todas as bancas) — separada da
+  // média dos gestores, não entra nesse cálculo. Editável direto na tela
+  // de ranking.
+  `ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS nota_comite INTEGER;`,
+  // Área final (definida pelo comitê, pode diferir da área de interesse que
+  // o próprio candidato indicou na avaliação) e tipo de programa (regular
+  // vs. férias) — editáveis direto na tela de ranking.
+  `ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS area_final TEXT;`,
+  `ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS tipo_programa TEXT;`,
+  // Nome do sócio que indicou o candidato (se houver) — editável direto na
+  // tela de ranking, ao lado do nome do candidato.
+  `ALTER TABLE dinamica_candidatos ADD COLUMN IF NOT EXISTS indicado_por TEXT;`,
+  `
   CREATE TABLE IF NOT EXISTS dinamica_notas (
     id BIGSERIAL PRIMARY KEY,
     candidato_id BIGINT NOT NULL REFERENCES dinamica_candidatos(id) ON DELETE CASCADE,
@@ -77,16 +77,14 @@ query(`
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE (candidato_id, avaliador_email)
   );
-`)).then(() => query(`
-  ALTER TABLE dinamica_notas ADD COLUMN IF NOT EXISTS avaliador_email TEXT;
-`)).then(() => query(`
-  ALTER TABLE dinamica_notas ADD COLUMN IF NOT EXISTS avaliador_nome TEXT;
-`)).then(() => query(`
-  ALTER TABLE dinamica_notas ADD COLUMN IF NOT EXISTS area_interesse TEXT[];
-`)).then(() => query(`
-  -- area_interesse começou como TEXT (um valor só); agora é TEXT[] (vários
-  -- valores). Converte só se ainda estiver no formato antigo — idempotente,
-  -- não faz nada em bancos que já tenham a coluna como array.
+  `,
+  `ALTER TABLE dinamica_notas ADD COLUMN IF NOT EXISTS avaliador_email TEXT;`,
+  `ALTER TABLE dinamica_notas ADD COLUMN IF NOT EXISTS avaliador_nome TEXT;`,
+  `ALTER TABLE dinamica_notas ADD COLUMN IF NOT EXISTS area_interesse TEXT[];`,
+  // area_interesse começou como TEXT (um valor só); agora é TEXT[] (vários
+  // valores). Converte só se ainda estiver no formato antigo — idempotente,
+  // não faz nada em bancos que já tenham a coluna como array.
+  `
   DO $$
   BEGIN
     IF (SELECT data_type FROM information_schema.columns
@@ -95,15 +93,13 @@ query(`
         CASE WHEN area_interesse IS NULL OR area_interesse = '' THEN ARRAY[]::text[] ELSE ARRAY[area_interesse] END;
     END IF;
   END $$;
-`)).then(() => query(`
-  ALTER TABLE dinamica_notas DROP CONSTRAINT IF EXISTS dinamica_notas_candidato_id_gestor_id_key;
-`)).then(() => query(`
-  ALTER TABLE dinamica_notas DROP COLUMN IF EXISTS gestor_id;
-`)).then(() => query(`
-  CREATE UNIQUE INDEX IF NOT EXISTS dinamica_notas_candidato_avaliador_key ON dinamica_notas(candidato_id, avaliador_email);
-`)).then(() => query(`
-  -- Qual gestor avalia qual banca (turno) — sem isso, todo gestor via os
-  -- candidatos liberados de QUALQUER banca, mesmo as que não eram dele.
+  `,
+  `ALTER TABLE dinamica_notas DROP CONSTRAINT IF EXISTS dinamica_notas_candidato_id_gestor_id_key;`,
+  `ALTER TABLE dinamica_notas DROP COLUMN IF EXISTS gestor_id;`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS dinamica_notas_candidato_avaliador_key ON dinamica_notas(candidato_id, avaliador_email);`,
+  // Qual gestor avalia qual banca (turno) — sem isso, todo gestor via os
+  // candidatos liberados de QUALQUER banca, mesmo as que não eram dele.
+  `
   CREATE TABLE IF NOT EXISTS dinamica_avaliadores_banca (
     id BIGSERIAL PRIMARY KEY,
     avaliador_email TEXT NOT NULL,
@@ -111,11 +107,21 @@ query(`
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE (avaliador_email, turno)
   );
-`)).then(() => {
-  console.log('[DB] Tabelas da dinâmica de estágio OK.');
-}).catch(err => {
-  console.error('[DB] Erro ao criar tabelas da dinâmica:', err.message);
-});
+  `,
+];
+
+(async () => {
+  let falhas = 0;
+  for (const sql of MIGRACOES_DINAMICA) {
+    try {
+      await query(sql);
+    } catch (err) {
+      falhas++;
+      console.error('[DB] Erro num passo da migração da dinâmica (seguindo pros próximos):', err.message);
+    }
+  }
+  console.log(falhas ? `[DB] Migração da dinâmica concluída com ${falhas} passo(s) com erro — ver logs acima.` : '[DB] Tabelas da dinâmica de estágio OK.');
+})();
 
 // ---------- Candidatos ----------
 
@@ -129,7 +135,7 @@ query(`
 const CAND_COLS = [
   'nome', 'curso', 'faculdade', 'formacao', 'telefone', 'email', 'linkedin_url',
   'turno', 'cv_arquivo_id', 'foto_arquivo_id', 'liberado', 'genero', 'status',
-  'nota_comite', 'area_final', 'tipo_programa',
+  'nota_comite', 'area_final', 'tipo_programa', 'indicado_por',
 ];
 
 const STATUS_VALIDOS = ['Pendente', 'Aprovado', 'Reprovado', 'Ausente'];
@@ -426,10 +432,10 @@ async function deleteNota(candidato_id, avaliador_email) {
 // Campos de múltipla seleção chegam como string separada por "|" (um ou
 // mais valores); `nome` é busca livre (substring, maiúsc./minúsc.).
 async function resultados(filtros = {}) {
-  const { turno, genero, curso, faculdade, nome, area, area_final, tipo_programa, nota_comite, media } = filtros;
+  const { turno, genero, curso, faculdade, nome, area, area_final, tipo_programa, nota_comite, media, indicado_por } = filtros;
   const condicoes = [];
   const params = [];
-  for (const [coluna, valor] of [['c.turno', turno], ['c.genero', genero], ['c.curso', curso], ['c.faculdade', faculdade], ['c.area_final', area_final], ['c.tipo_programa', tipo_programa]]) {
+  for (const [coluna, valor] of [['c.turno', turno], ['c.genero', genero], ['c.curso', curso], ['c.faculdade', faculdade], ['c.area_final', area_final], ['c.tipo_programa', tipo_programa], ['c.indicado_por', indicado_por]]) {
     if (!valor) continue;
     const valores = String(valor).split('|').filter(Boolean);
     if (!valores.length) continue;
